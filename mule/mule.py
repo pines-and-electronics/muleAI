@@ -36,6 +36,9 @@ import warnings
 from vehicle import Vehicle
 from parts.camera import WebCam
 from parts.display import DisplayFeed
+from parts.joystick import PS3Controller
+from parts.actuator import MockController, PCA9685Controller, SteeringController, ThrottleController
+
 
 
 
@@ -43,8 +46,17 @@ def drive():
     #Initialize car
     mule = Vehicle()
 
-    mule.add(WebCam(threaded=True))
-    mule.add(DisplayFeed('MuleView'))
+    #mule.add(WebCam(threaded=True))
+    #mule.add(DisplayFeed('MuleView'))
+
+    mule.add(PS3Controller())
+
+    #mule.add(SteeringController(MockController()))
+    #mule.add(ThrottleController(MockController()))
+
+    mule.add(SteeringController(PCA9685Controller(channel=0)))
+    mule.add(ThrottleController(PCA9685Controller(channel=1)))
+
 
     mule.start()
 
