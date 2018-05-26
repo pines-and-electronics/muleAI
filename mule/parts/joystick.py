@@ -18,6 +18,7 @@ import array
 import struct
 from collections import OrderedDict
 from parts.base import BasePart, ThreadComponent
+import utilities.jsio as jsio
 
 
 # TODO: potentially migrate from the older joystick interface 
@@ -142,9 +143,9 @@ class JoystickDevice:
                 1-byte event key    --> axis/button key
             and so expects to be populated with an 8-byte read from the device.  
         ''' 
-        JS_EVENT_BUTTON = 0x01
-        JS_EVENT_AXIS   = 0x02
-        JS_EVENT_INIT   = 0x80
+        JS_EVENT_BUTTON = jsio.retrieve_JS_EVENT_BUTTON()
+        JS_EVENT_AXIS   = jsio.retrieve_JS_EVENT_AXIS()
+        JS_EVENT_INIT   = jsio.retrieve_JS_EVENT_INIT()
 
         # in principle a signed short ranges from -32768 to 32767 but the documentation
         # https://www.kernel.org/doc/html/v4.16/input/joydev/joystick-api.html
@@ -187,24 +188,23 @@ class JoystickDevice:
     def _retrieve_device_name(self, joystick):
 
         MAX_NAME_LENGTH = 128
-        JSIOCGNAME = 0x80006a13
-        SHIFT_BITS = 16
+        JSIOCGNAME = jsio.retrieve_JSIOCGNAME(MAX_NAME_LENGTH)
 
         container = array.array('B', [0] * MAX_NAME_LENGTH)
 
-        fcntl.ioctl(joystick, JSIOCGNAME + (MAX_NAME_LENGTH << SHIFT_BITS), container)
+        fcntl.ioctl(joystick, JSIOCGNAME, container)
         self.device_name = container.tobytes().decode('utf-8')
 
 
     def _retrieve_axes(self, joystick):
 
-        JSIOCGAXES = 0x80016a11
+        JSIOCGAXES = jsio.retrieve_JSIOCGAXES()
         container = array.array('B', [0])
         fcntl.ioctl(joystick, JSIOCGAXES, container)
         nr_axes = container[0]
 
-        JSIOCGAXMAP = 0x80406a32
-        MAX_NR_AXES = 0x40 # 64 in decimal
+        JSIOCGAXMAP = jsio.retrieve_JSIOCGAXMAP()
+        MAX_NR_AXES = jsio.retrieve_MAX_NR_AXES()
         container = array.array('B', [0] * MAX_NR_AXES)
         fcntl.ioctl(joystick, JSIOCGAXMAP, container)  
 
@@ -215,13 +215,13 @@ class JoystickDevice:
 
     def _retrieve_buttons(self, joystick):
 
-        JSIOCGBUTTONS = 0x80016a12
+        JSIOCGBUTTONS = jsio.retrieve_JSIOCGBUTTONS()
         container = array.array('B', [0])
         fcntl.ioctl(joystick, JSIOCGBUTTONS, container) # 
         nr_buttons = container[0]
 
-        JSIOCGBTNMAP = 0x84006a34
-        MAX_NR_BUTTONS = 0x200 # 512 in decimal
+        JSIOCGBTNMAP = jsio.retrieve_JSIOCGBTNMAP()
+        MAX_NR_BUTTONS = jsio.retrieve_MAX_NR_BUTTONS() # 512 in decimal
         container = array.array('H', [0] * MAX_NR_BUTTONS)
         fcntl.ioctl(joystick, JSIOCGBTNMAP, container) # 
 
