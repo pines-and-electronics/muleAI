@@ -9,9 +9,9 @@
          MAX_NR_BUTTONS == 0x200 == 512 rather than 200
 
     If you wish to obtain the values of JSIOCG[NAME/AXES/AXMAP/BUTTONS/BTNMAP]
-    on your system, you will need to evaluate the appropriate quantities from:
-    https://github.com/raspberrypi/linux/blob/9d2ad143e40c38d34be86578840499a976c0a5b0/include/uapi/linux/joystick.h
-    or you can use the testing kit included in this repo.
+    on your system, you will need to evaluate the appropriate quantities from
+    your system header: linux/joystick.h
+    or you can use those provided by the included utilities.jsio
 '''
 import fcntl
 import array
@@ -117,6 +117,13 @@ class JoystickDevice:
           the list.  
     '''
     def __init__(self, device_path='/dev/input/js0'):
+        ''' Configure joystick device 
+
+            Arguments
+
+            device_path: str
+                path to the physical device
+            '''
         self._device_path = device_path
 
         self.device_name = ''
@@ -135,18 +142,19 @@ class JoystickDevice:
 
 
     def poll(self):
-        '''
+        ''' Reads joystick device for signals
+
+            The read returns a wrapped js_event
+
             The underlying C struct for the js_event contains:
                 4-byte timestamp    --> in milliseconds
                 2-byte event value  --> {0,1} for buttons, [-MAX_AXIS_VALUE,MAX_AXIS_VALUE] for axes
                 1-byte event type   --> JS_EVENT_BUTTON/AXIS/INIT
                 1-byte event key    --> axis/button key
-            and so expects to be populated with an 8-byte read from the device.  
-        ''' 
-        JS_EVENT_BUTTON = jsio.retrieve_JS_EVENT_BUTTON()
-        JS_EVENT_AXIS   = jsio.retrieve_JS_EVENT_AXIS()
-        JS_EVENT_INIT   = jsio.retrieve_JS_EVENT_INIT()
+            and so expects to be populated with an 8-byte read from the device.
 
+
+        ''' 
         # in principle a signed short ranges from -32768 to 32767 but the documentation
         # https://www.kernel.org/doc/html/v4.16/input/joydev/joystick-api.html
         # states that only values [-32767,32767] are emitted
@@ -162,14 +170,14 @@ class JoystickDevice:
             timestamp, event_value, event_type, event_key = struct.unpack('IhBB', event)
 
 
-            if event_type & JS_EVENT_INIT:
+            if event_type & self._JS_EVENT_INIT:
                 pass
 
-            elif event_type & JS_EVENT_AXIS:
+            elif event_type & self._JS_EVENT_AXIS:
                 tag = self._axes[event_key]
                 value = event_value / MAX_AXIS_VALUE
 
-            elif event_type & JS_EVENT_BUTTON:
+            elif event_type & self._JS_EVENT_BUTTON:
                 tag = self._buttons[event_key]
                 value = event_value
 
@@ -180,6 +188,11 @@ class JoystickDevice:
 
 
     def _configure(self, joystick):
+        self._JS_EVENT_BUTTON = jsio.retrieve_JS_EVENT_BUTTON()
+        self._JS_EVENT_AXIS = jsio.retrieve_JS_EVENT_AXIS()
+        self._JS_EVENT_INIT = jsio.retrieve_JS_EVENT_INIT()
+
+
         self._retrieve_device_name(joystick)
         self._retrieve_axes(joystick)
         self._retrieve_buttons(joystick)
@@ -231,18 +244,50 @@ class JoystickDevice:
 
 
 
-# TODO: set up "mode" and "recording" flags
+
+
+class Mode:
+    ''' A plain old data class that holds the various driving modes
+
+        Members
+
+        steering: str
+            either 'human' or 'ai'
+
+        throttle: str
+            either 'human' or 'ai'
+
+        recording: bool
+            either True or False
+
+    '''
+    def __init__(self, steering='human', throttle='human', recording=False):
+        self.steering = steering
+        self.throttle = throttle
+        self.recording = recording
+
+
+
 # TODO: set up auto-recording
 # TODO: delay (reduced user mobility)
-# TODO: apparently there are issues with throttle needing to be flipped
+# TODO: publish modes to state as a list/dict with one turned on?? 
+#       I don't see the reason right now, but it was a thought
+# TODO: Controllers should only produce the raw signal, there should be a
+#       separate part to do the manipulation, flipping, scaling, adapting to actuators, etc.
 
 class PS3Controller(BasePart):
     input_keys = ()
-    output_keys = ('steering_signal', 'throttle_signal')
+    output_keys = ('steering_signal', 'throttle_signal', 'mode')
 
-    def __init__(self, device='/dev/input/js0', flip_steering=False, flip_throttle=False):
+    def __init__(self, device_path='/dev/input/js0', 
+                       steering='human', 
+                       throttle='human', 
+                       recording=False,
+                       flip_steering=False, 
+                       flip_throttle=False):
 
-        self.joystick = JoystickDevice(device)
+        self.joystick = JoystickDevice(device_path)
+        self.mode = Mode(steering, throttle, recording)
 
         self.steering_signal = 0.0
         self.throttle_signal = 0.0
@@ -263,6 +308,7 @@ class PS3Controller(BasePart):
     def transform(self, state):
         state[self.output_keys[0]] = self.steering_signal
         state[self.output_keys[1]] = self.throttle_signal
+        state[self.output_keys[2]] = self.mode
 
 
     def stop(self):
@@ -279,6 +325,9 @@ class PS3Controller(BasePart):
         * button-dpad-down      | decrease throttle scale
         * button-dpad-left      | increase steering scale 
         * button-dpad-right     | decrease steering scale
+
+        * button-triangle       | toggle mode
+        * button-circle         | toggle recording
         '''
         THROTTLE_SCALE_SHIFT = 0.05
         STEERING_SCALE_SHIFT = 0.05
@@ -318,3 +367,22 @@ class PS3Controller(BasePart):
 
         elif tag == 'button-dpad-left' and value == 1:
             self.steering_scale = max(0.0, self.steering_scale - STEERING_SCALE_SHIFT)
+
+        elif tag == 'button-triangle' and value == 1:
+            self.mode.steering = 'human'
+            self.mode.throttle = 'human'
+
+        elif tag == 'button-square' and value == 1:
+            self.mode.steering = 'human'
+            self.mode.throttle = 'ai'
+
+        elif tag == 'button-circle' and value == 1:
+            self.mode.steering = 'ai'
+            self.mode.throttle = 'human'
+
+        elif tag == 'button-cross' and value == 1:
+            self.mode.steering = 'ai'
+            self.mode.throttle = 'ai'
+
+        elif tag == 'button-select' and value == 1:
+            self.mode.recording = not self.mode.recording

@@ -39,7 +39,7 @@ from parts.display import DisplayFeed
 from parts.joystick import PS3Controller
 from parts.actuator import MockController, PCA9685Controller
 from parts.actuator import SteeringController, ThrottleController
-
+from parts.ai import AIController
 
 
 
@@ -53,6 +53,8 @@ def drive():
     #mule.add(DisplayFeed('MuleView'))
 
     mule.add(PS3Controller())
+
+    mule.add(AIController('nothing'))
 
     mule.add(SteeringController(PCA9685Controller(channel=0)))
     mule.add(ThrottleController(PCA9685Controller(channel=1)))
