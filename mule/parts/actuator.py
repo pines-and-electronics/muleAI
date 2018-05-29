@@ -105,7 +105,7 @@ class SteeringController(BasePart):
 
 
 
-class ThrottleController:
+class ThrottleController(BasePart):
     ''' Controls vehicle throttle '''
 
     input_keys = ('throttle_signal',)
