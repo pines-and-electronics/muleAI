@@ -63,6 +63,7 @@ class Vehicle():
     # TODO: log moving average of loop times
     # TODO: implement maximum number of drive loops ???  
     #       I fail to see the usefulness at the moment
+    # TODO: MJ - Can we move the Regulator to self? 
     def drive(self, rps=10):
         ''' Engages drive loop
 

@@ -245,7 +245,8 @@ class JoystickDevice:
 
 
 
-
+# TODO: MJ - {'steering':'human','throttle':'human','recording':False}  
+# TODO: MJ - assert d['steering'] in [human','ai']
 class Mode:
     ''' A plain old data class that holds the various driving modes
 

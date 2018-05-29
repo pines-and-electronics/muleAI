@@ -91,7 +91,7 @@ class MockCam(BaseCam):
         self.frame = np.array(self.camera)
 
 
-
+# TODO: MJ - Add the members to __init__
 class PiCam(BaseCam):
     ''' Raspberry Pi camera '''
     def __init__(self, resolution=(160, 120), framerate=24, threaded=False):
