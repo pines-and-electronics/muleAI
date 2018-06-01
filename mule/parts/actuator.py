@@ -95,7 +95,7 @@ class SteeringController(BasePart):
 
     def transform(self, state):
         ''' Send signal as pulse to servo '''
-        pulse = self._steering_signal2pulse(state[self.input_keys[0]])
+        pulse = self._steering_signal2pulse(state['steering_signal'])
         self.controller.set_pulse(pulse)
 
     def stop(self):
@@ -147,10 +147,10 @@ class ThrottleController:
 
     def transform(self, state):
         ''' Send signal as pulse to servo '''
-        if state[self.input_keys[0]] > self.STOP_SIGNAL:
-            pulse = self._forward_signal2pulse(state[self.input_keys[0]])
+        if state['throttle_signal'] > self.STOP_SIGNAL:
+            pulse = self._forward_signal2pulse(state['throttle_signal'])
         else:
-            pulse = self._reverse_signal2pulse(state[self.input_keys[0]])
+            pulse = self._reverse_signal2pulse(state['throttle_signal'])
 
         self.controller.set_pulse(pulse)
 

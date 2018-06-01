@@ -52,7 +52,7 @@ class BaseCam(BasePart):
         if not self.threaded:
             self._update()
 
-        state[self.output_keys[0]] = self.frame
+        state['camera_array'] = self.frame
 
 
     def stop(self):
