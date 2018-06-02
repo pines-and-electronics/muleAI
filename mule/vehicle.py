@@ -1,5 +1,6 @@
 import time
-from utilities.generic_utilities import Regulator
+from itertools import count
+from utilities.generic import regulate
 
 
 class Vehicle():
@@ -75,17 +76,11 @@ class Vehicle():
             Iterates through parts, each transforming the state. Contains
             regulator that ensures rps.
         '''
-        step_regulator = Regulator(rps)
-
         try:
-            while True:
-                step_regulator.mark()
+            for loop_nr in regulate(count(), rps):
 
                 for part in self.parts:
                     part.transform(self.state)
-
-                step_regulator.mark()
-                step_regulator.regulate()
 
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour
