@@ -1,4 +1,5 @@
 import keras
+from parts.base import BasePart
 
 
 # TODO: add assertions for keras and tensorflow
