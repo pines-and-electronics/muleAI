@@ -307,9 +307,9 @@ class PS3Controller(BasePart):
 
 
     def transform(self, state):
-        state[self.output_keys[0]] = self.steering_signal
-        state[self.output_keys[1]] = self.throttle_signal
-        state[self.output_keys[2]] = self.mode
+        state['steering_signal'] = self.steering_signal
+        state['throttle_signal'] = self.throttle_signal
+        state['mode'] = self.mode
 
 
     def stop(self):
