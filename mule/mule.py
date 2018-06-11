@@ -35,11 +35,12 @@ import warnings
 
 from vehicle import Vehicle
 from parts.camera import MockCam, PiCam, WebCam
+from parts.datastore import ReadStore, WriteStore
 from parts.display import DisplayFeed
 from parts.joystick import PS3Controller
 from parts.actuator import MockController, PCA9685Controller
 from parts.actuator import SteeringController, ThrottleController
-from parts.ai import AIController
+#from parts.ai import AIController
 
 
 
@@ -47,18 +48,20 @@ def drive():
     #Initialize car
     mule = Vehicle()
 
-    mule.add(PiCam(threaded=True))
+    #mule.add(PiCam(threaded=True))
+    mule.add(ReadStore('../../datastores/1528742549', output_keys=('camera_array',)))
 
     # For the pc development
-    #mule.add(DisplayFeed('MuleView'))
+    mule.add(DisplayFeed('MuleView'))
 
-    mule.add(PS3Controller())
+    #mule.add(PS3Controller())
 
-    mule.add(AIController('nothing'))
+    #mule.add(AIController('nothing'))
 
-    mule.add(SteeringController(PCA9685Controller(channel=0)))
-    mule.add(ThrottleController(PCA9685Controller(channel=1)))
+    #mule.add(SteeringController(PCA9685Controller(channel=0)))
+    #mule.add(ThrottleController(PCA9685Controller(channel=1)))
 
+    #mule.add(WriteStore('../../datastores'))
 
     mule.start()
 
