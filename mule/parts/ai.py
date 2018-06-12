@@ -7,7 +7,7 @@ from parts.base import BasePart
 #       or at least error handling
 # TODO: could this be multiprocessed? or would this interfere with the
 #       drive loop?
-# TODO: do we need adapter compoents to wrap the keras model --> this could
+# TODO: do we need adapter components to wrap the keras model --> this could
 #       already be assigned to the image processing handler
 # TODO: At the moment, the model is tied to keras. Is this a good thing?
 
@@ -42,10 +42,10 @@ class AIController(BasePart):
         else:
             steering_signal, throttle_signal = self.model.predict('camera_array')
 
-            if state['mode'].steering == 'ai':
+            if state['mode']['steering'] == 'ai':
                 state['steering_signal'] = steering_signal
 
-            if state['mode'].throttle == 'ai':
+            if state['mode']['throttle'] == 'ai':
                 state['throttle_signal'] = throttle_signal
 
 

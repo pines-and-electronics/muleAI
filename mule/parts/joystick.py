@@ -288,7 +288,7 @@ class PS3Controller(BasePart):
                        flip_throttle=False):
 
         self.joystick = JoystickDevice(device_path)
-        self.mode = Mode(steering, throttle, recording)
+        self.mode = {'steering': 'human', 'throttle': 'human', 'recording': False}
 
         self.steering_signal = 0.0
         self.throttle_signal = 0.0
@@ -370,20 +370,20 @@ class PS3Controller(BasePart):
             self.steering_scale = max(0.0, self.steering_scale - STEERING_SCALE_SHIFT)
 
         elif tag == 'button-triangle' and value == 1:
-            self.mode.steering = 'human'
-            self.mode.throttle = 'human'
+            self.mode['steering'] = 'human'
+            self.mode['throttle'] = 'human'
 
         elif tag == 'button-square' and value == 1:
-            self.mode.steering = 'human'
-            self.mode.throttle = 'ai'
+            self.mode['steering'] = 'human'
+            self.mode['throttle'] = 'ai'
 
         elif tag == 'button-circle' and value == 1:
-            self.mode.steering = 'ai'
-            self.mode.throttle = 'human'
+            self.mode['steering'] = 'ai'
+            self.mode['throttle'] = 'human'
 
         elif tag == 'button-cross' and value == 1:
-            self.mode.steering = 'ai'
-            self.mode.throttle = 'ai'
+            self.mode['steering'] = 'ai'
+            self.mode['throttle'] = 'ai'
 
         elif tag == 'button-select' and value == 1:
-            self.mode.recording = not self.mode.recording
+            self.mode['recording'] = not self.mode['recording']
