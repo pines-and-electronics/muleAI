@@ -41,6 +41,7 @@ from parts.joystick import PS3Controller
 from parts.actuator import MockController, PCA9685Controller
 from parts.actuator import SteeringController, ThrottleController
 #from parts.ai import AIController
+from parts.mock import MockMode
 
 
 
@@ -49,7 +50,11 @@ def drive():
     mule = Vehicle()
 
     #mule.add(PiCam(threaded=True))
-    mule.add(ReadStore('../../datastores/1528813253', output_keys=('camera_array',)))
+    mule.add(WebCam(threaded=True))
+
+    mule.add(MockMode())
+
+    #mule.add(ReadStore('../../datastores/1528813253', output_keys=('camera_array',)))
 
     # For the pc development
     mule.add(DisplayFeed('MuleView'))
@@ -61,7 +66,7 @@ def drive():
     #mule.add(SteeringController(PCA9685Controller(channel=0)))
     #mule.add(ThrottleController(PCA9685Controller(channel=1)))
 
-    #mule.add(WriteStore('../../datastores'))
+    mule.add(WriteStore('../../datastores'))
 
     mule.start()
 
