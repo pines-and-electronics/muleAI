@@ -4,6 +4,7 @@ import re
 import json
 import numpy as np
 import random
+import itertools
 from collections import OrderedDict
 from parts.base import BasePart
 
@@ -180,12 +181,11 @@ class WriteStore(BasePart):
 
         <state-key>_<timestamp-in-seconds>.<extension>
     '''
-    input_keys = ()
+    input_keys = ('mode',)
     output_keys = ()
 
-    def __init__(self, path, input_keys=None):
+    def __init__(self, path):
         self.path = path
-        self.input_keys = input_keys or self.input_keys
 
     @property
     def path(self):
@@ -201,35 +201,39 @@ class WriteStore(BasePart):
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
-
     def start(self):
         pass
 
 
     def transform(self, state):
         ''' Writes state to (multiple) files
-        
+
             Writer first disposes of all the numpy arrays and then
-            writes remaining data to json file'''
-        # time in milliseconds
-        timestamp = int(time.time() * 1e3)
+            writes remaining data to json file
+        '''
+        if state['mode']['recording']:
+            # time in milliseconds
+            timestamp = int(time.time() * 1e3)
 
-        self.input_keys = self.input_keys or tuple(state.keys())
+            # convert to set to remove duplicates
+            keys = (key for key in state if key not in self.input_keys)
+            self.input_keys = tuple(key for key 
+                                    in itertools.chain(self.input_keys, keys))
 
-        local_state = {}
+            local_state = {}
 
-        for key in self.input_keys:
-            if isinstance(state[key], np.ndarray):
-                filename = os.path.join(self.path, 
-                                        '{}_{}.{}'.format(key, timestamp, 'npy'))
-                np.save(filename, state[key])
+            for key in self.input_keys:
+                if isinstance(state[key], np.ndarray):
+                    filename = os.path.join(self.path, 
+                            '{}_{}.{}'.format(key, timestamp, 'npy'))
+                    np.save(filename, state[key])
 
-            else:
-                local_state[key] = state[key]
+                else:
+                    local_state[key] = state[key]
 
-        filename = os.path.join(self.path, 'state_{}.{}'.format(timestamp, 'json'))
-        with open(filename, 'w') as fd:
-            json.dump(local_state, fd)
+            filename = os.path.join(self.path, 'state_{}.{}'.format(timestamp, 'json'))
+            with open(filename, 'w') as fd:
+                json.dump(local_state, fd)
 
 
     def stop(self):
