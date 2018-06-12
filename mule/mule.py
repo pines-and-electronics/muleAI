@@ -49,7 +49,7 @@ def drive():
     mule = Vehicle()
 
     #mule.add(PiCam(threaded=True))
-    mule.add(ReadStore('../../datastores/1528742549', output_keys=('camera_array',)))
+    mule.add(ReadStore('../../datastores/1528813253', output_keys=('camera_array',)))
 
     # For the pc development
     mule.add(DisplayFeed('MuleView'))
