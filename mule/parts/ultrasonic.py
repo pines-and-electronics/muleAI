@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 import time
-GPIO.setmode(GPIO.BCM)
+
 
 import logging
 
@@ -8,7 +8,8 @@ PIN_TRIG = 23
 PIN_ECHO = 24
 
 while 1:
-
+    
+    GPIO.setmode(GPIO.BCM)
     
     print("Distance Measurement In Progress")
     logging.debug("test")
