@@ -51,9 +51,9 @@ def cycle_blue():
     
         time.sleep(interval)
     
-        GPIO.output(PIN_BLUE1,  True)
-        GPIO.output(PIN_BLUE2,  True)
-        GPIO.output(PIN_BLUE3,  True)
+        GPIO.output(PIN_BLUE1,  False)
+        GPIO.output(PIN_BLUE2,  False)
+        GPIO.output(PIN_BLUE3,  False)
         GPIO.output(PIN_BLUE4,  True)
         
         time.sleep(interval)
