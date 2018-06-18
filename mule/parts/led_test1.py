@@ -30,6 +30,9 @@ hertz = 10
 interval = 1 / hertz
 
 def cycle_blue():
+    GPIO.output(PIN_RED,    False)
+    GPIO.output(PIN_YELLOW, False)
+    GPIO.output(PIN_GREED,  False)    
     while 1:
         logging.debug("Cycle")
 
