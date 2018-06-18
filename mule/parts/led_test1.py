@@ -2,6 +2,8 @@ import RPi.GPIO as GPIO
 import time
 import logging
 
+GPIO.setwarnings(False)
+
 PIN_BLUE1   = 26
 PIN_BLUE2   = 19
 PIN_BLUE3   = 13 
@@ -29,7 +31,8 @@ interval = 1 / hertz
 
 def cycle_blue():
     while 1:
-    
+        logging.debug("Cycle")
+
         GPIO.output(PIN_BLUE1,  True)
         GPIO.output(PIN_BLUE2,  False)
         GPIO.output(PIN_BLUE3,  False)
