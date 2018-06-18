@@ -11,6 +11,8 @@ PIN_RED     = 16
 PIN_YELLOW  = 20
 PIN_GREED   = 21
 
+GPIO.cleanup()
+
 GPIO.setmode(GPIO.BCM)
 
 GPIO.setup(PIN_BLUE1,GPIO.OUT)
@@ -25,7 +27,38 @@ GPIO.setup(PIN_GREED,GPIO.OUT)
 hertz = 10 
 interval = 1 / hertz
 
-if 1:
+def cycle_blue():
+    while 1:
+    
+        GPIO.output(PIN_BLUE1,  True)
+        GPIO.output(PIN_BLUE2,  False)
+        GPIO.output(PIN_BLUE3,  False)
+        GPIO.output(PIN_BLUE4,  False)
+    
+        time.sleep(interval)
+    
+        GPIO.output(PIN_BLUE1,  False)
+        GPIO.output(PIN_BLUE2,  True)
+        GPIO.output(PIN_BLUE3,  False)
+        GPIO.output(PIN_BLUE4,  False)
+    
+        time.sleep(interval)
+    
+        GPIO.output(PIN_BLUE1,  False)
+        GPIO.output(PIN_BLUE2,  False)
+        GPIO.output(PIN_BLUE3,  True)
+        GPIO.output(PIN_BLUE4,  False)
+    
+        time.sleep(interval)
+    
+        GPIO.output(PIN_BLUE1,  True)
+        GPIO.output(PIN_BLUE2,  True)
+        GPIO.output(PIN_BLUE3,  True)
+        GPIO.output(PIN_BLUE4,  True)
+        
+        time.sleep(interval)
+
+def cycle_onoff():
     while 1:
        
         logging.debug("LED Testing")
@@ -51,61 +84,8 @@ if 1:
         time.sleep(1)
         
         #GPIO.cleanup()
-while 1:
 
-    time.sleep(interval)
+if __name__ == "__main__":
+    cycle_blue()
+    #cycle_onoff()
 
-    GPIO.output(PIN_BLUE1,  True)
-    GPIO.output(PIN_BLUE2,  False)
-    GPIO.output(PIN_BLUE3,  False)
-    GPIO.output(PIN_BLUE4,  False)
-
-    time.sleep(interval)
-
-    GPIO.output(PIN_BLUE1,  False)
-    GPIO.output(PIN_BLUE2,  True)
-    GPIO.output(PIN_BLUE3,  False)
-    GPIO.output(PIN_BLUE4,  False)
-
-    time.sleep(interval)
-
-    GPIO.output(PIN_BLUE1,  False)
-    GPIO.output(PIN_BLUE2,  False)
-    GPIO.output(PIN_BLUE3,  True)
-    GPIO.output(PIN_BLUE4,  False)
-
-    time.sleep(interval)
-
-    GPIO.output(PIN_BLUE1,  True)
-    GPIO.output(PIN_BLUE2,  True)
-    GPIO.output(PIN_BLUE3,  True)
-    GPIO.output(PIN_BLUE4,  True)
-    
-    time.sleep(interval)
-
-if 0:
-    while 1:
-       
-        logging.debug("LED Testing")
-    
-        GPIO.output(PIN_BLUE1,  True)
-        GPIO.output(PIN_BLUE2,  True)
-        GPIO.output(PIN_BLUE3,  True)
-        GPIO.output(PIN_BLUE4,  True)
-        GPIO.output(PIN_RED,    True)
-        GPIO.output(PIN_YELLOW, True)
-        GPIO.output(PIN_GREED,  True)
-        
-        time.sleep(1)
-    
-        GPIO.output(PIN_BLUE1,  False)
-        GPIO.output(PIN_BLUE2,  False)
-        GPIO.output(PIN_BLUE3,  False)
-        GPIO.output(PIN_BLUE4,  False)
-        GPIO.output(PIN_RED,    False)
-        GPIO.output(PIN_YELLOW, False)
-        GPIO.output(PIN_GREED,  False)
-        
-        time.sleep(1)
-        
-        #GPIO.cleanup()
