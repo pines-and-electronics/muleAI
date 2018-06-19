@@ -1,0 +1,54 @@
+2018-06-19 20:56:39 -  INFO - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 20:57:07 -    20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 20:57:14 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 20:58:49 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 20:58:49 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 20:58:49 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 20:58:49 - 20 - vehicle    - add        - Adding part
+2018-06-19 20:59:05 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 20:59:05 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 20:59:05 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 20:59:05 - 20 - vehicle    - add        - Adding part
+2018-06-19 20:59:10 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 20:59:10 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 20:59:10 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 20:59:10 - 20 - vehicle    - add        - Adding part
+2018-06-19 20:59:15 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 20:59:15 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 20:59:15 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 20:59:15 - 20 - vehicle    - add        - Adding part
+2018-06-19 21:00:10 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 21:00:10 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 21:00:10 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 21:00:10 - 20 - vehicle    - add        - Adding part
+2018-06-19 21:00:10 - 20 - vehicle    - add        - Adding part
+2018-06-19 21:00:16 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 21:00:16 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 21:00:16 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 21:00:16 - 20 - vehicle    - add        - Adding part <parts.camera.WebCam object at 0x7f64c72606a0>
+2018-06-19 21:00:16 - 20 - vehicle    - add        - Adding part <parts.display.DisplayFeed object at 0x7f64ac716e10>
+2018-06-19 21:00:24 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 21:00:24 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 21:00:24 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 21:00:24 - 20 - vehicle    - add        - Adding part <parts.camera.WebCam object at 0x7f3c4dbd4668>
+2018-06-19 21:01:31 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 21:01:31 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 21:01:31 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 21:01:31 - 20 - vehicle    - add        - Adding part <parts.camera.WebCam object at 0x7f4ede44ad30>
+2018-06-19 21:01:31 - 20 - vehicle    - start      - Starting part 0 of 1, <parts.camera.WebCam object at 0x7f4ede44ad30>
+2018-06-19 21:01:44 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 21:01:44 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 21:01:44 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 21:01:44 - 20 - vehicle    - add        - Adding part <parts.camera.WebCam object at 0x7f599a9f76a0>
+2018-06-19 21:01:44 - 20 - vehicle    - start      - Starting part 1 of 1, <parts.camera.WebCam object at 0x7f599a9f76a0>
+2018-06-19 21:02:30 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 21:02:30 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 21:02:30 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 21:02:30 - 20 - vehicle    - add        - Adding part 1, <parts.camera.WebCam object at 0x7fbaa472d320>
+2018-06-19 21:02:30 - 20 - vehicle    - start      - Starting part 1 of 1, <parts.camera.WebCam object at 0x7fbaa472d320>
+2018-06-19 21:03:18 - 20 - mule       - <module>   - Logging brought to you by logging_simple.yaml
+2018-06-19 21:03:18 - 20 - mule       - drive      - Start your engines ...
+2018-06-19 21:03:18 - 20 - vehicle    - __init__   - Initialize Vehicle
+2018-06-19 21:03:18 - 20 - vehicle    - add        - Adding part 1, <parts.camera.WebCam object at 0x7fbd15d526a0>
+2018-06-19 21:03:18 - 20 - vehicle    - start      - Starting part 1 of 1, <parts.camera.WebCam object at 0x7fbd15d526a0>
+2018-06-19 21:03:20 - 20 - vehicle    - drive      - Starting drive loop at 10 Hz
