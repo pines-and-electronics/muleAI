@@ -51,6 +51,9 @@ class Vehicle():
             raise KeyError(msg.format(part.__class__.__name__))
 
         self.parts.append(part)
+        
+        logging.info("Registering {} key(s)".format(len(part.output_keys)))
+        
         self.state_keys = self.state_keys.union(set(part.output_keys))
 
         

@@ -37,7 +37,7 @@ def drive():
     
     mule.add(WebCam(threaded=True))
     #mule.add(DisplayFeed('MuleView'))
-
+    
     mule.start()
 
     mule.drive()
