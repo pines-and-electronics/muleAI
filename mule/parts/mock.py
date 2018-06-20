@@ -16,7 +16,6 @@ class MockMode(BasePart):
         state['mode'] = self.mode
         if self.counter % 20 == 0:
             self.mode['recording'] = not self.mode['recording']
-            print(self.mode['recording'])
         self.counter += 1
 
     def stop(self):
