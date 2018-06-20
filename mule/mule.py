@@ -1,28 +1,20 @@
 #!/usr/bin/env python3
 
-
 # TODO: this main file should be very simple, load in a template/configuration and set things going.
-
-
 
 import logging.config
 import yaml
 import os
 import warnings
 
+logging_config_file = 'logging_simple.yaml'
+path_logging_conf = os.path.join(os.getcwd(), 'logging', 'configurations', logging_config_file)
+assert os.path.exists(path_logging_conf)
+log_config = yaml.load(open(path_logging_conf, 'r'))
+logging.config.dictConfig(log_config)
 
+logging.info(f"Logging brought to you by {logging_config_file}")
 
-#path_logging_conf = os.path.join(os.getcwd(), 'logging', 'configurations', 'logging_simple.yaml')
-#assert os.path.exists(path_logging_conf)
-#log_config = yaml.load(open(path_logging_conf, 'r'))
-#logging.config.dictConfig(log_config)
-#
-#logger = logging.getLogger(__name__)
-#logger.setLevel('DEBUG')
-#
-#logger.debug(f"Logging by {path_logging_conf}")
-#
-#
 #import utilities.other_utilities as util
 #
 #with warnings.catch_warnings(): # Suppress warnings!
@@ -31,7 +23,6 @@ import warnings
 #    #TODO: Better way??
 #    logging.getLogger("matplotlib").setLevel(logging.WARNING)
 #
-
 
 from vehicle import Vehicle
 from parts.camera import MockCam, PiCam, WebCam
@@ -44,9 +35,10 @@ from parts.actuator import SteeringController, ThrottleController
 from parts.mock import MockMode
 
 
-
 def drive():
     #Initialize car
+    logging.info(f"Start your engines ...")
+
     mule = Vehicle()
 
     #mule.add(PiCam(threaded=True))

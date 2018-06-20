@@ -2,7 +2,6 @@ import time
 from itertools import count
 from utilities.generic import regulate
 
-
 class Vehicle():
     ''' Vehicle control
 
@@ -34,6 +33,7 @@ class Vehicle():
 
         self.state = {}
         self.parts = []
+        logging.info("Initialize Vehicle")
 
 
     def add(self, part):
@@ -44,19 +44,26 @@ class Vehicle():
             part: parts.BasePart
             parts.BasePart is an ABC for a generic vehicle part
         '''
+        logging.info("Adding part {}, {}".format(len(self.parts)+1,part))
+
         if not self.state_keys.issuperset(set(part.input_keys)):
             msg='state missing input key for {}'
             raise KeyError(msg.format(part.__class__.__name__))
 
         self.parts.append(part)
+        
+        logging.info("Registering {} key(s)".format(len(part.output_keys)))
+        
         self.state_keys = self.state_keys.union(set(part.output_keys))
 
-
+        
     def start(self):
         ''' Starts vehicle by starting it constituent parts '''
         self.state = dict.fromkeys(self.state_keys, None)
 
-        for part in self.parts:
+        
+        for i,part in enumerate(self.parts):
+            logging.info("Starting part {} of {}, {}".format(i+1,len(self.parts),part))
             part.start()
 
 
@@ -76,6 +83,9 @@ class Vehicle():
             Iterates through parts, each transforming the state. Contains
             regulator that ensures rps.
         '''
+
+        logging.info("Starting drive loop at {} Hz".format(rps))
+
         try:
             for loop_nr in regulate(count(), rps):
 
