@@ -11,7 +11,7 @@ import numpy as np
 
 class BaseImageProcessor(BasePart):
     input_keys = ('camera_array',)
-    output_keys = ('camera_array',)
+    output_keys = ('processed_camera_array',)
 
     def start():
         pass
@@ -33,7 +33,7 @@ class ColorSpaceMapProcessor(BaseImageProcessor):
         self.colorspace_map = colorspace_map
 
     def transform(self, state):
-        state[self.output_keys[0]] = cv2.cvtColor(state[self.input_keys[0]], self.colorspace_map)
+        state['processed_camera_array'] = cv2.cvtColor(state['camera_array'], self.colorspace_map)
 
 
 
@@ -47,11 +47,11 @@ class ColorSpaceThresholdProcessor(BaseImageProcessor):
         self.upper_threshold = np.array(upper_threshold)
 
     def transform(self, state):
-        mask = cv2.inRange(state[self.input_keys[0]], 
+        mask = cv2.inRange(state['camera_array'], 
                 self.lower_threshold, self.upper_threshold)
 
-        state[self.output_keys[0]] = cv2.bitwise_and(state[self.input_keys[0]], 
-                state[self.input_keys[0]], mask=mask)
+        state['processed_camera_array'] = cv2.bitwise_and(state['camera_array'], 
+                state['camera_array'], mask=mask)
 
 
 # TODO: add kernel support
@@ -67,7 +67,7 @@ class CannyProcessor(BaseImageProcessor):
 
 
     def transform(self, state):
-        state[self.output_keys[0]] = cv2.Canny(state[self.input_keys[0]], 
+        state['processed_camera_array'] = cv2.Canny(state['camera_array'], 
                                           self.lower_threshold, 
                                           self.upper_threshold)
 
@@ -79,7 +79,7 @@ class GaussianBlurProcessor(BaseImageProcessor):
         self.kernel = kernel
 
     def transform(self, state):
-        state[self.output_keys[0]] = cv2.GaussianBlur(state[self.input_keys[0]], 
+        state['processed_camera_array'] = cv2.GaussianBlur(state['camera_array'], 
                                 kernel, 
                                 0)
 
@@ -94,9 +94,9 @@ class CropProcessor(BaseImageProcessor):
         self.margin = margin
 
     def transform(self, state):
-        image_shape = state[self.input_keys[0]].shape[:2]
+        image_shape = state['camera_array'].shape[:2]
         height_slice = slice(self.margin[0], image_shape[0] - self.margin[1])
         width_slice = slice(self.margin[2], image_shape[1] - self.margin[3])
 
-        state[self.output_keys[0]] = state[self.input_keys[0]][height_slice, width_slice]
+        state['processed_camera_array'] = state['camera_array'][height_slice, width_slice]
 

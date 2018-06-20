@@ -3,28 +3,21 @@ import time
 import re
 import json
 import numpy as np
-import collections
-import collections.abc
 import random
+import itertools
+from collections import OrderedDict
 from parts.base import BasePart
 
 
-# TODO: filter on input_keys for WriteStore
 # TODO: add handler for multiple read/write stores
 # TODO: document properly
 # TODO: multithread, multiprocess or asyncio these ops
 
 
 def _json_load(path):
+    ''' Wrapper to load contents of json file '''
     with open(path, 'r') as fd:
          return json.load(fd)
-
-def _none_load(path):
-    return None
-
-
-_LOADER_LOOKUP = {'npy': np.load, 'json': _json_load}
-_EXTENSION_LOOKUP = {np.ndarray: 'npy', collections.abc.Mapping: 'json'}
 
 
 
@@ -38,81 +31,145 @@ class ReadStore(BasePart):
     input_keys = ()
     output_keys = ()
 
-    def __init__(self, path, output_keys=None, shuffled=False):
-        self.path = os.path.realpath(path)
-        self.output_keys = output_keys or ()
-        self.shuffled = shuffled
+    def __init__(self, path, output_keys, shuffled=False):
+        ''' Retrieve file details and set up state generator
+
+            Arguments
+
+            path: str
+                path to datastore
+
+            output_keys: tuple
+                keys for state to retrieve
+
+            shuffled: bool
+                toggle return of state sequence in shuffled
+                or sorted manner
+
+
+            Members
+
+            specifiers: collections.OrderedDict
+                file specifiers extracted from filename
+                key = timestamp
+                value = list of tuples (label, extension, filename)
+
+                Either label is a stete key for a file containing a 
+                numpy array or label = 'state', meaning the (json) file
+                contains state data
+
+            state_generator: generator
+                yields next state from file
+        '''
+        self.path = path
+        self.output_keys = output_keys
+        self.specifiers = self._retrieve_specifiers(shuffled)
+        self.state_generator = self._update()
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, path):
+        self._path = os.path.realpath(os.path.expanduser(path))
 
         # TODO: remove to external verification
         if not os.path.exists(self.path):
             msg = '{} does not exist'.format(self.path)
             raise FileNotFoundError()
 
-        self.data_specifiers = self._retrieve_data_specifiers()
-
 
     def start(self):
-        if self.shuffled:
-            self.random_generator = random.Random()
-            self.random_generator.seed(0)
-
+        pass
 
     def transform(self, state):
-        old_state = state
-        try:
-            state = self._generate_state()
-        except StopIteration:
-            state = old_state
-            raise StopIteration
+        ''' Generate state from file contents and assign
+            vehicle state
+
+            Notes:
+                The explicit iteration through the private
+                self._state is required because assigning directly
+                to state would hide it from the enclosing scope
+        '''
+        self._state = next(self.state_generator)
+        for key, value in self._state.items():
+            state[key] = value
+
 
     def stop(self):
         pass
 
 
-    def _retrieve_data_specifiers(self):
-        data_specifiers = {}
-        for element in os.listdir(self.path):
-            match = re.fullmatch('(\w+)_([0-9]{9}).(.*)', element)
+    def _retrieve_specifiers(self, shuffled):
+        ''' Extract file information from filenames 
+
+            Arguments
+
+            shuffled: bool
+                shuffle or sort OrderedDict
+
+
+            Returns
+
+            OrderedDict containing file metadata
+                key = timestamp
+                value = (label, extension, filename)
+
+                Either label is a stete key for a file containing a 
+                numpy array or label = 'state', meaning the (json) file
+                contains state data
+        '''
+        # filename pattern
+        # (label)_(timestamp).(extension)
+        PATTERN = '(\w+)_([0-9]*).(.*)'
+
+        specifiers = {}
+        for node in os.listdir(self.path):
+            match = re.fullmatch(PATTERN, node)
             if match:
-                filename = os.path.join(self.path, element)
-
-                datum_key, timestamp, extension = match.groups()
-
+                filename = os.path.join(self.path, node)
+                label, timestamp, extension = match.groups()
                 timestamp = int(timestamp)
 
-                datum_specifier = (datum_key, extension, filename)
-                if data_specifiers.get(timestamp):
-                    data_specifiers[timestamp].append(datum_specifier)
+                # 
+                specifier = (label, extension, filename)
+                if specifiers.get(timestamp):
+                    specifiers[timestamp].append(specifier)
                 else:
-                    data_specifiers[timestamp] = [datum_specifier]
+                    specifiers[timestamp] = [specifier]
 
-        return collections.OrderedDict(sorted(data_specifiers.items(), key=lambda d: d[0]))
+        # return data shuffled or sorted
+        timestamps = list(specifiers)
+        if shuffled:
+            random_generator = random.Random()
+            random_generator.seed(0)
+            random_generator.shuffle(timestamps)
+        else:
+            timestamps.sort(key=lambda t: int(t))
+
+        return OrderedDict((timestamp, specifiers[timestamp])
+                           for timestamp in timestamps)
 
 
-    def _generate_state(self):
+
+    def _update(self):
         ''' Generates state dictionary from files 
 
-            Expects data to be either a Mapping whose keys are state keys'''
-
-        data_specifier_keys = list(self.data_specifiers)
-
-        if self.shuffled:
-            self.random_generator.shuffle(data_specifier_keys)
-
-        for key in data_specifier_keys:
-            state = {}
-            for key, extension, filename in self.data_specifiers[key]:
-                # open file
-                data = _LOADER_LOOKUP.get(extension, _none_load)(filename)
-
-                if isinstance(data, collections.abc.Mapping)
-                    if self.output_keys:
-                        data = {k:v for k, v in data.items() if k in self.output_keys} 
-                    # TODO: requires python >= 3.5, make this 3.4 compatible
-                    state = {**state, **data}
-                else if key in self.output_keys:
-                    state[key] = data 
-
+            Expects fiies to contain numpy arrays or json metadata'''
+        # contruct state from different data types
+        state = {}
+        for timestamp, specifier in self.specifiers.items():
+            for label, extension, filename in specifier:
+                if extension == 'npy' and label in self.output_keys:
+                    state[label] = np.load(filename)
+                elif extension == 'json':
+                    data = _json_load(filename)
+                    for key, value in data.items():
+                        if key in self.output_keys:
+                            state[key] = value
+                else:
+                    raise ValueError('Invalid extension: {}'.format(extension))
             yield state
 
 
@@ -124,38 +181,59 @@ class WriteStore(BasePart):
 
         <state-key>_<timestamp-in-seconds>.<extension>
     '''
-    input_keys = ()
+    input_keys = ('mode',)
     output_keys = ()
 
-    def __init__(self, path, input_keys=None):
-        self.path = os.path.realpath(path)
-        self.input_keys = input_keys or ()
+    def __init__(self, path):
+        self.path = path
+
+    @property
+    def path(self):
+        return self._path
+
+
+    @path.setter
+    def path(self, path):
+        self._path = os.path.realpath(os.path.expanduser(path))
+        self._path = os.path.join(self._path, str(int(time.time())))
 
         # TODO: remove to external verification
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
-
+        if not os.path.exists(self._path):
+            os.makedirs(self._path)
 
     def start(self):
         pass
 
 
     def transform(self, state):
-        timestamp = time.time()
+        ''' Writes state to (multiple) files
 
-        local_state = {}
+            Writer first disposes of all the numpy arrays and then
+            writes remaining data to json file
+        '''
+        if state['mode']['recording']:
+            # time in milliseconds
+            timestamp = int(time.time() * 1e3)
 
-        for key, value in state.items():
-            if isinstance(value, np.ndarray):
-                filename = '{}_{}.{}'.format(key, timestamp, _EXTENSION_LOOKUP[np.ndarray])
-                np.save(filename, value)
+            # convert to set to remove duplicates
+            keys = (key for key in state if key not in self.input_keys)
+            self.input_keys = tuple(key for key 
+                                    in itertools.chain(self.input_keys, keys))
 
-            else:
-                local_state[key] = value
+            local_state = {}
 
-        filename = 'state_{}.{}'.format(timestamp, _EXTENSION_LOOKUP[collections.abc.Mapping])
-        with open(filename, 'w') as fd:
-            json.dump(local_state)
+            for key in self.input_keys:
+                if isinstance(state[key], np.ndarray):
+                    filename = os.path.join(self.path, 
+                            '{}_{}.{}'.format(key, timestamp, 'npy'))
+                    np.save(filename, state[key])
+
+                else:
+                    local_state[key] = state[key]
+
+            filename = os.path.join(self.path, 'state_{}.{}'.format(timestamp, 'json'))
+            with open(filename, 'w') as fd:
+                json.dump(local_state, fd)
 
 
     def stop(self):

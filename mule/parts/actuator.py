@@ -1,9 +1,14 @@
 import math
 import functools
+import time
+from parts.base import BasePart
 
 # TODO: should we really have separate instances for the steering and throttle
 #       on the same board
-
+# TODO: check that _signal2pulse allows for the fact that the user may put 
+#       full_left_pulse < full_right_pulse or
+#       full_reverse_pulse > full_forward_pulse
+# TODO: document the above idiosyncracy
 
 def _signal2pulse(signal_lower, signal_upper, pulse_lower, pulse_upper, signal):
     ''' Linearly transforms signal from signal-space to pulse-space
@@ -69,13 +74,13 @@ class SteeringController(BasePart):
     input_keys = ('steering_signal',)
     output_keys = ()
 
-    FULL_LEFT_SIGNAL = -1 
-    FULL_RIGHT_SIGNAL = 1
+    FULL_LEFT_SIGNAL = 1 
+    FULL_RIGHT_SIGNAL = -1
     STRAIGHT_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
-                       full_left_pulse=290,
-                       full_right_pulse=490):
+                       full_left_pulse=490,
+                       full_right_pulse=290):
         ''' Acquires reference to controller and full left and right pulse frequencies
             that are discovered during callibration '''
         self.controller = controller
@@ -90,17 +95,17 @@ class SteeringController(BasePart):
 
     def transform(self, state):
         ''' Send signal as pulse to servo '''
-        pulse = self._steering_signal2pulse(state[input_keys[0]])
+        pulse = self._steering_signal2pulse(state['steering_signal'])
         self.controller.set_pulse(pulse)
 
     def stop(self):
         ''' Signal the servo to return to straight trajectory '''
-        pulse = self._steering_signal2pulse(STRAIGHT_SIGNAL)
+        pulse = self._steering_signal2pulse(self.STRAIGHT_SIGNAL)
         self.controller.set_pulse(pulse)
 
 
 
-class ThrottleController:
+class ThrottleController(BasePart):
     ''' Controls vehicle throttle '''
 
     input_keys = ('throttle_signal',)
@@ -111,9 +116,9 @@ class ThrottleController:
     STOP_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
-                       full_reverse_pulse=300,
+                       full_reverse_pulse=290,
                        full_forward_pulse=490,
-                       stop_pulse=350):
+                       stop_pulse=390):
         ''' Acquires reference to controller and full forward and reverse as well 
             as pulse frequencies that are discovered during callibration 
 
@@ -142,10 +147,10 @@ class ThrottleController:
 
     def transform(self, state):
         ''' Send signal as pulse to servo '''
-        if state[input_keys[0]] > self.STOP_SIGNAL:
-            pulse = self._forward_signal2pulse(state[input_keys[0]])
+        if state['throttle_signal'] > self.STOP_SIGNAL:
+            pulse = self._forward_signal2pulse(state['throttle_signal'])
         else:
-            pulse = self._reverse_signal2pulse(state[input_keys[0]])
+            pulse = self._reverse_signal2pulse(state['throttle_signal'])
 
         self.controller.set_pulse(pulse)
 

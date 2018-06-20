@@ -1,6 +1,6 @@
 import time
-from utilities.generic_utilities import Regulator
-import logging
+from itertools import count
+from utilities.generic import regulate
 
 class Vehicle():
     ''' Vehicle control
@@ -71,6 +71,7 @@ class Vehicle():
     # TODO: log moving average of loop times
     # TODO: implement maximum number of drive loops ???  
     #       I fail to see the usefulness at the moment
+    # TODO: MJ - Can we move the Regulator to self? 
     def drive(self, rps=10):
         ''' Engages drive loop
 
@@ -82,18 +83,14 @@ class Vehicle():
             Iterates through parts, each transforming the state. Contains
             regulator that ensures rps.
         '''
-        step_regulator = Regulator(rps)
+
         logging.info("Starting drive loop at {} Hz".format(rps))
 
         try:
-            while True:
-                step_regulator.mark()
+            for loop_nr in regulate(count(), rps):
 
                 for part in self.parts:
                     part.transform(self.state)
-
-                step_regulator.mark()
-                step_regulator.regulate()
 
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour

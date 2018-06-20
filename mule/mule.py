@@ -25,8 +25,14 @@ logging.info(f"Logging brought to you by {logging_config_file}")
 #
 
 from vehicle import Vehicle
-from parts.camera import WebCam
+from parts.camera import MockCam, PiCam, WebCam
+from parts.datastore import ReadStore, WriteStore
 from parts.display import DisplayFeed
+from parts.joystick import PS3Controller
+from parts.actuator import MockController, PCA9685Controller
+from parts.actuator import SteeringController, ThrottleController
+#from parts.ai import AIController
+from parts.mock import MockMode
 
 
 def drive():
@@ -34,10 +40,26 @@ def drive():
     logging.info(f"Start your engines ...")
 
     mule = Vehicle()
-    
+
+    #mule.add(PiCam(threaded=True))
     mule.add(WebCam(threaded=True))
-    #mule.add(DisplayFeed('MuleView'))
-    
+
+    mule.add(MockMode())
+
+    #mule.add(ReadStore('../../datastores/1528813253', output_keys=('camera_array',)))
+
+    # For the pc development
+    mule.add(DisplayFeed('MuleView'))
+
+    #mule.add(PS3Controller())
+
+    #mule.add(AIController('nothing'))
+
+    #mule.add(SteeringController(PCA9685Controller(channel=0)))
+    #mule.add(ThrottleController(PCA9685Controller(channel=1)))
+
+    mule.add(WriteStore('../../datastores'))
+
     mule.start()
 
     mule.drive()
