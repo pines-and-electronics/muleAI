@@ -2,8 +2,7 @@ drive:
     freq_hertz: 10
 
 parts:
-    - actuator:
-    
+ - actuator:
         type: SteeringController
         arguments:
         channel: 1
@@ -11,27 +10,15 @@ parts:
         full_right_pulse:   290
         
         type: ThrottleController
+        arguments:
         channel: 1
         full_reverse_pulse:     290
         full_forward_pulse:     490
         neutral_pulse:          390
-        
-    - camera: 
+ - camera: 
         type: WebCam
         
-    - display:
+ - display:
         type: DisplayFeed
         arguments:
         window_name: 'MuleView'
-        
-
-        STEERING:
-    STEERING_CHANNEL : 1
-    STEERING_LEFT_PWM : 420
-    STEERING_RIGHT_PWM : 360
-
-THROTTLE:
-    THROTTLE_CHANNEL : 0
-    THROTTLE_FORWARD_PWM : 400
-    THROTTLE_STOPPED_PWM : 360
-    THROTTLE_REVERSE_PWM : 310
