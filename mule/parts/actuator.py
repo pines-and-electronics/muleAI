@@ -67,8 +67,14 @@ class PCA9685Controller:
         ''' Set pwm pulse '''
         self.PCA9685.set_pwm(self.channel, 0, pulse) 
 
+    def start(self):
+        pass
 
+    def transform(self, PWM_value):
+        pass
 
+    def stop(self):
+        pass
 
 
 class SteeringController(BasePart):
