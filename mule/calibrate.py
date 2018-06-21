@@ -19,14 +19,18 @@ logging.info('Logging brought to you by {}'.format(logging_config_file))
 def calibrate(config):
 
     logging.info('Creating vehicle from config')
-
+    
+    channel = int(input('Enter a channel number'))
+    
     mule = Vehicle.from_config(config.parts)
+    
+    print(mule.parts)
+    
+    #logging.info('Start your engines ...')
 
-    logging.info('Start your engines ...')
+    #mule.start()
 
-    mule.start()
-
-    logging.info('Initiating drive loop')
+    #logging.info('Initiating drive loop')
 
     mule.drive(**config.drive)
 
