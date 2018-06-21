@@ -2,6 +2,8 @@ import math
 import functools
 import time
 from parts.base import BasePart
+import logging
+
 
 # TODO: should we really have separate instances for the steering and throttle
 #       on the same board
@@ -51,11 +53,19 @@ class PCA9685Controller:
 
     * set_pwm_all(on, off)
     '''
+    input_keys = ()
+    output_keys = ()
+    
     def __init__(self, address=0x40, frequency=60, channel=0):
         ''' Create a reference to the PCA9685 on a specified channel '''
-        import Adafruit_PCA9685
 
-        self.PCA9685 = Adafruit_PCA9685.PCA9685(address)
+        import Adafruit_PCA9685
+        logging.debug("Adafruit_PCA9685 library imported")
+        
+        logging.debug("Instantiating PCA9685 class at address 0x{:X}".format(address))
+        self.PCA9685 = Adafruit_PCA9685.PCA9685()
+        
+        logging.debug("Set the PWM frequency {} Hz".format(frequency))
         self.PCA9685.set_pwm_freq(frequency)
 
         self.channel = channel
@@ -64,8 +74,17 @@ class PCA9685Controller:
         ''' Set pwm pulse '''
         self.PCA9685.set_pwm(self.channel, 0, pulse) 
 
+    def run(self, pulse):
+        self.set_pulse(pulse)
 
+    def start(self):
+        pass
 
+    def transform(self, PWM_value):
+        pass
+
+    def stop(self):
+        pass
 
 
 class SteeringController(BasePart):
@@ -79,6 +98,7 @@ class SteeringController(BasePart):
     STRAIGHT_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
+                    channel = 1,
                        full_left_pulse=490,
                        full_right_pulse=290):
         ''' Acquires reference to controller and full left and right pulse frequencies
@@ -119,6 +139,7 @@ class ThrottleController(BasePart):
     NEUTRAL_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
+                    channel = 0,
                        full_reverse_pulse=290,
                        full_forward_pulse=490,
                        neutral_pulse=390):

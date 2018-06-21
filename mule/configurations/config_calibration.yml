@@ -1,0 +1,10 @@
+drive:
+    freq_hertz: 10
+
+parts:
+  - actuator: 
+      type: PCA9685Controller
+      arguments:
+        address: 0x40
+        frequency: 60
+        channel: 0
