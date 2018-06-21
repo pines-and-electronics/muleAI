@@ -29,8 +29,6 @@ class BasePart(abc.ABC):
         ''' Stops part components '''
         pass
 
-
-class PartIntrospect:
     def __str__(self):
         return "{} with {} and {} input/output keys".format(self._class_string, self.__class__.input_keys, self.__class__.input_keys)
 

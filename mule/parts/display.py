@@ -3,7 +3,7 @@ import cv2
 import parts.base
 
 
-class DisplayFeed(BasePart,parts.base.PartIntrospect):
+class DisplayFeed(BasePart):
     ''' Displays image feed to screen '''
     input_keys = ('camera_array', )
     output_keys = ()

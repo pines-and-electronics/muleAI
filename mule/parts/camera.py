@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import time
-from parts.base import BasePart, ThreadComponent, PartIntrospect
+from parts.base import BasePart, ThreadComponent
 
 
 
@@ -64,9 +64,7 @@ class BaseCam(BasePart):
     def _update(self, **kwargs):
         ''' Updates part state '''
         pass
-
-
-
+    
 
 # TODO: impore framerate using Regulator class
 # TODO: allow for changing color inn stream of images
@@ -138,7 +136,7 @@ class PiCam(BaseCam):
 # TODO: add device search -- on the pi, there is the possibility for multiple devices
 #                            but for one webcam, it will be 0 (I think).
 #                            if not, then >> ls -l /dev/video*
-class WebCam(BaseCam,PartIntrospect):
+class WebCam(BaseCam):
     ''' Web camera 
     
         Most web cameras are not so flexible as to allow for arbitrary
@@ -187,3 +185,7 @@ class WebCam(BaseCam,PartIntrospect):
 
         return image[padding_height:image.shape[0]-padding_height, 
                      padding_width:image.shape[1]-padding_width]
+
+    @property
+    def _class_string(self):
+        return "{} {}".format(self.__class__.__name__, self.resolution)
