@@ -2,6 +2,7 @@ import logging
 import yaml
 import importlib
 from collections import namedtuple
+import pprint
 
 # POD classes to facilitate configuration parsing
 # holder for main vehicle drive configuration
@@ -35,12 +36,32 @@ def parse_config(path):
 
     with open(path, 'r') as fd:
         config = yaml.load(fd)
-
+    
+    
+    #pprint.pprint(config)
+    
+    for part in config['parts']:
+        #print(part)
+        print("")
+        
+        part_module = list(part.keys())
+        assert len(part_module) == 1
+        part_module = part_module.pop()
+        
+        print("Part type:", part[part_module]['type'])
+        print("Part module: {}.py".format(part_module))
+        if 'arguments' in part[part_module].keys():
+            print("Part arguments:", part[part_module]['arguments'])
+        else:
+            print("Part arguments:", None)
+        #print("")
 
     parsed_config = Config()
 
     parsed_config.drive = config['drive'] if config.get('drive') else {}
-
+    
+    
+    
     protoparts = []
 
     for component in config.get('parts', []):
@@ -50,7 +71,9 @@ def parse_config(path):
         name, attributes = component.popitem()
 
         name = 'parts.{}'.format(name) 
-
+        
+        
+        
         # submodule of parts module containing the actual part
         module = importlib.import_module(name)
 

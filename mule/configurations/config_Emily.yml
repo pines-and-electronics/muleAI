@@ -5,16 +5,16 @@ parts:
  - actuator:
         type: SteeringController
         arguments:
-        channel: 1
-        full_left_pulse:    490
-        full_right_pulse:   290
-        
+          channel: 1
+          full_left_pulse:    490
+          full_right_pulse:   290
+ - actuator:
         type: ThrottleController
         arguments:
-        channel: 1
-        full_reverse_pulse:     290
-        full_forward_pulse:     490
-        neutral_pulse:          390
+          channel: 1
+          full_reverse_pulse:     290
+          full_forward_pulse:     490
+          neutral_pulse:          390
  - camera: 
         type: WebCam
         

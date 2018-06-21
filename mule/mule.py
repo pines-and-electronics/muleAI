@@ -40,5 +40,6 @@ def drive(config):
 
 if __name__ == '__main__':
     path = 'configurations/config_Emily.yml'
+    #path = 'configurations/config.yml'
     config = configutil.parse_config(path)
     drive(config)
