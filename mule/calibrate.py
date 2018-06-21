@@ -21,9 +21,9 @@ def calibrate():
 
     logging.info('Calibration of the PCA9685')
     
-    address=0x40 
+    address=0x40
     frequency=60
-    logging.info("PCA9685 address set to  {} (0x{:X}) ".format(address,address))
+    logging.info("PCA9685 address set to {} (0x{:X}) - NOT USED?".format(address,address))
     logging.info("PCA9685 frequency set to {}".format(frequency))
     
     channel = int(input('Enter a channel number: '))
