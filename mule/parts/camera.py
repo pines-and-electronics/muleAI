@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import time
-from parts.base import BasePart, ThreadComponent
+from parts.base import BasePart, ThreadComponent, PartIntrospect
 
 
 
@@ -138,7 +138,7 @@ class PiCam(BaseCam):
 # TODO: add device search -- on the pi, there is the possibility for multiple devices
 #                            but for one webcam, it will be 0 (I think).
 #                            if not, then >> ls -l /dev/video*
-class WebCam(BaseCam):
+class WebCam(BaseCam,PartIntrospect):
     ''' Web camera 
     
         Most web cameras are not so flexible as to allow for arbitrary

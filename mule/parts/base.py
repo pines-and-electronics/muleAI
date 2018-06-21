@@ -30,6 +30,17 @@ class BasePart(abc.ABC):
         pass
 
 
+class PartIntrospect:
+    def __str__(self):
+        return "{} with {} and {} input/output keys".format(self._class_string, self.__class__.input_keys, self.__class__.input_keys)
+
+    def __repr__(self):
+        return "{} with {} and {} input/output keys".format(self.__class__.__name__, self.__class__.input_keys, self.__class__.input_keys)
+    
+    @property
+    def _class_string(self):
+        return self.__class__.__name__
+
 class ThreadComponent:
     ''' Component held by part that added threading capability
 
