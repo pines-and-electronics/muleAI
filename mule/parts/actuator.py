@@ -2,6 +2,8 @@ import math
 import functools
 import time
 from parts.base import BasePart
+import logging
+
 
 # TODO: should we really have separate instances for the steering and throttle
 #       on the same board
