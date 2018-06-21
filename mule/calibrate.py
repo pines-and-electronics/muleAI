@@ -34,9 +34,9 @@ def calibrate():
     
     for i in range(10):
         pwm_value = int(input('Enter a PWM setting to test (0-1500): '))
-        pca.set_pulse(pwm_value)
+        pca.run(pwm_value)
         #c.run(pmw)
-
+    
     
     # Get the actuator back
     #print(mule.parts)

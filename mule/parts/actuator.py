@@ -63,9 +63,9 @@ class PCA9685Controller:
         logging.debug("Adafruit_PCA9685 library imported")
         
         logging.debug("Instantiating PCA9685 class at address 0x{:X}".format(address))
-        self.PCA9685 = Adafruit_PCA9685.PCA9685(address)
+        self.PCA9685 = Adafruit_PCA9685.PCA9685()
         
-        logging.debug("Calling PCA9685.set_pwm_freq({})".format(frequency))
+        logging.debug("Set the PWM frequency {} Hz".format(frequency))
         self.PCA9685.set_pwm_freq(frequency)
 
         self.channel = channel
@@ -73,6 +73,9 @@ class PCA9685Controller:
     def set_pulse(self, pulse):
         ''' Set pwm pulse '''
         self.PCA9685.set_pwm(self.channel, 0, pulse) 
+
+    def run(self, pulse):
+        self.set_pulse(pulse)
 
     def start(self):
         pass
