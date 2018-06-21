@@ -56,9 +56,15 @@ class PCA9685Controller:
     
     def __init__(self, address=0x40, frequency=60, channel=0):
         ''' Create a reference to the PCA9685 on a specified channel '''
-        import Adafruit_PCA9685
 
+        logging.debug("Import Adafruit_PCA9685")
+        import Adafruit_PCA9685
+        
+        logging.debug("Instantiating PCA9685 class to address {}".format(address))
         self.PCA9685 = Adafruit_PCA9685.PCA9685(address)
+        
+        logging.debug("Calling PCA9685.set_pwm_freq({})".format(frequency))
+
         self.PCA9685.set_pwm_freq(frequency)
 
         self.channel = channel
