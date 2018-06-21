@@ -3,6 +3,7 @@
 import logging.config
 import yaml
 import os
+import parts.actuator
 
 from utilities import configure as configutil
 from vehicle import Vehicle
@@ -16,15 +17,23 @@ logging.config.dictConfig(log_config)
 
 logging.info('Logging brought to you by {}'.format(logging_config_file))
 
-def calibrate(config):
+def calibrate():
 
-    logging.info('Creating vehicle from config')
+    logging.info('Calibration of the PCA9685')
     
-    channel = int(input('Enter a channel number'))
+    address=0x40 
+    frequency=60
+    logging.info("PCA9685 address set to  {} (0x{:X}) ".format(address,address))
+    logging.info("PCA9685 frequency set to {}".format(frequency))
     
-    mule = Vehicle.from_config(config.parts)
+    channel = int(input('Enter a channel number: '))
     
-    print(mule.parts)
+    pca = parts.actuator.PCA9685Controller()
+    
+    print(pca)
+    
+    # Get the actuator back
+    #print(mule.parts)
     
     #logging.info('Start your engines ...')
 
@@ -32,13 +41,13 @@ def calibrate(config):
 
     #logging.info('Initiating drive loop')
 
-    mule.drive(**config.drive)
+    #mule.drive(**config.drive)
 
-    logging.info('Killing engine')
+    #logging.info('Killing engine')
 
-    mule.stop()
+    #mule.stop()
 
 if __name__ == '__main__':
-    path = 'configurations/config_calibration.yml'
-    config = configutil.parse_config(path)
-    calibrate(config)
+    #path = 'configurations/config_calibration.yml'
+    #config = configutil.parse_config(path)
+    calibrate()
