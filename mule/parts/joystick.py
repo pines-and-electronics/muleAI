@@ -243,6 +243,9 @@ class JoystickDevice:
             self._buttons.append(button_name)
 
 
+    @property
+    def _class_string(self):
+        return "{} at {}".format(self.__class__.__name__, self.device_name)
 
 
 # TODO: MJ - {'steering':'human','throttle':'human','recording':False}  

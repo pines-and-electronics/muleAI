@@ -35,6 +35,7 @@ class BasePart(abc.ABC):
     def __repr__(self):
         return "{} with {} and {} input/output keys".format(self.__class__.__name__, self.__class__.input_keys, self.__class__.input_keys)
     
+    
     @property
     def _class_string(self):
         return self.__class__.__name__

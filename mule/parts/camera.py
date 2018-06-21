@@ -130,6 +130,9 @@ class PiCam(BaseCam):
         self.frame = next(self.stream).array
         self.rgb_stream.seek(0)
 
+    @property
+    def _class_string(self):
+        return "{} {}".format(self.__class__.__name__, self.resolution)
 
 
 # TODO: impose framerate
@@ -188,4 +191,4 @@ class WebCam(BaseCam):
 
     @property
     def _class_string(self):
-        return "{} {}".format(self.__class__.__name__, self.resolution)
+        return "{} {} at {} frames per second".format(self.__class__.__name__, self.resolution, self.framerate)
