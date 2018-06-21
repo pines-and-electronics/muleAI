@@ -98,6 +98,7 @@ class SteeringController(BasePart):
     STRAIGHT_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
+                    channel = 1,
                        full_left_pulse=490,
                        full_right_pulse=290):
         ''' Acquires reference to controller and full left and right pulse frequencies
@@ -138,6 +139,7 @@ class ThrottleController(BasePart):
     NEUTRAL_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
+                    channel = 0,
                        full_reverse_pulse=290,
                        full_forward_pulse=490,
                        neutral_pulse=390):
