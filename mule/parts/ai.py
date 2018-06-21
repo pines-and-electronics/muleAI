@@ -51,3 +51,9 @@ class AIController(BasePart):
 
     def stop(self):
         pass
+    
+    @property
+    def _class_string(self):
+        return "{} from {}".format(self.__class__.__name__, self.model_path)
+
+    

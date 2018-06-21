@@ -64,9 +64,7 @@ class BaseCam(BasePart):
     def _update(self, **kwargs):
         ''' Updates part state '''
         pass
-
-
-
+    
 
 # TODO: impore framerate using Regulator class
 # TODO: allow for changing color inn stream of images
@@ -132,6 +130,9 @@ class PiCam(BaseCam):
         self.frame = next(self.stream).array
         self.rgb_stream.seek(0)
 
+    @property
+    def _class_string(self):
+        return "{} {}".format(self.__class__.__name__, self.resolution)
 
 
 # TODO: impose framerate
@@ -187,3 +188,7 @@ class WebCam(BaseCam):
 
         return image[padding_height:image.shape[0]-padding_height, 
                      padding_width:image.shape[1]-padding_width]
+
+    @property
+    def _class_string(self):
+        return "{} {} at {} frames per second".format(self.__class__.__name__, self.resolution, self.framerate)

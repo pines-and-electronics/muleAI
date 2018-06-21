@@ -1,5 +1,6 @@
 from parts.base import BasePart
 import cv2
+import parts.base
 
 
 class DisplayFeed(BasePart):
