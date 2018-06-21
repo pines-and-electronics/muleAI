@@ -28,7 +28,7 @@ def calibrate():
     
     channel = int(input('Enter a channel number: '))
     
-    pca = parts.actuator.PCA9685Controller()
+    pca = parts.actuator.PCA9685Controller(channel=channel)
     
     print(pca)
     
