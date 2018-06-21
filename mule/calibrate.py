@@ -18,42 +18,29 @@ logging.config.dictConfig(log_config)
 logging.info('Logging brought to you by {}'.format(logging_config_file))
 
 def calibrate():
+    """
+    Simple function to set PWM values
+    
+    Choose a channel, set PWM
+    Keyboard interrupt to quit
+    """
 
-    logging.info('Calibration of the PCA9685')
+    logging.info("Calibration of the PCA9685, keyboard interrupt to quit")
     
     address=0x40
     frequency=60
     logging.info("PCA9685 address set to {} (0x{:X}) - NOT USED?".format(address,address))
     logging.info("PCA9685 frequency set to {}".format(frequency))
     
-    channel = int(input('Enter a channel number: '))
+    channel = int(input("Enter a channel number: "))
     
     pca = parts.actuator.PCA9685Controller(channel=channel)
     
     print(pca)
     
-    for i in range(10):
-        pwm_value = int(input('Enter a PWM setting to test (0-1500): '))
+    for i in range(100):
+        pwm_value = int(input("Enter a PWM value on channel {} (0-1500):".format(channel)))
         pca.run(pwm_value)
-        #c.run(pmw)
-    
-    
-    # Get the actuator back
-    #print(mule.parts)
-    
-    #logging.info('Start your engines ...')
-
-    #mule.start()
-
-    #logging.info('Initiating drive loop')
-
-    #mule.drive(**config.drive)
-
-    #logging.info('Killing engine')
-
-    #mule.stop()
 
 if __name__ == '__main__':
-    #path = 'configurations/config_calibration.yml'
-    #config = configutil.parse_config(path)
     calibrate()
