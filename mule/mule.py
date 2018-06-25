@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import click
 import logging.config
 import yaml
 import os
@@ -7,19 +7,45 @@ import os
 from utilities import configure as configutil
 from vehicle import Vehicle
 
-
-
-logging_config_file = 'logging_simple.yaml'
-path_logging_conf = os.path.join(os.getcwd(), 'logging', 'configurations', logging_config_file)
-assert os.path.exists(path_logging_conf)
-log_config = yaml.load(open(path_logging_conf, 'r'))
-logging.config.dictConfig(log_config)
-
-logging.info('Logging brought to you by {}'.format(logging_config_file))
+CONFIG_DIR = 'configurations'
+LOGGING_DIR = 'logging'
 
 
 
-def drive(config):
+
+@click.group()
+@click.option('--logcfg', default=os.path.join(LOGGING_DIR, 'logging.simple.yml'), type=click.Path(exists=True))
+def cli(logcfg):
+    with open(logcfg, 'r') as fd:
+        config = yaml.load(fd)
+        logging.config.dictConfig(config)
+
+    logging.info('Logging brought to you by {}'.format(logcfg))
+
+
+@cli.command()
+def create():
+    pass
+
+
+@cli.command()
+def find():
+    pass
+
+
+@click.command()
+@click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.calibrate.yml'), type=click.Path(exists=True))
+def calibrate(cfg):
+    pass
+
+cli.add_command(calibrate)
+
+
+@click.command()
+@click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.drive.yml'), type=click.Path(exists=True))
+def drive(cfg):
+
+    config = configutil.parse_config(cfg)
 
     logging.info('Creating vehicle from config')
 
@@ -37,9 +63,14 @@ def drive(config):
 
     mule.stop()
 
+cli.add_command(drive)
+
+
+@cli.command()
+def train():
+    pass
+
+
 
 if __name__ == '__main__':
-    path = 'configurations/config_Emily.yml'
-    #path = 'configurations/config.yml'
-    config = configutil.parse_config(path)
-    drive(config)
+    cli()
