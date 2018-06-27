@@ -1,5 +1,6 @@
 from parts.base import BasePart
 import cv2
+import parts.base
 
 
 class DisplayFeed(BasePart):
@@ -22,7 +23,7 @@ class DisplayFeed(BasePart):
             The 5 millisecond wait is necessary in order for the window
             to display the image
         '''
-        cv2.imshow(self.window_name, cv2.cvtColor(state[self.input_keys[0]], cv2.COLOR_RGB2BGR))
+        cv2.imshow(self.window_name, cv2.cvtColor(state['camera_array'], cv2.COLOR_RGB2BGR))
         cv2.waitKey(5)
 
 

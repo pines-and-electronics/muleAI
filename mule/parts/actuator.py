@@ -1,9 +1,16 @@
 import math
 import functools
+import time
+from parts.base import BasePart
+import logging
+
 
 # TODO: should we really have separate instances for the steering and throttle
 #       on the same board
-
+# TODO: check that _signal2pulse allows for the fact that the user may put 
+#       full_left_pulse < full_right_pulse or
+#       full_reverse_pulse > full_forward_pulse
+# TODO: document the above idiosyncracy
 
 def _signal2pulse(signal_lower, signal_upper, pulse_lower, pulse_upper, signal):
     ''' Linearly transforms signal from signal-space to pulse-space
@@ -46,11 +53,19 @@ class PCA9685Controller:
 
     * set_pwm_all(on, off)
     '''
+    input_keys = ()
+    output_keys = ()
+    
     def __init__(self, address=0x40, frequency=60, channel=0):
         ''' Create a reference to the PCA9685 on a specified channel '''
-        import Adafruit_PCA9685
 
-        self.PCA9685 = Adafruit_PCA9685.PCA9685(address)
+        import Adafruit_PCA9685
+        logging.debug("Adafruit_PCA9685 library imported")
+        
+        logging.debug("Instantiating PCA9685 class at address 0x{:X}".format(address))
+        self.PCA9685 = Adafruit_PCA9685.PCA9685()
+        
+        logging.debug("Set the PWM frequency {} Hz".format(frequency))
         self.PCA9685.set_pwm_freq(frequency)
 
         self.channel = channel
@@ -59,8 +74,17 @@ class PCA9685Controller:
         ''' Set pwm pulse '''
         self.PCA9685.set_pwm(self.channel, 0, pulse) 
 
+    def run(self, pulse):
+        self.set_pulse(pulse)
 
+    def start(self):
+        pass
 
+    def transform(self, PWM_value):
+        pass
+
+    def stop(self):
+        pass
 
 
 class SteeringController(BasePart):
@@ -69,13 +93,14 @@ class SteeringController(BasePart):
     input_keys = ('steering_signal',)
     output_keys = ()
 
-    FULL_LEFT_SIGNAL = -1 
-    FULL_RIGHT_SIGNAL = 1
+    FULL_LEFT_SIGNAL = 1 
+    FULL_RIGHT_SIGNAL = -1
     STRAIGHT_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
-                       full_left_pulse=290,
-                       full_right_pulse=490):
+                    channel = 1,
+                       full_left_pulse=490,
+                       full_right_pulse=290):
         ''' Acquires reference to controller and full left and right pulse frequencies
             that are discovered during callibration '''
         self.controller = controller
@@ -90,17 +115,20 @@ class SteeringController(BasePart):
 
     def transform(self, state):
         ''' Send signal as pulse to servo '''
-        pulse = self._steering_signal2pulse(state[input_keys[0]])
+        pulse = self._steering_signal2pulse(state['steering_signal'])
         self.controller.set_pulse(pulse)
 
     def stop(self):
         ''' Signal the servo to return to straight trajectory '''
-        pulse = self._steering_signal2pulse(STRAIGHT_SIGNAL)
+        pulse = self._steering_signal2pulse(self.STRAIGHT_SIGNAL)
         self.controller.set_pulse(pulse)
 
+    @property
+    def _class_string(self):
+        return "{} with {} {} left/right PWM".format(self.__class__.__name__, self.FULL_LEFT_SIGNAL,self.FULL_RIGHT_SIGNAL)
 
 
-class ThrottleController:
+class ThrottleController(BasePart):
     ''' Controls vehicle throttle '''
 
     input_keys = ('throttle_signal',)
@@ -108,12 +136,13 @@ class ThrottleController:
 
     FULL_REVERSE_SIGNAL = -1
     FULL_FORWARD_SIGNAL =  1
-    STOP_SIGNAL = 0
+    NEUTRAL_SIGNAL = 0
 
     def __init__(self, controller=MockController(),
-                       full_reverse_pulse=300,
+                    channel = 0,
+                       full_reverse_pulse=290,
                        full_forward_pulse=490,
-                       stop_pulse=350):
+                       neutral_pulse=390):
         ''' Acquires reference to controller and full forward and reverse as well 
             as pulse frequencies that are discovered during callibration 
 
@@ -123,34 +152,40 @@ class ThrottleController:
         self.controller = controller
 
         self._reverse_signal2pulse = functools.partial(_signal2pulse, self.FULL_REVERSE_SIGNAL,
-                                                                      self.STOP_SIGNAL,
+                                                                      self.NEUTRAL_SIGNAL,
                                                                       full_reverse_pulse,
-                                                                      stop_pulse)
+                                                                      neutral_pulse)
 
-        self._forward_signal2pulse = functools.partial(_signal2pulse, self.STOP_SIGNAL,
+        self._forward_signal2pulse = functools.partial(_signal2pulse, self.NEUTRAL_SIGNAL,
                                                                       self.FULL_FORWARD_SIGNAL,
-                                                                      stop_pulse,
+                                                                      neutral_pulse,
                                                                       full_forward_pulse)
 
 
     def start(self):
         ''' Callibrate by sending stop signal '''
-        pulse = self._reverse_signal2pulse(self.STOP_SIGNAL)
+        pulse = self._reverse_signal2pulse(self.NEUTRAL_SIGNAL)
         self.controller.set_pulse(pulse)
         time.sleep(0.5)
 
 
     def transform(self, state):
         ''' Send signal as pulse to servo '''
-        if state[input_keys[0]] > self.STOP_SIGNAL:
-            pulse = self._forward_signal2pulse(state[input_keys[0]])
+        if state['throttle_signal'] > self.NEUTRAL_SIGNAL:
+            pulse = self._forward_signal2pulse(state['throttle_signal'])
         else:
-            pulse = self._reverse_signal2pulse(state[input_keys[0]])
+            pulse = self._reverse_signal2pulse(state['throttle_signal'])
 
         self.controller.set_pulse(pulse)
 
 
     def stop(self):
         ''' Signal to stop vehicle ''' 
-        pulse = self._reverse_signal2pulse(self.STOP_SIGNAL)
+        pulse = self._reverse_signal2pulse(self.NEUTRAL_SIGNAL)
         self.controller.set_pulse(pulse)
+        
+    @property
+    def _class_string(self):
+        return "{} with {} {} left/right PWM".format(self.__class__.__name__, self.FULL_LEFT_SIGNAL,self.FULL_RIGHT_SIGNAL)
+
+        

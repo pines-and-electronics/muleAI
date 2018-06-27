@@ -1,0 +1,24 @@
+drive:
+    freq_hertz: 10
+
+parts:
+ - actuator:
+        type: SteeringController
+        arguments:
+          channel: 1
+          full_left_pulse:    425
+          full_right_pulse:   295
+ - actuator:
+        type: ThrottleController
+        arguments:
+          channel: 1
+          full_reverse_pulse:     350
+          full_forward_pulse:     385
+          neutral_pulse:          370
+ - camera: 
+        type: WebCam
+        
+ - display:
+        type: DisplayFeed
+        arguments:
+        window_name: 'MuleView'

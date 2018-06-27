@@ -52,7 +52,7 @@ class BaseCam(BasePart):
         if not self.threaded:
             self._update()
 
-        state[self.output_keys[0]] = self.frame
+        state['camera_array'] = self.frame
 
 
     def stop(self):
@@ -64,9 +64,7 @@ class BaseCam(BasePart):
     def _update(self, **kwargs):
         ''' Updates part state '''
         pass
-
-
-
+    
 
 # TODO: impore framerate using Regulator class
 # TODO: allow for changing color inn stream of images
@@ -91,11 +89,10 @@ class MockCam(BaseCam):
         self.frame = np.array(self.camera)
 
 
-
-class PiCam(BasePart):
+# TODO: MJ - Add the members to __init__
+class PiCam(BaseCam):
     ''' Raspberry Pi camera '''
     def __init__(self, resolution=(160, 120), framerate=24, threaded=False):
-        import picamera
         super().__init__(resolution, framerate, threaded)
 
 
@@ -104,14 +101,19 @@ class PiCam(BasePart):
 
             https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.PiCamera.capture_continuous
         '''
-
+        import picamera
         self.camera = picamera.PiCamera(resolution=self.resolution, framerate=self.framerate)
+
         # warm-up
         time.sleep(1)
-        # instantiate appropriate holder for data
-        self.frame = np.empty((resolution[1], resolution[0], 3), dtype=np.uint8)
+
+        import picamera.array
+        # second argument engages the GPU resizer to ensure the desired resolution
+        # as the camera may capture only at certain resolutions predetermined resolutions
+        self.rgb_stream = picamera.array.PiRGBArray(self.camera, self.resolution)
+
         # the capture stream is an iterator that updates self.frame each time it is iterated
-        self.stream = self.camera.capture_continuous(self.frame, format='rgb', use_video_port=True)
+        self.stream = self.camera.capture_continuous(self.rgb_stream, format='rgb', use_video_port=True)
 
         super().start()
 
@@ -120,13 +122,17 @@ class PiCam(BasePart):
         super().stop()
 
         self.stream.close()
+        self.rgb_stream.close()
         self.camera.close()
 
 
     def _update(self):
-        next(self.stream)
+        self.frame = next(self.stream).array
+        self.rgb_stream.seek(0)
 
-
+    @property
+    def _class_string(self):
+        return "{} {}".format(self.__class__.__name__, self.resolution)
 
 
 # TODO: impose framerate
@@ -182,3 +188,7 @@ class WebCam(BaseCam):
 
         return image[padding_height:image.shape[0]-padding_height, 
                      padding_width:image.shape[1]-padding_width]
+
+    @property
+    def _class_string(self):
+        return "{} {} at {} frames per second".format(self.__class__.__name__, self.resolution, self.framerate)

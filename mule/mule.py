@@ -1,57 +1,76 @@
 #!/usr/bin/env python3
-
-
-# TODO: this main file should be very simple, load in a template/configuration and set things going.
-
-
-
+import click
 import logging.config
 import yaml
 import os
-import warnings
 
-
-
-#path_logging_conf = os.path.join(os.getcwd(), 'logging', 'configurations', 'logging_simple.yaml')
-#assert os.path.exists(path_logging_conf)
-#log_config = yaml.load(open(path_logging_conf, 'r'))
-#logging.config.dictConfig(log_config)
-#
-#logger = logging.getLogger(__name__)
-#logger.setLevel('DEBUG')
-#
-#logger.debug(f"Logging by {path_logging_conf}")
-#
-#
-#import utilities.other_utilities as util
-#
-#with warnings.catch_warnings(): # Suppress warnings!
-#    warnings.simplefilter("ignore")
-#    # Disable logging messages from tf - matplotlib (
-#    #TODO: Better way??
-#    logging.getLogger("matplotlib").setLevel(logging.WARNING)
-#
-
-
+from utilities import configure as configutil
 from vehicle import Vehicle
-from parts.camera import WebCam
-from parts.display import DisplayFeed
+
+CONFIG_DIR = 'configurations'
+LOGGING_DIR = 'logging'
 
 
 
-def drive():
-    #Initialize car
-    mule = Vehicle()
 
-    mule.add(WebCam(threaded=True))
-    mule.add(DisplayFeed('MuleView'))
+@click.group()
+@click.option('--logcfg', default=os.path.join(LOGGING_DIR, 'logging.simple.yml'), type=click.Path(exists=True))
+def cli(logcfg):
+    with open(logcfg, 'r') as fd:
+        config = yaml.load(fd)
+        logging.config.dictConfig(config)
+
+    logging.info('Logging brought to you by {}'.format(logcfg))
+
+
+@cli.command()
+def create():
+    pass
+
+
+@cli.command()
+def find():
+    pass
+
+
+@click.command()
+@click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.calibrate.yml'), type=click.Path(exists=True))
+def calibrate(cfg):
+    pass
+
+cli.add_command(calibrate)
+
+
+@click.command()
+@click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.drive.yml'), type=click.Path(exists=True))
+def drive(cfg):
+
+    config = configutil.parse_config(cfg)
+
+    logging.info('Creating vehicle from config')
+
+    mule = Vehicle.from_config(config.parts)
+
+    logging.info('Start your engines ...')
 
     mule.start()
 
-    mule.drive()
+    logging.info('Initiating drive loop')
+
+    mule.drive(**config.drive)
+
+    logging.info('Killing engine')
 
     mule.stop()
 
+cli.add_command(drive)
+
+
+@cli.command()
+def train():
+    pass
+
+
 
 if __name__ == '__main__':
-    drive()
+    cli()

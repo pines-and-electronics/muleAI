@@ -1,6 +1,8 @@
 import time
-from utilities.generic_utilities import Regulator
 
+from itertools import count
+from utilities.generic import regulate
+import logging
 
 class Vehicle():
     ''' Vehicle control
@@ -33,6 +35,7 @@ class Vehicle():
 
         self.state = {}
         self.parts = []
+        logging.info("Initialize Vehicle")
 
 
     def add(self, part):
@@ -43,19 +46,50 @@ class Vehicle():
             part: parts.BasePart
             parts.BasePart is an ABC for a generic vehicle part
         '''
+        logging.info("Adding part {}, {}".format(len(self.parts)+1,part))
+
         if not self.state_keys.issuperset(set(part.input_keys)):
             msg='state missing input key for {}'
             raise KeyError(msg.format(part.__class__.__name__))
 
         self.parts.append(part)
+
+        logging.info("Registering {} key(s)".format(len(part.output_keys)))
+
         self.state_keys = self.state_keys.union(set(part.output_keys))
+
+
+    @classmethod
+    def from_config(cls, config):
+        ''' Creates vehicle from parsed configuration
+
+            Argument
+
+            config: list(utilities.ProtoParts)
+                ProtoPart is a POD class; it is expected to
+                have members:
+                    type : class type for vehicle part
+                    arguments: dict of kwargs to be passed to initializer
+        '''
+        logging.info('Loading parts from parsed config')
+
+        vehicle = cls()
+
+        for part in config:
+            vehicle.add(part.type(**part.arguments))
+
+        return vehicle
+
+
 
 
     def start(self):
         ''' Starts vehicle by starting it constituent parts '''
         self.state = dict.fromkeys(self.state_keys, None)
 
-        for part in self.parts:
+
+        for i, part in enumerate(self.parts):
+            logging.info("Starting part {} of {}, {}".format(i+1,len(self.parts),part))
             part.start()
 
 
@@ -63,28 +97,25 @@ class Vehicle():
     # TODO: log moving average of loop times
     # TODO: implement maximum number of drive loops ???  
     #       I fail to see the usefulness at the moment
-    def drive(self, rps=10):
+    def drive(self, freq_hertz=10):
         ''' Engages drive loop
 
             Arguments
 
-            rps: int
+            freq_hertz: int
                 number of drive loops to complete per second
 
             Iterates through parts, each transforming the state. Contains
-            regulator that ensures rps.
+            regulator that ensures freq_hertz.
         '''
-        step_regulator = Regulator(rps)
+
+        logging.info("Starting drive loop at {} Hz".format(freq_hertz))
 
         try:
-            while True:
-                step_regulator.mark()
+            for loop_nr in regulate(count(), freq_hertz):
 
                 for part in self.parts:
                     part.transform(self.state)
-
-                step_regulator.mark()
-                step_regulator.regulate()
 
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour

@@ -1,0 +1,10 @@
+drive:
+    freq_hertz: 10
+
+parts:
+  - camera: 
+      type: WebCam
+  - display:
+      type: DisplayFeed
+      arguments:
+        window_name: 'MuleView'

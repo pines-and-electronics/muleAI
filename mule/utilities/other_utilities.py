@@ -14,18 +14,6 @@ import pprint
 #warnings.filterwarnings("default")
 
 
-def load_config_yaml(path_config):
-    config = yaml.load(open(path_config, 'r'))
-    logging.debug(f"Loaded config file {path_config}")
-    print("*** CONFIG ***")
-    pprint.pprint(config)
-    print("**************")
-    
-    assert config['CAMERA']['CAMERA_FRAMERATE'] == config['VEHICLE']['DRIVE_LOOP_HZ']
-    
-    return config
-
-
 def list_path():
     try:
         user_paths = os.environ['PYTHONPATH'].split(os.pathsep)
