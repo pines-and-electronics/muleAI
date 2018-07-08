@@ -47,7 +47,7 @@ def drive(cfg):
 
     config = configutil.parse_config(cfg)
 
-    logging.info('Creating vehicle from config')
+    logging.info('Creating vehicle from loaded configuration')
 
     mule = Vehicle.from_config(config.parts)
 

@@ -1,0 +1,6 @@
+drive:
+    freq_hertz: 10
+
+parts:
+  - led:
+      type: LED_loop
