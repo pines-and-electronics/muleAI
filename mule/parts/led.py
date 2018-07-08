@@ -9,8 +9,8 @@ class sequential_LED_loop(BasePart):
     input_keys = ()
     output_keys = ('led_flags',)
     #output_keys = ()
-    last_flags = state['led_flags']
-    print(last_flags)
+    #last_flags = state['led_flags']
+    #print(last_flags)
     
     
 
