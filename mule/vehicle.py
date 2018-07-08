@@ -41,6 +41,7 @@ class Vehicle():
     def print_state(self):
         """Helper to print concise state"""
         state_strings = list()
+        #print(self.state)
         for key in self.state:
             
             #print(key)
@@ -54,7 +55,7 @@ class Vehicle():
             state_strings.append("{}={}".format(key,this_variable))
         #raise
     
-        return ",".join(state_strings)
+        return ", ".join(state_strings)
      
     def add(self, part):
         ''' Adds part to vehicle
@@ -136,15 +137,16 @@ class Vehicle():
         LOOP_VERBOSITY = 20
         try:
             for loop_nr in regulate(count(), freq_hertz):
+                # For debugging: Print current status
                 if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
                     print("Loop",loop_nr, "Vehicle state variables: ",self.print_state())
                     
                 for part in self.parts:
                     part.transform(self.state)
                     
-                    # For debugging: Print current status
-                if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
-                        print("\t",part)
+                    # For debugging: print each part
+                    if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
+                            print("\t",part)
 
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour

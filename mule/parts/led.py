@@ -1,24 +1,57 @@
 from parts.base import BasePart
+import random
+import logging
+import time
+import RPi.GPIO as GPIO
 
-
-class LED_loop(BasePart):
+class random_onoff_LED_loop(BasePart):
     ''' asdf '''
     input_keys = ()
-    output_keys = ()
+    output_keys = ('led_flags',)
+    #output_keys = ()
 
     def __init__(self):
-        pass
+        NUMBER_LED = 4
+        self.lights_off = [False for i in range(NUMBER_LED)]
+        self.lights_on = [True for i in range(NUMBER_LED)]
 
     def start(self):
         ''' asdf '''
-        pass
-
+        #state['led_flags'] = self.lights_on
+        GPIO.setwarnings(False)
+        
+        PIN_BLUE1   = 26
+        PIN_BLUE2   = 19
+        PIN_BLUE3   = 13 
+        PIN_BLUE4   = 6
+        
+        GPIO.cleanup()
+        
+        GPIO.setmode(GPIO.BCM)
+        
+        GPIO.setup(PIN_BLUE1,GPIO.OUT)
+        GPIO.setup(PIN_BLUE2,GPIO.OUT)
+        GPIO.setup(PIN_BLUE3,GPIO.OUT)
+        GPIO.setup(PIN_BLUE4,GPIO.OUT)
+        
     def transform(self, state):
         ''' asdf
         '''
-        pass
-
+        coin_flips = [random.random() < 0.5 for i in range(5)]
+        #print(coin_flips)
+        state['led_flags'] = coin_flips
+        
+        GPIO.output(PIN_BLUE1,  state['led_flags'][0])
+        GPIO.output(PIN_BLUE2,  state['led_flags'][1])
+        GPIO.output(PIN_BLUE3,  state['led_flags'][2])
+        GPIO.output(PIN_BLUE4,  state['led_flags'][3])
+        
+        #print(bool(random.getrandbits(5)))
+        #print(random.sample([True, False],5))
+        #if coin_flip: state['led_flags'] = self.lights_on
+        #else:  state['led_flags'] = self.lights_off
 
     def stop(self):
-        ''' Closes window '''
+        '''  '''
+        #state['led_flags'] = self.lights_off
         pass

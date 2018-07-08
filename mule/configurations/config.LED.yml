@@ -3,4 +3,4 @@ drive:
 
 parts:
   - led: 
-      type: LED_loop
+      type: random_onoff_LED_loop
