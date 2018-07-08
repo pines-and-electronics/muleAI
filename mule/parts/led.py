@@ -64,13 +64,14 @@ class sequential_LED_loop(BasePart):
         GPIO.output(self.PIN_BLUE4,  self.lights_off[3])
     
 class random_onoff_LED_loop(BasePart):
-    raise
+    
     ''' asdf '''
     input_keys = ()
     output_keys = ('led_flags',)
     #output_keys = ()
 
     def __init__(self,PIN_BLUE1,PIN_BLUE2,PIN_BLUE3, PIN_BLUE4  ):
+        raise "OBSELETE"
         NUMBER_LED = 4
         self.lights_off = [False for i in range(NUMBER_LED)]
         self.lights_on = [True for i in range(NUMBER_LED)]
