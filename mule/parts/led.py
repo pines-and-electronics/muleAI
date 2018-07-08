@@ -39,22 +39,30 @@ class sequential_LED_loop(BasePart):
         GPIO.setup(self.PIN_BLUE2,GPIO.OUT)
         GPIO.setup(self.PIN_BLUE3,GPIO.OUT)
         GPIO.setup(self.PIN_BLUE4,GPIO.OUT)
-        
+
     def transform(self, state):
         ''' asdf
         '''
-        coin_flips = [random.random() < 0.5 for i in range(5)]
+        #coin_flips = [random.random() < 0.5 for i in range(5)]
         #print(coin_flips)
-        state['led_flags'] = coin_flips
+        #state['led_flags'] = coin_flips
+
+        if self.count%5 == 0:
+            state['led_flags'] = self.lights_off
+        else:
+            state['led_flags'] = self.lights_off
+            state['led_flags'][self.count%5-1] = True
+        self.count += 1
         
         GPIO.output(self.PIN_BLUE1,  state['led_flags'][0])
         GPIO.output(self.PIN_BLUE2,  state['led_flags'][1])
         GPIO.output(self.PIN_BLUE3,  state['led_flags'][2])
         GPIO.output(self.PIN_BLUE4,  state['led_flags'][3])
         
+     
         
-        print(self.count,self.count%5)
-        self.count += 1
+        #print(self.count,self.count%5)
+        
         
         
         #print(bool(random.getrandbits(5)))
