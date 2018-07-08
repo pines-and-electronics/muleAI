@@ -71,5 +71,8 @@ class random_onoff_LED_loop(BasePart):
 
     def stop(self):
         '''  '''
-        #state['led_flags'] = self.lights_off
+        GPIO.output(PIN_BLUE1,  self.lights_off[0])
+        GPIO.output(PIN_BLUE2,  self.lights_off[1])
+        GPIO.output(PIN_BLUE3,  self.lights_off[2])
+        GPIO.output(PIN_BLUE4,  self.lights_off[3])
         pass
