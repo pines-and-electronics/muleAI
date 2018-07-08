@@ -39,15 +39,16 @@ class sequential_LED_loop(BasePart):
         """ """
         #state['led_flags'] = self.lights_off
         
+        #TODO: Why is self.lights_off being changed???
         state['led_flags'] = [False for i in range(self.NUMBER_LED)]
-        print("Falses:", self.lights_off)
-        print("Before: ",state['led_flags'])
+        #print("Falses:", self.lights_off)
+        #print("Before: ",state['led_flags'])
  
         if self.count%5 != 0:
-            print("Turn on this LED:",self.count%5-1)
+            #print("Turn on this LED:",self.count%5-1)
             state['led_flags'][self.count%5-1] = True
             
-        print("After:",state['led_flags'])
+        #print("After:",state['led_flags'])
         self.count += 1
         
         GPIO.output(self.PIN_BLUE1,  state['led_flags'][0])
@@ -62,11 +63,8 @@ class sequential_LED_loop(BasePart):
         GPIO.output(self.PIN_BLUE3,  self.lights_off[2])
         GPIO.output(self.PIN_BLUE4,  self.lights_off[3])
     
-    
-    
-    
-
 class random_onoff_LED_loop(BasePart):
+    raise
     ''' asdf '''
     input_keys = ()
     output_keys = ('led_flags',)
