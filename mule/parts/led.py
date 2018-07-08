@@ -52,6 +52,9 @@ class sequential_LED_loop(BasePart):
         else:
             state['led_flags'] = self.lights_off
             state['led_flags'][self.count%5-1] = True
+
+        print(state['led_flags'])
+        print(self.count)            
         self.count += 1
         
         GPIO.output(self.PIN_BLUE1,  state['led_flags'][0])
