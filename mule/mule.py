@@ -3,7 +3,8 @@ import click
 import logging.config
 import yaml
 import os
-
+import sys
+    
 from utilities import configure as configutil
 from vehicle import Vehicle
 
@@ -52,7 +53,7 @@ def drive(cfg):
 
     logging.info('Start your engines ...')
 
-    mule.start()
+    mule.start(config)
 
     logging.info('Initiating drive loop')
 
@@ -72,4 +73,8 @@ def train():
 
 
 if __name__ == '__main__':
+    print('*** Welcome to Mule.AI ***')
+    print('Number of arguments:', len(sys.argv), 'arguments.')
+    print('Argument List:', str(sys.argv))
+    print("Current working directory", os.getcwd())
     cli()

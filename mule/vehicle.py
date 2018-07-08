@@ -3,7 +3,9 @@ import time
 from itertools import count
 from utilities.generic import regulate
 import logging
+#from numpy.core.multiarray_tests import npy_log10l
 
+import numpy as np
 class Vehicle():
     ''' Vehicle control
 
@@ -37,7 +39,25 @@ class Vehicle():
         self.parts = []
         logging.info("Initialize Vehicle")
 
-
+    def print_state(self):
+        """Helper to print concise state"""
+        state_strings = list()
+        #print(self.state)
+        for key in self.state:
+            
+            #print(key)
+            #print())
+            #if self.state[key] == 
+            #print(self.state[key])
+            if type(self.state[key]) == np.ndarray:
+                this_variable = self.state[key].shape
+            else:
+                this_variable = self.state[key]
+            state_strings.append("{}={}".format(key,this_variable))
+        #raise
+    
+        return ", ".join(state_strings)
+     
     def add(self, part):
         ''' Adds part to vehicle
 
@@ -76,6 +96,9 @@ class Vehicle():
         vehicle = cls()
 
         for part in config:
+            logging.debug("Adding {} {}".format(part.type, part.arguments))
+            
+
             vehicle.add(part.type(**part.arguments))
 
         return vehicle
@@ -83,7 +106,7 @@ class Vehicle():
 
 
 
-    def start(self):
+    def start(self,config):
         ''' Starts vehicle by starting it constituent parts '''
         self.state = dict.fromkeys(self.state_keys, None)
 
@@ -111,11 +134,20 @@ class Vehicle():
 
         logging.info("Starting drive loop at {} Hz".format(freq_hertz))
 
+        LOOP_VERBOSE = True
+        LOOP_VERBOSITY = 20
         try:
             for loop_nr in regulate(count(), freq_hertz):
-
+                # For debugging: Print current status
+                if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
+                    print("Loop",loop_nr, "Vehicle state variables: ",self.print_state())
+                    
                 for part in self.parts:
                     part.transform(self.state)
+                    
+                    # For debugging: print each part
+                    if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
+                            print("\t",part)
 
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour

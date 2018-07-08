@@ -1,0 +1,25 @@
+drive:
+    freq_hertz: 10
+
+parts:
+  - led: 
+      #type: random_onoff_LED_loop
+      #arguments:
+      #  PIN_BLUE1: 26
+      #  PIN_BLUE2: 19
+      #  PIN_BLUE3: 13
+      #  PIN_BLUE4: 6
+
+      type: sequential_LED_loop
+      arguments:
+        PIN_BLUE1: 26
+        PIN_BLUE2: 19
+        PIN_BLUE3: 13
+        PIN_BLUE4: 6
+
+
+      #type: sequential_LED_loop
+      #arguments:
+      #  PIN_RED     : 16
+      #  PIN_YELLOW  : 20
+      #  PIN_GREED   : 21     

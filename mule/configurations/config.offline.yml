@@ -8,3 +8,5 @@ parts:
       type: DisplayFeed
       arguments:
         window_name: 'MuleView'
+  - led:
+      type: random_onoff_LED_loop
