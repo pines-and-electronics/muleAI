@@ -32,17 +32,17 @@ def parse_config(path):
         In turn this 2-element dict contains the class type of the part (as a string)
         and the argument to be passed to this class upon initialization.
     '''
-    logging.info('Parsing configuration yaml file: {}'.format(path))
 
     with open(path, 'r') as fd:
         config = yaml.load(fd)
     
+    logging.info('Loaded configuration yaml file into dict: {}'.format(path))
     
     #pprint.pprint(config)
     
     for part in config['parts']:
         #print(part)
-        print("")
+        #print("")
         
         part_module = list(part.keys())
         assert len(part_module) == 1
@@ -72,7 +72,8 @@ def parse_config(path):
 
         name = 'parts.{}'.format(name) 
         
-        
+        logging.info('Processing {} {}'.format(name, attributes))
+
         
         # submodule of parts module containing the actual part
         module = importlib.import_module(name)
@@ -89,10 +90,14 @@ def parse_config(path):
             logging.info('Part type not present in config: skipping {}'.format(name))
             continue
 
-        logging.debug(protopart.type)
+        logging.debug("This part: {}".format(protopart.type))
 
         protoparts.append(protopart)
+        
+    logging.debug("This parts list: {}".format(protoparts))
 
     parsed_config.parts = protoparts
+    
+    logging.info('Parsed config {}'.format(parsed_config))
 
     return parsed_config
