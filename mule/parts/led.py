@@ -6,7 +6,7 @@ class LED_loop(BasePart):
     input_keys = ()
     output_keys = ()
 
-    def __init__(self, window_name):
+    def __init__(self):
         pass
 
     def start(self):

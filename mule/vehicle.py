@@ -3,6 +3,7 @@ import time
 from itertools import count
 from utilities.generic import regulate
 import logging
+from numpy.core.multiarray_tests import npy_log10l
 
 class Vehicle():
     ''' Vehicle control
@@ -76,6 +77,9 @@ class Vehicle():
         vehicle = cls()
 
         for part in config:
+            logging.debug("Adding {} {}".format(part.type, part.arguments))
+            
+
             vehicle.add(part.type(**part.arguments))
 
         return vehicle
@@ -111,11 +115,18 @@ class Vehicle():
 
         logging.info("Starting drive loop at {} Hz".format(freq_hertz))
 
+        LOOP_VERBOSE = True
+        LOOP_VERBOSITY = 10
         try:
             for loop_nr in regulate(count(), freq_hertz):
-
+                if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
+                    print("Loop",loop_nr, "State: ",self.state)
                 for part in self.parts:
                     part.transform(self.state)
+                    
+                    # For debugging: Print current status
+                if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
+                        print(part)
 
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour
