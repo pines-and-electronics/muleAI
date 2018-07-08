@@ -2,5 +2,9 @@ drive:
     freq_hertz: 10
 
 parts:
-  - led:
-      type: LED_loop
+  - camera: 
+      type: WebCam
+  - display:
+      type: DisplayFeed
+      arguments:
+        window_name: 'MuleView'

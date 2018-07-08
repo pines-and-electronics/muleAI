@@ -6,13 +6,11 @@ import pprint
 
 # POD classes to facilitate configuration parsing
 # holder for main vehicle drive configuration
-class Config:
-    pass
+#class Config:
+#    pass
 # holder for attributes from which a part may be later constructed
 class ProtoPart:
     pass
-
-
 
 def parse_config(path):
     ''' Parses configuration file 
@@ -31,6 +29,8 @@ def parse_config(path):
 
         In turn this 2-element dict contains the class type of the part (as a string)
         and the argument to be passed to this class upon initialization.
+        
+        returns a dictionary
     '''
 
     with open(path, 'r') as fd:
@@ -42,7 +42,7 @@ def parse_config(path):
     
     for part in config['parts']:
         #print(part)
-        #print("")
+        print("")
         
         part_module = list(part.keys())
         assert len(part_module) == 1
@@ -55,16 +55,25 @@ def parse_config(path):
         else:
             print("Part arguments:", None)
         #print("")
+    print("")
+    #parsed_config = Config()
 
-    parsed_config = Config()
+    #parsed_config.drive = config['drive'] if config.get('drive') else {}
+    
+    return config
 
-    parsed_config.drive = config['drive'] if config.get('drive') else {}
+def create_protoparts(parts):
+    """
+    A validator for parts
     
-    
-    
+    From a config dictionary, go through each part and ensure the module and
+    class exist. Return a list of 'protoparts'. 
+    """    
     protoparts = []
+    #print(parts)
+    logging.debug('Processing {} parts'.format(len(parts)))
 
-    for component in config.get('parts', []):
+    for component in parts:
         # each component is a 1-element dict
         # name = name of parts submodule
         # attributes = elements needed to construct part
@@ -77,27 +86,29 @@ def parse_config(path):
         
         # submodule of parts module containing the actual part
         module = importlib.import_module(name)
-
+        
         protopart = ProtoPart()
 
         # attributes is a 2-element dict
         # type = class type of part
         # arguments = initialization arguments
         try:
+            # Get the class from the module
             protopart.type = getattr(module, attributes['type'])
+            # Get the arguments
             protopart.arguments = attributes['arguments'] if attributes.get('arguments') else {}
         except KeyError:
             logging.info('Part type not present in config: skipping {}'.format(name))
             continue
 
-        logging.debug("This part: {}".format(protopart.type))
+        logging.debug("Created a protopart: {} {}".format(protopart.type,protopart.arguments))
 
         protoparts.append(protopart)
-        
-    logging.debug("This parts list: {}".format(protoparts))
-
-    parsed_config.parts = protoparts
     
-    logging.info('Parsed config {}'.format(parsed_config))
+    logging.debug("Returning {} protoparts ready for instantiation".format(len(protoparts)))
 
-    return parsed_config
+    #parsed_config.parts = protoparts
+    
+    #logging.info('Parsed config {}'.format(parsed_config))
+
+    return protoparts
