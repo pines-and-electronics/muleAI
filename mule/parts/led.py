@@ -10,7 +10,7 @@ class sequential_LED_loop(BasePart):
     output_keys = ('led_flags',)
     
     def __init__(self,PIN_BLUE1,PIN_BLUE2,PIN_BLUE3, PIN_BLUE4  ):
-        NUMBER_LED = 4
+        self.NUMBER_LED = 4
         self.lights_off = [False for i in range(NUMBER_LED)]
         self.lights_on = [True for i in range(NUMBER_LED)]
         
@@ -39,7 +39,7 @@ class sequential_LED_loop(BasePart):
         """ """
         #state['led_flags'] = self.lights_off
         
-        state['led_flags'] = [False for i in range(NUMBER_LED)]
+        state['led_flags'] = [False for i in range(self.NUMBER_LED)]
         print("Falses:", self.lights_off)
         print("Before: ",state['led_flags'])
  
