@@ -2,7 +2,7 @@ from parts.base import BasePart
 import random
 import logging
 import time
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 class random_onoff_LED_loop(BasePart):
     ''' asdf '''
