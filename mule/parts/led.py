@@ -4,6 +4,24 @@ import logging
 import time
 import RPi.GPIO as GPIO
 
+
+GPIO.setwarnings(False)
+
+PIN_BLUE1   = 26
+PIN_BLUE2   = 19
+PIN_BLUE3   = 13 
+PIN_BLUE4   = 6
+
+PIN_RED     = 16
+PIN_YELLOW  = 20
+PIN_GREED   = 21
+
+GPIO.cleanup()
+
+GPIO.setmode(GPIO.BCM)
+
+
+
 class random_onoff_LED_loop(BasePart):
     ''' asdf '''
     input_keys = ()
