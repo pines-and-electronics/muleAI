@@ -3,7 +3,8 @@ import time
 from itertools import count
 from utilities.generic import regulate
 import logging
-from numpy.core.multiarray_tests import npy_log10l
+#from numpy.core.multiarray_tests import npy_log10l
+
 import numpy as np
 class Vehicle():
     ''' Vehicle control
