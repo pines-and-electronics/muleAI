@@ -47,6 +47,7 @@ class sequential_LED_loop(BasePart):
         #print(coin_flips)
         #state['led_flags'] = coin_flips
         state['led_flags'] = self.lights_off
+        print("Falses:", self.lights_off)
         print("Before: ",state['led_flags'])
  
         if self.count%5 != 0:
