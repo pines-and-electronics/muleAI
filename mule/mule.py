@@ -10,9 +10,6 @@ from vehicle import Vehicle
 CONFIG_DIR = 'configurations'
 LOGGING_DIR = 'logging'
 
-
-
-
 @click.group()
 @click.option('--logcfg', default=os.path.join(LOGGING_DIR, 'logging.simple.yml'), type=click.Path(exists=True))
 def cli(logcfg):
@@ -46,10 +43,12 @@ cli.add_command(calibrate)
 def drive(cfg):
 
     config = configutil.parse_config(cfg)
-
+    
+    protoparts = configutil.create_protoparts(config['parts'])
+    
     logging.info('Creating vehicle from loaded configuration')
 
-    mule = Vehicle.from_config(config.parts)
+    mule = Vehicle.from_config(protoparts)
 
     logging.info('Start your engines ...')
 
@@ -57,7 +56,7 @@ def drive(cfg):
 
     logging.info('Initiating drive loop')
 
-    mule.drive(**config.drive)
+    mule.drive(freq_hertz=config['drive']['freq_hertz'])
 
     logging.info('Killing engine')
 
