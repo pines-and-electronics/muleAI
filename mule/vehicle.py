@@ -106,7 +106,7 @@ class Vehicle():
 
 
 
-    def start(self):
+    def start(self,config):
         ''' Starts vehicle by starting it constituent parts '''
         self.state = dict.fromkeys(self.state_keys, None)
 

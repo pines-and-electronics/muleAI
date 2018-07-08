@@ -53,7 +53,7 @@ def drive(cfg):
 
     logging.info('Start your engines ...')
 
-    mule.start()
+    mule.start(config)
 
     logging.info('Initiating drive loop')
 
