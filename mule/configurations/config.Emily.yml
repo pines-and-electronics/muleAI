@@ -3,7 +3,7 @@ drive:
 
 parts:
  - joystick:
-      type:PS3Controller
+      type: PS3Controller
  
  - led: 
       type: sequential_LED_loop
