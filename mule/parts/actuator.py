@@ -186,6 +186,6 @@ class ThrottleController(BasePart):
         
     @property
     def _class_string(self):
-        return "{} with {} {} left/right PWM".format(self.__class__.__name__, self.FULL_LEFT_SIGNAL,self.FULL_RIGHT_SIGNAL)
+        return "{} with".format(self.__class__.__name__)
 
         
