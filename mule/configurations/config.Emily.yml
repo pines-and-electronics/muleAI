@@ -2,6 +2,13 @@ drive:
     freq_hertz: 10
 
 parts:
+ - led: 
+      type: sequential_LED_loop
+      arguments:
+        PIN_BLUE1: 26
+        PIN_BLUE2: 19
+        PIN_BLUE3: 13
+        PIN_BLUE4: 6
  - actuator:
         type: SteeringController
         arguments:
