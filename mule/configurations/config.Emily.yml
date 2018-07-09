@@ -2,6 +2,9 @@ drive:
     freq_hertz: 10
 
 parts:
+ - joystick:
+      type:PS3Controller
+ 
  - led: 
       type: sequential_LED_loop
       arguments:
