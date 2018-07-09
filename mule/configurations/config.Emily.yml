@@ -26,9 +26,4 @@ parts:
           full_forward_pulse:     385
           neutral_pulse:          370
  - camera: 
-        type: WebCam
-        
- - display:
-        type: DisplayFeed
-        arguments:
-        window_name: 'MuleView'
+        type: PiCam
