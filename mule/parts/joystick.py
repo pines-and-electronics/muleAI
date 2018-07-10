@@ -337,7 +337,7 @@ class PS3Controller(BasePart):
         STEERING_SCALE_SHIFT = 0.05
 
         tag, value = self.joystick.poll()
-
+        
         if tag == 'axis-thumb-left-x':
             # actuators expect:
             # +ve signal indicates left
@@ -361,32 +361,44 @@ class PS3Controller(BasePart):
             self.throttle_signal =  self.throttle_scale * self.throttle_flip * (-value)
 
         elif tag == 'button-dpad-up' and value == 1:
+            logging.debug("{}".format(tag))            
             self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
+            logging.debug("{} throttle_scale = {}".format(tag,self.throttle_scale))
 
         elif tag == 'button-dpad-down' and value == 1:
             self.throttle_scale = max(0.0, self.throttle_scale - THROTTLE_SCALE_SHIFT)
+            logging.debug("{} throttle_scale = {}".format(tag,self.throttle_scale))
 
         elif tag == 'button-dpad-right' and value == 1:
+            logging.debug("{}".format(tag))            
             self.steering_scale = min(1.0, self.steering_scale + STEERING_SCALE_SHIFT)
+            logging.debug("{} steering_scale = {}".format(tag,self.steering_scale))
 
         elif tag == 'button-dpad-left' and value == 1:
             self.steering_scale = max(0.0, self.steering_scale - STEERING_SCALE_SHIFT)
+            logging.debug("{} steering_scale = {}".format(tag,self.steering_scale))
 
         elif tag == 'button-triangle' and value == 1:
             self.mode['steering'] = 'human'
             self.mode['throttle'] = 'human'
-
+            logging.debug("{} mode = {}".format(tag,self.mode))
+            
         elif tag == 'button-square' and value == 1:
             self.mode['steering'] = 'human'
             self.mode['throttle'] = 'ai'
-
+            logging.debug("{} mode  = {}".format(tag,self.mode))
+            
         elif tag == 'button-circle' and value == 1:
             self.mode['steering'] = 'ai'
             self.mode['throttle'] = 'human'
-
+            logging.debug("{} mode = {}".format(tag,self.mode))
+            
         elif tag == 'button-cross' and value == 1:
             self.mode['steering'] = 'ai'
             self.mode['throttle'] = 'ai'
-
+            logging.debug("{} mode = {}".format(tag,self.mode))
+            
         elif tag == 'button-select' and value == 1:
             self.mode['recording'] = not self.mode['recording']
+            logging.debug("{} mode = {}".format(tag,self.mode))
+            
