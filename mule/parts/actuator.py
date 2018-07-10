@@ -104,9 +104,9 @@ class SteeringController(BasePart):
         ''' Acquires reference to controller and full left and right pulse frequencies
             that are discovered during callibration '''
 
-        if controller_select = "Mock":
+        if controller_select == "Mock":
             controller = MockController()
-        elif controller_select = "PCA":
+        elif controller_select == "PCA":
             controller = PCA9685Controller()
         else:
             raise
@@ -159,9 +159,9 @@ class ThrottleController(BasePart):
             need not be the same
             '''
 
-        if controller_select = "Mock":
+        if controller_select == "Mock":
             controller = MockController()
-        elif controller_select = "PCA":
+        elif controller_select == "PCA":
             controller = PCA9685Controller()
         else:
             raise
