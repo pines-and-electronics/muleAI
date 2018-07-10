@@ -158,4 +158,5 @@ class Vehicle():
     def stop(self):
         ''' Stops vehicle by stopping parts in reverse order ''' 
         for part in reversed(self.parts):
+            logging.debug("Stopping {} ...".format(part._class_string)) 
             part.stop()
