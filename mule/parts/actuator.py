@@ -61,6 +61,8 @@ class PCA9685Controller:
 
         import Adafruit_PCA9685
         logging.debug("Adafruit_PCA9685 library imported")
+        print("Loggers:")
+        print(logging.Logger.manager.loggerDict)
         
         logging.debug("Instantiating PCA9685 class at address 0x{:X}".format(address))
         self.PCA9685 = Adafruit_PCA9685.PCA9685()
