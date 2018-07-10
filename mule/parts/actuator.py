@@ -97,12 +97,21 @@ class SteeringController(BasePart):
     FULL_RIGHT_SIGNAL = -1
     STRAIGHT_SIGNAL = 0
 
-    def __init__(self, controller=MockController(),
+    def __init__(self, controller_select="Mock",
                     channel = 1,
                        full_left_pulse=490,
                        full_right_pulse=290):
         ''' Acquires reference to controller and full left and right pulse frequencies
             that are discovered during callibration '''
+
+        if controller_select = "Mock":
+            controller = MockController()
+        elif controller_select = "PCA":
+            controller = PCA9685Controller()
+        else:
+            raise
+
+        
         self.controller = controller
 
         self._steering_signal2pulse = functools.partial(_signal2pulse, self.FULL_LEFT_SIGNAL, 
@@ -138,7 +147,7 @@ class ThrottleController(BasePart):
     FULL_FORWARD_SIGNAL =  1
     NEUTRAL_SIGNAL = 0
 
-    def __init__(self, controller=MockController(),
+    def __init__(self, controller_select="Mock",
                     channel = 0,
                        full_reverse_pulse=290,
                        full_forward_pulse=490,
@@ -149,6 +158,14 @@ class ThrottleController(BasePart):
             One needs both signal to pulse maps as the pulse-ranges for reverse and forward 
             need not be the same
             '''
+
+        if controller_select = "Mock":
+            controller = MockController()
+        elif controller_select = "PCA":
+            controller = PCA9685Controller()
+        else:
+            raise
+        
         self.controller = controller
 
         self._reverse_signal2pulse = functools.partial(_signal2pulse, self.FULL_REVERSE_SIGNAL,
