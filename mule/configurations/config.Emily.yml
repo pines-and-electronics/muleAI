@@ -1,5 +1,5 @@
 drive:
-    freq_hertz: 10
+    freq_hertz: 5
 
 parts:
  - joystick:
@@ -18,7 +18,7 @@ parts:
           controller_select: PCA
           channel: 0
           full_reverse_pulse:     350
-          full_forward_pulse:     385
+          full_forward_pulse:     390
           neutral_pulse:          370
  - actuator:
         type: SteeringController

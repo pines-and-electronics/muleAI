@@ -82,11 +82,12 @@ class PCA9685Controller:
         logging.debug("Instantiating PCA9685 class at address 0x{:X}".format(address))
         self.PCA9685 = Adafruit_PCA9685.PCA9685()
         
-        logging.debug("Set the PWM frequency {} Hz".format(frequency))
         self.PCA9685.set_pwm_freq(frequency)
-
+        logging.debug("Set the PWM frequency {} Hz".format(frequency))
+        
         self.channel = channel
-
+        logging.debug("Set the channel to  {}".format(self.channel))
+        
     def set_pulse(self, pulse):
         ''' Set pwm pulse '''
         self.PCA9685.set_pwm(self.channel, 0, pulse) 
@@ -142,6 +143,9 @@ class SteeringController(BasePart):
     def transform(self, state):
         ''' Send signal as pulse to servo '''
         pulse = self._steering_signal2pulse(state['steering_signal'])
+        
+        print("SteeringController.transform() pulse:", pulse)
+        
         self.controller.set_pulse(pulse)
 
     def stop(self):
@@ -209,7 +213,9 @@ class ThrottleController(BasePart):
             pulse = self._forward_signal2pulse(state['throttle_signal'])
         else:
             pulse = self._reverse_signal2pulse(state['throttle_signal'])
-
+            
+        print("ThrottleController.transform() pulse:", pulse)
+        
         self.controller.set_pulse(pulse)
 
 
