@@ -13,19 +13,19 @@ parts:
         PIN_BLUE3: 13
         PIN_BLUE4: 6
  - actuator:
+        type: ThrottleController
+        arguments:
+          controller_select: PCA
+          channel: 0
+          full_reverse_pulse:     350
+          full_forward_pulse:     385
+          neutral_pulse:          370
+ - actuator:
         type: SteeringController
         arguments:
           controller_select: PCA
           channel: 1
           full_left_pulse:    425
           full_right_pulse:   295
- - actuator:
-        type: ThrottleController
-        arguments:
-          controller_select: PCA
-          channel: 1
-          full_reverse_pulse:     350
-          full_forward_pulse:     385
-          neutral_pulse:          370
  - camera: 
         type: PiCam

@@ -33,6 +33,8 @@ def _signal2pulse(signal_lower, signal_upper, pulse_lower, pulse_upper, signal):
 
 class MockController:
     ''' A mock controller class with the appropriate methods '''
+    def __init__(self):
+        self.channel = 0
 
     def set_pulse(self, pulse):
         ''' Set pwm pulse '''
@@ -149,7 +151,7 @@ class SteeringController(BasePart):
 
     @property
     def _class_string(self):
-        return "{} with {} {} left/right PWM".format(self.__class__.__name__, self.FULL_LEFT_SIGNAL,self.FULL_RIGHT_SIGNAL)
+        return "{} channel {}".format(self.__class__.__name__, self.controller.channel)
 
 
 class ThrottleController(BasePart):
