@@ -18,7 +18,7 @@ parts:
           controller_select: PCA
           channel: 0
           full_reverse_pulse:     350
-          full_forward_pulse:     400
+          full_forward_pulse:     390
           neutral_pulse:          370
  - actuator:
         type: SteeringController
