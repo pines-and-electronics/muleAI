@@ -116,7 +116,7 @@ class SteeringController(BasePart):
     STRAIGHT_SIGNAL = 0
     PCA_ADDRESS = 0x40
     PCA_FREQUENCY = 60
-    def __init__(self, controller_select="Mock",
+    def __init__(self, controller_select,
                     channel,
                        full_left_pulse,
                        full_right_pulse):
@@ -171,7 +171,7 @@ class ThrottleController(BasePart):
     PCA_ADDRESS = 0x40
     PCA_FREQUENCY = 60
 
-    def __init__(self, controller_select="Mock",
+    def __init__(self, controller_select,
                     channel,
                        full_reverse_pulse,
                        full_forward_pulse,
