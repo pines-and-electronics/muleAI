@@ -58,7 +58,7 @@ class PCA9685Controller:
     input_keys = ()
     output_keys = ()
     
-    def __init__(self, address=0x40, frequency=60, channel=0):
+    def __init__(self, address=0x40, frequency=60, channel):
         ''' Create a reference to the PCA9685 on a specified channel '''
 
         import Adafruit_PCA9685
