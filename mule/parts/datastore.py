@@ -211,7 +211,7 @@ class WriteStore(BasePart):
             Writer first disposes of all the numpy arrays and then
             writes remaining data to json file
         '''
-        print("Transform. Mode:", state['mode'])
+        #print("Transform. Mode:", state['mode'])
         if state['mode']['recording']:
             # time in milliseconds
             timestamp = int(time.time() * 1e3)
