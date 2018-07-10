@@ -168,7 +168,7 @@ class ThrottleController(BasePart):
                        full_forward_pulse=490,
                        neutral_pulse=390):
         ''' Acquires reference to controller and full forward and reverse as well 
-            as pulse frequencies that are discovered during callibration 
+            as pulse frequencies that are discovered during calibration 
 
             One needs both signal to pulse maps as the pulse-ranges for reverse and forward 
             need not be the same
@@ -195,7 +195,7 @@ class ThrottleController(BasePart):
 
 
     def start(self):
-        ''' Callibrate by sending stop signal '''
+        ''' Calibrate by sending stop signal '''
         pulse = self._reverse_signal2pulse(self.NEUTRAL_SIGNAL)
         self.controller.set_pulse(pulse)
         time.sleep(0.5)
@@ -218,6 +218,6 @@ class ThrottleController(BasePart):
         
     @property
     def _class_string(self):
-        return "{} with".format(self.__class__.__name__)
+        return "{} channel {}".format(self.__class__.__name__, self.controller.channel)
 
         
