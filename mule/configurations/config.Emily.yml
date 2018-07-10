@@ -15,14 +15,14 @@ parts:
  - actuator:
         type: SteeringController
         arguments:
-          controller: PCA
+          controller_select: PCA
           channel: 1
           full_left_pulse:    425
           full_right_pulse:   295
  - actuator:
         type: ThrottleController
         arguments:
-          controller: PCA
+          controller_select: PCA
           channel: 1
           full_reverse_pulse:     350
           full_forward_pulse:     385
