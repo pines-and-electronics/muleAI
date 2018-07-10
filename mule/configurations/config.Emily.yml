@@ -4,7 +4,6 @@ drive:
 parts:
  - joystick:
       type: PS3Controller
- 
  - led: 
       type: sequential_LED_loop
       arguments:
@@ -29,3 +28,7 @@ parts:
           full_right_pulse:   295
  - camera: 
         type: PiCam
+ - datastore:
+        type: WriteStore
+        arguments:
+            path: ~/mule_out
