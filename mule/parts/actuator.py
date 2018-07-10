@@ -125,7 +125,7 @@ class SteeringController(BasePart):
         if controller_select == "Mock":
             controller = MockController()
         elif controller_select == "PCA":
-            controller = PCA9685Controller()
+            controller = PCA9685Controller(channel)
         else:
             raise
 
@@ -183,7 +183,7 @@ class ThrottleController(BasePart):
         if controller_select == "Mock":
             controller = MockController()
         elif controller_select == "PCA":
-            controller = PCA9685Controller()
+            controller = PCA9685Controller(channel)
         else:
             raise
         
