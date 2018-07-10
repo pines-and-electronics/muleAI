@@ -58,7 +58,7 @@ class PCA9685Controller:
     input_keys = ()
     output_keys = ()
     
-    def __init__(self, address=0x40, frequency=60, channel):
+    def __init__(self, address, frequency=60, channel):
         ''' Create a reference to the PCA9685 on a specified channel '''
 
         import Adafruit_PCA9685
@@ -114,18 +114,19 @@ class SteeringController(BasePart):
     FULL_LEFT_SIGNAL = 1 
     FULL_RIGHT_SIGNAL = -1
     STRAIGHT_SIGNAL = 0
-
+    PCA_ADDRESS = 0x40
+    PCA_FREQUENCY = 60
     def __init__(self, controller_select="Mock",
-                    channel = 1,
-                       full_left_pulse=490,
-                       full_right_pulse=290):
+                    channel,
+                       full_left_pulse,
+                       full_right_pulse):
         ''' Acquires reference to controller and full left and right pulse frequencies
             that are discovered during callibration '''
 
         if controller_select == "Mock":
             controller = MockController()
         elif controller_select == "PCA":
-            controller = PCA9685Controller(channel)
+            controller = PCA9685Controller(PCA_ADDRESS,PCA_FREQUENCY,channel)
         else:
             raise
 
@@ -167,12 +168,14 @@ class ThrottleController(BasePart):
     FULL_REVERSE_SIGNAL = -1
     FULL_FORWARD_SIGNAL =  1
     NEUTRAL_SIGNAL = 0
+    PCA_ADDRESS = 0x40
+    PCA_FREQUENCY = 60
 
     def __init__(self, controller_select="Mock",
-                    channel = 0,
-                       full_reverse_pulse=290,
-                       full_forward_pulse=490,
-                       neutral_pulse=390):
+                    channel,
+                       full_reverse_pulse,
+                       full_forward_pulse,
+                       neutral_pulse):
         ''' Acquires reference to controller and full forward and reverse as well 
             as pulse frequencies that are discovered during calibration 
 
@@ -183,7 +186,7 @@ class ThrottleController(BasePart):
         if controller_select == "Mock":
             controller = MockController()
         elif controller_select == "PCA":
-            controller = PCA9685Controller(channel)
+            controller = PCA9685Controller(PCA_ADDRESS,PCA_FREQUENCY,channel)
         else:
             raise
         
