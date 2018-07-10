@@ -61,9 +61,22 @@ class PCA9685Controller:
 
         import Adafruit_PCA9685
         logging.debug("Adafruit_PCA9685 library imported")
-        print("Loggers:")
-        print(logging.Logger.manager.loggerDict)
-        
+
+#        print("Loggers:")
+#        print(logging.Logger.manager.loggerDict)
+#         Loggers:
+#         {'Adafruit_I2C.Device.Bus.1': <logging.PlaceHolder object at 0x717ca670>, 
+#          'Adafruit_I2C.Device.Bus': <logging.PlaceHolder object at 0x717ca6d0>, 
+#          'Adafruit_I2C.Device.Bus.1.Address': <logging.PlaceHolder object at 0x7180ef70>, 
+#          'Adafruit_I2C.Device': <logging.PlaceHolder object at 0x717ca6f0>, 
+#          'Adafruit_PCA9685.PCA9685': <logging.Logger object at 0x7181f390>, 
+#          'my_module': <logging.Logger object at 0x75625c70>, 
+#          'Adafruit_PCA9685': <logging.PlaceHolder object at 0x7181f3b0>, 
+#          'Adafruit_I2C.Device.Bus.1.Address.0X40': <logging.Logger object at 0x7180eed0>, 
+#          'Adafruit_I2C': <logging.PlaceHolder object at 0x717cabd0>}
+        logging.getLogger('Adafruit_I2C').setLevel(logging.WARNING)
+        logging.getLogger('Adafruit_PCA9685').setLevel(logging.WARNING)
+
         logging.debug("Instantiating PCA9685 class at address 0x{:X}".format(address))
         self.PCA9685 = Adafruit_PCA9685.PCA9685()
         
