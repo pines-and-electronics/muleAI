@@ -6,7 +6,6 @@ parts:
       type: PS3Controller
  - led: 
       type: setup_GPIO
-      
  - led: 
       type: sequential_LED_loop
       arguments:
