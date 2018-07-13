@@ -4,6 +4,53 @@ import logging
 import time
 import RPi.GPIO as GPIO
 
+class setup_GPIO(BasePart):
+    """This part should be before any other LED parts in the configuration!
+    
+    
+    """
+    input_keys = ()
+    output_keys = ()
+    def __init__(self):
+        pass
+
+    def start(self):
+        """ """
+        GPIO.setwarnings(False)
+        GPIO.cleanup()
+        GPIO.setmode(GPIO.BCM)
+        
+    def transform(self, state):
+        pass
+
+    def stop(self):
+        pass
+
+
+class record_LED(BasePart):
+    input_keys = ('mode',)
+    output_keys = ()
+    def __init__(self,PIN_RED):
+        self.PIN_RED = PIN_RED
+
+    def start(self):
+        """ """
+        #GPIO.setwarnings(False)
+        #GPIO.cleanup()
+        #GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.PIN_RED,GPIO.OUT)
+        GPIO.output(self.PIN_RED,  False)
+        
+    def transform(self, state):
+        if state['mode']['recording'] == True:
+            GPIO.output(self.PIN_RED,  True)
+        elif state['mode']['recording'] == False:         
+            GPIO.output(self.PIN_RED,  False)
+
+    def stop(self):
+        GPIO.output(self.PIN_RED,  False)
+
+        
 class sequential_LED_loop(BasePart):
     """ """
     input_keys = ()
@@ -24,11 +71,9 @@ class sequential_LED_loop(BasePart):
     def start(self):
         """ """
         #state['led_flags'] = self.lights_on
-        GPIO.setwarnings(False)
-        
-        GPIO.cleanup()
-        
-        GPIO.setmode(GPIO.BCM)
+        #GPIO.setwarnings(False)
+        #GPIO.cleanup()
+        #GPIO.setmode(GPIO.BCM)
         
         GPIO.setup(self.PIN_BLUE1,GPIO.OUT)
         GPIO.setup(self.PIN_BLUE2,GPIO.OUT)

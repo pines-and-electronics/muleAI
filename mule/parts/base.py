@@ -30,10 +30,10 @@ class BasePart(abc.ABC):
         pass
 
     def __str__(self):
-        return "{} with {} and {} input/output keys".format(self._class_string, self.__class__.input_keys, self.__class__.input_keys)
+        return "{} with {} and {} input/output keys".format(self._class_string, self.__class__.input_keys, self.__class__.output_keys)
 
     def __repr__(self):
-        return "{} with {} and {} input/output keys".format(self.__class__.__name__, self.__class__.input_keys, self.__class__.input_keys)
+        return "{} with {} and {} input/output keys".format(self.__class__.__name__, self.__class__.input_keys, self.__class__.output_keys)
     
     
     @property

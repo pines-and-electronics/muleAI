@@ -74,9 +74,11 @@ class Vehicle():
 
         self.parts.append(part)
 
-        logging.info("Registering {} key(s)".format(len(part.output_keys)))
+        logging.debug("Registering {} output key(s)".format(len(part.output_keys)))
 
         self.state_keys = self.state_keys.union(set(part.output_keys))
+        
+        logging.debug("Keys: {}".format(self.state_keys))
 
 
     @classmethod
@@ -158,4 +160,5 @@ class Vehicle():
     def stop(self):
         ''' Stops vehicle by stopping parts in reverse order ''' 
         for part in reversed(self.parts):
+            logging.debug("Stopping {} ...".format(part._class_string)) 
             part.stop()
