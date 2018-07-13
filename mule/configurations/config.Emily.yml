@@ -1,5 +1,5 @@
 drive:
-    freq_hertz: 5
+    freq_hertz: 20
 
 parts:
  - joystick:
@@ -14,7 +14,6 @@ parts:
         PIN_BLUE2: 19
         PIN_BLUE3: 13
         PIN_BLUE4: 6
-
  - actuator:
         type: ThrottleController
         arguments:
