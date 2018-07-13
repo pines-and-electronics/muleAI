@@ -62,7 +62,7 @@ def drive(cfg):
     logging.info('Killing engine')
 
     mule.stop()
-
+    logging.info("Done.")
 cli.add_command(drive)
 
 
