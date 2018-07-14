@@ -8,6 +8,10 @@ import itertools
 from collections import OrderedDict
 from parts.base import BasePart
 import datetime
+#from samba.dcerpc.drsblobs import ldapControlDirSyncBlob
+import logging
+#import zipfile
+import shutil
 
 # TODO: add handler for multiple read/write stores
 # TODO: document properly
@@ -54,7 +58,7 @@ class ReadStore(BasePart):
                 key = timestamp
                 value = list of tuples (label, extension, filename)
 
-                Either label is a stete key for a file containing a 
+                Either label is a stete key for a file containing a
                 numpy array or label = 'state', meaning the (json) file
                 contains state data
 
@@ -102,7 +106,7 @@ class ReadStore(BasePart):
 
 
     def _retrieve_specifiers(self, shuffled):
-        ''' Extract file information from filenames 
+        ''' Extract file information from filenames
 
             Arguments
 
@@ -116,7 +120,7 @@ class ReadStore(BasePart):
                 key = timestamp
                 value = (label, extension, filename)
 
-                Either label is a stete key for a file containing a 
+                Either label is a stete key for a file containing a
                 numpy array or label = 'state', meaning the (json) file
                 contains state data
         '''
@@ -132,7 +136,7 @@ class ReadStore(BasePart):
                 label, timestamp, extension = match.groups()
                 timestamp = int(timestamp)
 
-                # 
+                #
                 specifier = (label, extension, filename)
                 if specifiers.get(timestamp):
                     specifiers[timestamp].append(specifier)
@@ -154,7 +158,7 @@ class ReadStore(BasePart):
 
 
     def _update(self):
-        ''' Generates state dictionary from files 
+        ''' Generates state dictionary from files
 
             Expects fiies to contain numpy arrays or json metadata'''
         # contruct state from different data types
@@ -192,17 +196,35 @@ class WriteStore(BasePart):
     def path(self):
         return self._path
 
-
     @path.setter
     def path(self, path):
         self._path = os.path.realpath(os.path.expanduser(path))
         date_time_str = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
         self._path = os.path.join(self._path, date_time_str)
-        
-        # TODO: remove to external verification
+
+        # Ensure the path is new
+        assert not(os.path.exists(self._path))
+
+        # Create the folder
+        # TODO: remove to external verification - Why? -MJ
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
+        logging.debug("Session data folder created: {}".format(self._path))
+
+
+    def make_archive(self, source, destination):
+        base = os.path.basename(destination)
+        name = base.split('.')[0]
+        format = base.split('.')[1]
+        archive_from = os.path.dirname(source)
+        archive_to = os.path.basename(source.strip(os.sep))
+        #print(source, destination, archive_from, archive_to)
+        shutil.make_archive(name, format, archive_from, archive_to)
+        shutil.move('%s.%s'%(name,format), destination)
+        
+        logging.debug("Created archive {}".format(destination))
+        
     def start(self):
         pass
 
@@ -220,14 +242,14 @@ class WriteStore(BasePart):
 
             # convert to set to remove duplicates
             keys = (key for key in state if key not in self.input_keys)
-            self.input_keys = tuple(key for key 
+            self.input_keys = tuple(key for key
                                     in itertools.chain(self.input_keys, keys))
 
             local_state = {}
 
             for key in self.input_keys:
                 if isinstance(state[key], np.ndarray):
-                    filename = os.path.join(self.path, 
+                    filename = os.path.join(self.path,
                             '{}_{}.{}'.format(key, timestamp, 'npy'))
                     np.save(filename, state[key])
 
@@ -240,4 +262,30 @@ class WriteStore(BasePart):
 
 
     def stop(self):
-        pass
+
+        # Get statistics of the saved data
+        files = os.listdir(self.path)
+        npy_files = [f for f in files if os.path.splitext(f)[1]=='.npy']
+        json_files = [f for f in files if os.path.splitext(f)[1]=='.json']
+        other_files = [f for f in files if os.path.splitext(f)[1] not in ('.npy','.json')]
+        
+        assert len(npy_files) == len(json_files)
+        
+        logging.debug("{} states (.npy, .json pairs)saved to {}".format(len(json_files),self.path))
+        logging.debug("{} other files saved to {}".format(len(other_files),self.path))
+        
+        self.make_archive(self.path,os.path.join(self.path,'state.zip'))
+        
+        # Remove all .npy files, confirm
+        [os.remove(os.path.join(self.path,f)) for f in npy_files]
+        #files = os.listdir(self.path)
+        npy_files = [f for f in os.listdir(self.path) if os.path.splitext(f)[1]=='.npy']
+        assert len(npy_files) == 0
+        logging.debug("Deleted all .npy files".format())
+        
+        # Remove all .json files, confirm
+        [os.remove(os.path.join(self.path,f)) for f in json_files]
+        #files = 
+        json_files = [f for f in os.listdir(self.path) if os.path.splitext(f)[1]=='.json']
+        assert len(json_files) == 0
+        logging.debug("Deleted all .json files".format())        

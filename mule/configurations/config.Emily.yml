@@ -1,5 +1,5 @@
 drive:
-    freq_hertz: 20
+    freq_hertz: 5
 
 parts:
  - joystick:
