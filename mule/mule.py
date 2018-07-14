@@ -11,9 +11,14 @@ from vehicle import Vehicle
 CONFIG_DIR = 'configurations'
 LOGGING_DIR = 'logging'
 
+#LOGGING_DIR_HARD_CODE = "~/muleAI/mule/logging/logging.simple.yml"
+
 @click.group()
-@click.option('--logcfg', default=os.path.join(LOGGING_DIR, 'logging.simple.yml'), type=click.Path(exists=True))
+@click.option('--logcfg', default=None, type=click.Path(exists=True))
+#@click.option('--logcfg', default=LOGGING_DIR_HARD_CODE,type=click.Path())
+#@click.option('--logcfg', default=None,type=click.Path(exists=True))
 def cli(logcfg):
+    print('Opening {}'.format(logcfg))
     with open(logcfg, 'r') as fd:
         config = yaml.load(fd)
         logging.config.dictConfig(config)
@@ -41,6 +46,7 @@ cli.add_command(calibrate)
 
 @click.command()
 @click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.drive.yml'), type=click.Path(exists=True))
+#@click.option('--logcfg', default=os.path.join(LOGGING_DIR, 'logging.simple.yml'), type=click.Path(exists=True))
 def drive(cfg):
 
     config = configutil.parse_config(cfg)
