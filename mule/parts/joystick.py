@@ -285,21 +285,36 @@ class PS3Controller(BasePart):
     output_keys = ('steering_signal', 'throttle_signal', 'mode')
 
     def __init__(self, device_path='/dev/input/js0', 
-                       steering='human', 
-                       throttle='human', 
+                       steering='human',
+                       throttle='human',
                        recording=False,
                        flip_steering=False, 
-                       flip_throttle=False):
+                       flip_throttle=False,
+                       scale_throttle_forward=1.0,
+                       scale_throttle_back=1.0,
+                       scale_steer_left=1.0,
+                       scale_steer_right=1.0,
+                       ):
 
         self.joystick = JoystickDevice(device_path)
         self.mode = {'steering': 'human', 'throttle': 'human', 'recording': False}
-
+        
         self.steering_signal = 0.0
         self.throttle_signal = 0.0
-
-        self.steering_scale = 1.0;
-        self.throttle_scale = 1.0;
-
+        
+        # These values are adjustable
+        self.scale_throttle_forward = scale_throttle_forward
+        self.scale_throttle_back = scale_throttle_back
+        self.scale_steer_left=scale_steer_left
+        self.scale_steer_right = scale_steer_right
+        
+        # This is the adjustment mode
+        self.adjustment_mode_list = ['throttle forward','throttle_back','steer left','steer right']
+        self.num_adjustment_modes = len(self.adjustment_mode_list)
+        
+        self.adjustment_mode_index = 0
+        self.adjustment_mode = self.adjustment_mode_list[self.adjustment_mode_index]
+        
         self.steering_flip = -1.0 if flip_steering else 1.0
         self.throttle_flip = -1.0 if flip_throttle else 1.0
 
@@ -326,16 +341,16 @@ class PS3Controller(BasePart):
 
         * axis-thumb-left-x     | steering
         * axis-thumb-right-y    | throttle
-        * button-dpad-up        | increase throttle scale
-        * button-dpad-down      | decrease throttle scale
-        * button-dpad-left      | increase steering scale 
-        * button-dpad-right     | decrease steering scale
+        * button-dpad-up        | adjustment 
+        * button-dpad-down      | adjustment
+        * button-dpad-left      | select adjustment 
+        * button-dpad-right     | select adjustment
 
         * button-triangle       | toggle mode
         * button-circle         | toggle recording
         '''
-        THROTTLE_SCALE_SHIFT = 0.05
-        STEERING_SCALE_SHIFT = 0.05
+        THROTTLE_SCALE_SHIFT = 0.01
+        STEERING_SCALE_SHIFT = 0.01
 
         tag, value = self.joystick.poll()
         
@@ -370,13 +385,27 @@ class PS3Controller(BasePart):
             logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
 
         elif tag == 'button-dpad-right' and value == 1:
-            self.steering_scale = min(1.0, self.steering_scale + STEERING_SCALE_SHIFT)
-            logging.debug("{} steering_scale = {:.2f}".format(tag,self.steering_scale))
+            self.adjustment_mode_index += 1
+            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes 
+            self.adjustment_mode = self.adjustment_mode_list[self.adjustment_mode_index]
+            print(self.adjustment_mode_index, self.adjustment_mode)
+            logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))            
+#                    for i in range(-20,20):
+#    print(i, i%4)
+
+            
+            #self.steering_scale = min(1.0, self.steering_scale + STEERING_SCALE_SHIFT)
+            #logging.debug("{} steering_scale = {:.2f}".format(tag,self.steering_scale))
 
         elif tag == 'button-dpad-left' and value == 1:
-            self.steering_scale = max(0.0, self.steering_scale - STEERING_SCALE_SHIFT)
-            logging.debug("{} steering_scale = {:.2f}".format(tag,self.steering_scale))
-
+            #self.steering_scale = max(0.0, self.steering_scale - STEERING_SCALE_SHIFT)
+            #logging.debug("{} steering_scale = {:.2f}".format(tag,self.steering_scale))
+            self.adjustment_mode_index += -1
+            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes 
+            self.adjustment_mode = self.adjustment_mode_list[self.adjustment_mode_index]
+            #print(self.adjustment_mode_index, self.adjustment_mode)
+            logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))
+            
         elif tag == 'button-triangle' and value == 1:
             self.mode['steering'] = 'human'
             self.mode['throttle'] = 'human'

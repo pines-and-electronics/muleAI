@@ -9,15 +9,6 @@ parts:
         scale_throttle_back: 1.0
         scale_steer_left: 1.0
         scale_steer_right: 1.0
- - led: 
-      type: setup_GPIO
- - led: 
-      type: sequential_LED_loop
-      arguments:
-        PIN_BLUE1: 26
-        PIN_BLUE2: 19
-        PIN_BLUE3: 13
-        PIN_BLUE4: 6
  - actuator:
         type: ThrottleController
         arguments:
@@ -32,15 +23,4 @@ parts:
           controller_select: PCA
           channel: 1
           full_left_pulse:    425
-          full_right_pulse:   295
- - camera: 
-        type: PiCam
- - datastore:
-        type: WriteStore
-        arguments:
-            path: ~/mule_out
-            flg_zip: 1
- - led: 
-      type: record_LED
-      arguments: 
-        PIN_RED: 16            
+          full_right_pulse:   295         
