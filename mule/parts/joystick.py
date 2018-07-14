@@ -16,7 +16,8 @@
 import fcntl
 import array
 import struct
-from collections import OrderedDict
+#from collections import OrderedDict
+import collections
 from parts.base import BasePart, ThreadComponent
 import utilities.jsio as jsio
 
@@ -303,17 +304,23 @@ class PS3Controller(BasePart):
         self.throttle_signal = 0.0
         
         # These values are adjustable
-        self.scale_throttle_forward = scale_throttle_forward
-        self.scale_throttle_back = scale_throttle_back
-        self.scale_steer_left=scale_steer_left
-        self.scale_steer_right = scale_steer_right
+        
+        self.adjustment_mode_dict = collections.OrderedDict()
+        
+        self.adjustment_mode_dict['scale_throttle_forward'] = scale_throttle_forward
+        self.adjustment_mode_dict['scale_throttle_back'] = scale_throttle_back
+        self.adjustment_mode_dict['scale_steer_left'] = scale_steer_left
+        self.adjustment_mode_dict['scale_steer_right'] = scale_steer_right
         
         # This is the adjustment mode
-        self.adjustment_mode_list = ['throttle forward','throttle_back','steer left','steer right']
-        self.num_adjustment_modes = len(self.adjustment_mode_list)
+        #self.adjustment_mode_list = ['throttle forward','throttle_back','steer left','steer right']
+        
+        self.num_adjustment_modes = len(self.adjustment_mode_dict)
         
         self.adjustment_mode_index = 0
-        self.adjustment_mode = self.adjustment_mode_list[self.adjustment_mode_index]
+        #list(ordered_dict.keys())
+        modes = list(self.adjustment_mode_dict.keys())
+        self.adjustment_mode = modes[self.adjustment_mode_index]
         
         self.steering_flip = -1.0 if flip_steering else 1.0
         self.throttle_flip = -1.0 if flip_throttle else 1.0
@@ -363,7 +370,10 @@ class PS3Controller(BasePart):
             # -ve value indicates thumb was moved left
             # hence the presence of (-value)
             # to allow for an on the fly fudge factor, steering_flip can be activated
-            self.steering_signal = self.steering_scale * self.steering_flip * (-value)
+            #print()
+            #self.steering_signal = self.steering_scale * self.steering_flip * (-value)
+            self.steering_signal = self.steering_flip * (-value)
+            print("Steer:",self.steering_signal)
 
         elif tag == 'axis-thumb-right-y':
             # actuators expect:
@@ -374,36 +384,54 @@ class PS3Controller(BasePart):
             # -ve value indicates thumb was pushed forward
             # hence the presence of (-value)
             # to allow for an on the fly fudge factor, throttle_flip can be activated
-            self.throttle_signal =  self.throttle_scale * self.throttle_flip * (-value)
-
+            #self.throttle_signal =  self.throttle_scale * self.throttle_flip * (-value)
+            
+            # +ve throttle is +value (more intuitive!)
+            value = -value
+             
+            #print("Throttle original value",value)
+            if value > 0:
+                print("Throttle forward value",value)
+            elif value < 0:
+                print("Throttle backward value",value)
+            else: 
+                print("Throttle neutral value",value)
+            
+            self.throttle_signal =  self.throttle_flip * (value)
+            
+            #print("Throttle:",self.throttle_signal)
+        
+        #--- dpad-up
         elif tag == 'button-dpad-up' and value == 1:
-            self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
-            logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
+            #self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
+            #print("")
+            #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
+            logging.debug("".format(self.adjustment_mode))
 
+        #--- dpad-down
         elif tag == 'button-dpad-down' and value == 1:
             self.throttle_scale = max(0.0, self.throttle_scale - THROTTLE_SCALE_SHIFT)
             logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
 
+        #--- dpad-right
         elif tag == 'button-dpad-right' and value == 1:
             self.adjustment_mode_index += 1
-            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes 
-            self.adjustment_mode = self.adjustment_mode_list[self.adjustment_mode_index]
-            print(self.adjustment_mode_index, self.adjustment_mode)
-            logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))            
-#                    for i in range(-20,20):
-#    print(i, i%4)
-
-            
-            #self.steering_scale = min(1.0, self.steering_scale + STEERING_SCALE_SHIFT)
-            #logging.debug("{} steering_scale = {:.2f}".format(tag,self.steering_scale))
-
-        elif tag == 'button-dpad-left' and value == 1:
-            #self.steering_scale = max(0.0, self.steering_scale - STEERING_SCALE_SHIFT)
-            #logging.debug("{} steering_scale = {:.2f}".format(tag,self.steering_scale))
-            self.adjustment_mode_index += -1
-            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes 
-            self.adjustment_mode = self.adjustment_mode_list[self.adjustment_mode_index]
+            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
+            modes = list(self.adjustment_mode_dict.keys())
+            #print(modes,self.adjustment_mode_index)
+            self.adjustment_mode = modes[self.adjustment_mode_index]
+            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
             #print(self.adjustment_mode_index, self.adjustment_mode)
+            logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))            
+
+        #--- dpad-left
+        elif tag == 'button-dpad-left' and value == 1:
+            self.adjustment_mode_index += -1
+            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
+            modes = list(self.adjustment_mode_dict.keys())
+            #print(modes,self.adjustment_mode_index)
+            self.adjustment_mode = modes[self.adjustment_mode_index]
+            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
             logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))
             
         elif tag == 'button-triangle' and value == 1:
