@@ -7,7 +7,7 @@ import random
 import itertools
 from collections import OrderedDict
 from parts.base import BasePart
-
+import datetime
 
 # TODO: add handler for multiple read/write stores
 # TODO: document properly
@@ -184,8 +184,9 @@ class WriteStore(BasePart):
     input_keys = ('mode',)
     output_keys = ()
 
-    def __init__(self, path):
+    def __init__(self, path, flg_zip):
         self.path = path
+        self.flg_zip = flg_zip
 
     @property
     def path(self):
@@ -195,8 +196,9 @@ class WriteStore(BasePart):
     @path.setter
     def path(self, path):
         self._path = os.path.realpath(os.path.expanduser(path))
-        self._path = os.path.join(self._path, str(int(time.time())))
-
+        date_time_str = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
+        self._path = os.path.join(self._path, date_time_str)
+        
         # TODO: remove to external verification
         if not os.path.exists(self._path):
             os.makedirs(self._path)
