@@ -1,9 +1,14 @@
 drive:
-    freq_hertz: 5
+    freq_hertz: 20
 
 parts:
  - joystick:
       type: PS3Controller
+      arguments:
+        scale_throttle_forward: 0.50
+        scale_throttle_back: 1.5
+        scale_steer_left: 1.0
+        scale_steer_right: 1.0
  - led: 
       type: setup_GPIO
  - led: 
@@ -26,7 +31,7 @@ parts:
         arguments:
           controller_select: PCA
           channel: 1
-          full_left_pulse:    425
+          full_left_pulse:    420
           full_right_pulse:   295
  - camera: 
         type: PiCam

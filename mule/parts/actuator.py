@@ -143,6 +143,7 @@ class SteeringController(BasePart):
 
     def transform(self, state):
         ''' Send signal as pulse to servo '''
+        #print(state['steering_signal'])
         pulse = self._steering_signal2pulse(state['steering_signal'])
         
         #print("SteeringController.transform() pulse:", pulse)
