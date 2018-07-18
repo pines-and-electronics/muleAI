@@ -1,14 +1,7 @@
 drive:
-    freq_hertz: 20
+    freq_hertz: 2
 
 parts:
- - joystick:
-      type: PS3Controller
-      arguments:
-        scale_throttle_forward: 0.50
-        scale_throttle_back: 1.5
-        scale_steer_left: 1.0
-        scale_steer_right: 1.0
  - led: 
       type: setup_GPIO
  - led: 
@@ -18,6 +11,15 @@ parts:
         PIN_BLUE2: 19
         PIN_BLUE3: 13
         PIN_BLUE4: 6
+ - joystick_old:
+      type: PS3Controller
+# - joystick:
+#      type: PS3Controller
+#      arguments:
+#        scale_throttle_forward: 0.50
+#        scale_throttle_back: 1.5
+#        scale_steer_left: 1.0
+#        scale_steer_right: 1.0             
  - actuator:
         type: ThrottleController
         arguments:
@@ -43,4 +45,5 @@ parts:
  - led: 
       type: record_LED
       arguments: 
-        PIN_RED: 16            
+        PIN_RED: 16
+         
