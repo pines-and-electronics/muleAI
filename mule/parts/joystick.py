@@ -363,9 +363,9 @@ class PS3Controller(BasePart):
         
         self.thread.stop()
         logging.debug("Closing joystick {}".format(self.joystick))
+        self.joystick.close()
         
-        #self.joystick.close()
-        logging.debug("SKIP: Closing joystick!!! This hangs, SKIP!".format())
+        #logging.debug("SKIP: Closing joystick!!! This hangs, SKIP!".format())
 
     def _update(self):
         ''' Update steering and throttle signals

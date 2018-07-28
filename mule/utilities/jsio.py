@@ -1,7 +1,11 @@
-
+import logging
 # TODO: log import errors
 
 try:
+    logging.debug("Attempting to load utilities._jsio methods.".format())
+    #logging.debug("Note: PURPOSELY skipping this for now!".format())
+    #raise ImportError
+
     from utilities._jsio import (retrieve_JSIOCGAXES,
                                  retrieve_JSIOCGBUTTONS,
                                  retrieve_JSIOCGNAME,
@@ -19,6 +23,8 @@ except ImportError:
     # asm-generic/ll64.h
     # linux/input-event-codes.h
     # linux/joystick.h
+    logging.debug("_jsio FAILED. Hard coded events used.".format())
+        
     def retrieve_JS_EVENT_BUTTON():
         return 0x01
 
