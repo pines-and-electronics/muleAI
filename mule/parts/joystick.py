@@ -23,6 +23,12 @@ import utilities.jsio as jsio
 import pprint
 import logging
 
+
+from bitstring import BitArray
+
+
+TESTING = True
+
 # TODO: potentially migrate from the older joystick interface 
 #       to the evdev interface
 
@@ -43,7 +49,7 @@ import logging
            Using the order information from jstest, one can map physical axes/buttons
            to keys sent.
 '''
-_AXIS_NAME_LOOKUP = {                   # DEC   | linux jsio naming
+_AXIS_NAME_LOOKUP_OLD = {                   # DEC   | linux jsio naming
         0x00: 'axis-thumb-left-x',      # 0     | 'x'
         0x01: 'axis-thumb-left-y',      # 1     | 'y'
         0x02: 'axis-thumb-right-x',     # 2     | 'z'
@@ -72,6 +78,40 @@ _AXIS_NAME_LOOKUP = {                   # DEC   | linux jsio naming
         0x3d: 'axis-accelerometer-z',   # 61    |
         0x3e: 'axis-?-8'                # 62    |
         }
+
+
+_AXIS_NAME_LOOKUP = {
+0x00 : 'x',        
+0x01 : 'y',        
+0x02 : 'z',        
+0x03 : 'rx',        
+0x04 : 'ry',        
+0x05 : 'rz',        
+0x06 : 'trottle',        
+0x07 : 'rudder',        
+0x08 : 'wheel',        
+0x09 : 'gas',        
+0x0a : 'brake',        
+0x10 : 'hat0x',        
+0x11 : 'hat0y',        
+0x12 : 'hat1x',        
+0x13 : 'hat1y',        
+0x14 : 'hat2x',        
+0x15 : 'hat2y',        
+0x16 : 'hat3x',        
+0x17 : 'hat3y',        
+0x18 : 'pressure',        
+0x19 : 'distance',        
+0x1a : 'tilt_x',        
+0x1b : 'tilt_y',        
+0x1c : 'tool_width',        
+0x20 : 'volume',        
+0x28 : 'misc',    
+        }
+
+
+
+
 
 _BUTTON_NAME_LOOKUP = {
         0x120: 'button-select',         # 288   | 'trigger'
@@ -173,9 +213,14 @@ class JoystickDevice:
         event = self.joystick.read(8)
 
         if event:
+            if TESTING:
+                #logging.debug("event hex: {}".format(event.hex()))
+                logging.debug("event: {}".format(BitArray(bytes=event)))
+                logging.debug("event: {}".format(BitArray(bytes=event).bin))
+
             # IhBB --> I: unsigned int (4-bytes), h: signed short (2-bytes), B: unsigned char (1-byte)
             timestamp, event_value, event_type, event_key = struct.unpack('IhBB', event)
-
+            
 
             if event_type & self._JS_EVENT_INIT:
                 pass
@@ -213,8 +258,11 @@ class JoystickDevice:
         container = array.array('B', [0] * MAX_NAME_LENGTH)
 
         fcntl.ioctl(joystick, JSIOCGNAME, container)
+        
+        
         self.device_name = container.tobytes().decode('utf-8')
-
+        logging.debug("device_name: ".format(self.device_name))
+        
 
     def _retrieve_axes(self, joystick):
 
@@ -231,6 +279,7 @@ class JoystickDevice:
         for axis in container[:nr_axes]:
             axis_name = _AXIS_NAME_LOOKUP.get(axis, 'unexpected-({})'.format(axis))
             self._axes.append(axis_name)
+            logging.debug("axis_name: ".format(axis_name))
 
 
     def _retrieve_buttons(self, joystick):
@@ -248,7 +297,7 @@ class JoystickDevice:
         for button in container[:nr_buttons]:
             button_name = _BUTTON_NAME_LOOKUP.get(button, 'unexpected-({})'.format(button))
             self._buttons.append(button_name)
-
+            logging.debug("button_name: ".format(button_name))
 
     @property
     def _class_string(self):
@@ -364,8 +413,8 @@ class PS3Controller(BasePart):
         self.thread.stop()
         logging.debug("Closing joystick {}".format(self.joystick))
         
-        #self.joystick.close()
-        logging.debug("SKIP: Closing joystick!!! This hangs, SKIP!".format())
+        self.joystick.close()
+        #logging.debug("SKIP: Closing joystick!!! This hangs, SKIP!".format())
 
     def _update(self):
         ''' Update steering and throttle signals
@@ -384,10 +433,12 @@ class PS3Controller(BasePart):
         #THROTTLE_SCALE_SHIFT = 0.01
         #STEERING_SCALE_SHIFT = 0.01
         ADJUSTMENT_SHIFT = 0.01
-        logging.debug("_update".format())
+        #logging.debug("_update".format())
 
         tag, value = self.joystick.poll()
-        logging.debug("tag {}, value {}".format(tag, value))
+        
+        if TESTING:
+            logging.debug("tag {}, value {}".format(tag, value))
         
         if tag == 'axis-thumb-left-x':
             # actuators expect:

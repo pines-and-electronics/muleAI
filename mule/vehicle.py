@@ -162,3 +162,6 @@ class Vehicle():
         for part in reversed(self.parts):
             logging.debug("Stopping {} ...".format(part._class_string)) 
             part.stop()
+        
+        #TODO: Is this necesary at very end? 
+        #GPIO.cleanup()

@@ -140,6 +140,8 @@ while True:
     if evbuf:
         time, value, type, number = struct.unpack('IhBB', evbuf)
         
+        print('STEP', value, type, number)
+        
         if type & 0x80:
              print("(initial)",)
 
