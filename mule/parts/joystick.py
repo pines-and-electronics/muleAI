@@ -268,8 +268,9 @@ class JoystickDevice:
 
             # IhBB --> I: unsigned int (4-bytes), h: signed short (2-bytes), B: unsigned char (1-byte)
             timestamp, event_value, event_type, event_key = struct.unpack('IhBB', event)
+            if TESTING:
+                print("{} - {} - {} - {}".format(timestamp, event_value, event_type, event_key))
             
-
             if event_type & self._JS_EVENT_INIT:
                 pass
 
