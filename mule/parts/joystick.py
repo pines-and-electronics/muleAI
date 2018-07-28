@@ -425,7 +425,10 @@ class PS3Controller(BasePart):
         self.adjustment_mode_dict['scale_steer_left']['shift'] = 0.01
         self.adjustment_mode_dict['scale_steer_right']['shift'] = 0.01
             
-        pprint.pprint("Adjustment modes:\n",self.adjustment_mode_dict)
+        print("Adjustment modes:")
+        for k in self.adjustment_mode_dict:
+            print(k, self.adjustment_mode_dict[k])
+        
         # This is the adjustment mode
         #self.adjustment_mode_list = ['throttle forward','throttle_back','steer left','steer right']
         
