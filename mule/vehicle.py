@@ -6,6 +6,7 @@ import logging
 #from numpy.core.multiarray_tests import npy_log10l
 
 import numpy as np
+
 class Vehicle():
     ''' Vehicle control
 
@@ -154,6 +155,7 @@ class Vehicle():
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour
         except KeyboardInterrupt:
+            logging.debug("KeyboardInterrupt".format())
             pass
 
 

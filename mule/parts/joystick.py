@@ -27,7 +27,7 @@ import logging
 from bitstring import BitArray
 
 
-TESTING = True
+TESTING = False
 
 # TODO: potentially migrate from the older joystick interface 
 #       to the evdev interface
@@ -81,36 +81,33 @@ _AXIS_NAME_LOOKUP_OLD = {                   # DEC   | linux jsio naming
 
 
 _AXIS_NAME_LOOKUP = {
-0x00 : 'x',        
-0x01 : 'y',        
-0x02 : 'z',        
-0x03 : 'rx',        
-0x04 : 'ry',        
-0x05 : 'rz',        
-0x06 : 'trottle',        
-0x07 : 'rudder',        
-0x08 : 'wheel',        
-0x09 : 'gas',        
-0x0a : 'brake',        
-0x10 : 'hat0x',        
-0x11 : 'hat0y',        
-0x12 : 'hat1x',        
-0x13 : 'hat1y',        
-0x14 : 'hat2x',        
-0x15 : 'hat2y',        
-0x16 : 'hat3x',        
-0x17 : 'hat3y',        
-0x18 : 'pressure',        
-0x19 : 'distance',        
-0x1a : 'tilt_x',        
-0x1b : 'tilt_y',        
-0x1c : 'tool_width',        
-0x20 : 'volume',        
-0x28 : 'misc',    
+                    0x00 : 'axis-thumb-left-x',        
+                    0x01 : 'axis-thumb-left-y',        
+                    0x02 : 'axis-thumb-left-z',        
+                    0x03 : 'axis-thumb-right-x',        
+                    0x04 : 'axis-thumb-right-y',        
+                    0x05 : 'axis-thumb-right-z',        
+                    0x06 : 'trottle',        
+                    0x07 : 'rudder',        
+                    0x08 : 'wheel',        
+                    0x09 : 'gas',        
+                    0x0a : 'brake',        
+                    0x10 : 'hat0x',        
+                    0x11 : 'hat0y',        
+                    0x12 : 'hat1x',        
+                    0x13 : 'hat1y',        
+                    0x14 : 'hat2x',        
+                    0x15 : 'hat2y',        
+                    0x16 : 'hat3x',        
+                    0x17 : 'hat3y',        
+                    0x18 : 'pressure',        
+                    0x19 : 'distance',        
+                    0x1a : 'tilt_x',        
+                    0x1b : 'tilt_y',        
+                    0x1c : 'tool_width',        
+                    0x20 : 'volume',        
+                    0x28 : 'misc',    
         }
-
-
-
 
 
 _BUTTON_NAME_LOOKUP_OLD = {
@@ -232,8 +229,8 @@ class JoystickDevice:
         logging.debug("self.joystick.closed = {}".format(self.joystick.closed))
         
         logging.debug("Closing {}".format(self.joystick))
-        
-        self.joystick.close()
+        logging.debug("-> SKIPPING THE CLOSE!!!".format())
+        #self.joystick.close()
 
 
     def poll(self):
@@ -427,8 +424,8 @@ class PS3Controller(BasePart):
         self.adjustment_mode_dict['scale_throttle_back']['shift'] = 0.01
         self.adjustment_mode_dict['scale_steer_left']['shift'] = 0.01
         self.adjustment_mode_dict['scale_steer_right']['shift'] = 0.01
-                
-        pprint.pprint(self.adjustment_mode_dict)
+            
+        pprint.pprint("Adjustment modes:\n",self.adjustment_mode_dict)
         # This is the adjustment mode
         #self.adjustment_mode_list = ['throttle forward','throttle_back','steer left','steer right']
         
@@ -486,8 +483,8 @@ class PS3Controller(BasePart):
 
         tag, value = self.joystick.poll()
         
-        if TESTING:
-            logging.debug("tag {}, value {}".format(tag, value))
+        #if TESTING:
+        logging.debug("tag {}, value {}".format(tag, value))
         
         if tag == 'axis-thumb-left-x':
             # actuators expect:
