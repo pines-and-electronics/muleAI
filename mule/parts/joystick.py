@@ -169,10 +169,10 @@ _BUTTON_NAME_LOOKUP = {
             0x13d : 'thumbl',
             0x13e : 'thumbr',
 
-            0x220 : 'dpad_up',
-            0x221 : 'dpad_down',
-            0x222 : 'dpad_left',
-            0x223 : 'dpad_right',
+            0x220 : 'button-dpad-up',
+            0x221 : 'button-dpad-down',
+            0x222 : 'button-dpad-left',
+            0x223 : 'button-dpad-right',
 
             # XBox 360 controller uses these codes.
             0x2c0 : 'dpad_left',
@@ -187,7 +187,7 @@ class JoystickDevice:
 
         Notes:
         * See: https://www.kernel.org/doc/html/v4.16/input/joydev/joystick-api.html
-
+button-
         * This object opens the device in blocking mode.  This means that the read 
           operation will block the thread on which it is running until it registers an
           event.  As a result, this device must definitely be threaded.
@@ -530,7 +530,7 @@ class PS3Controller(BasePart):
                 self.throttle_signal =  self.throttle_flip * (value)
                 #print("Throttle neutral value",self.throttle_signal)
         
-        #--- dpad-up
+        #--- button-dpad-up
         elif tag == 'button-dpad-up' and value == 1:
             #self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
             #print("")
@@ -542,7 +542,7 @@ class PS3Controller(BasePart):
             self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
 
-        #--- dpad-down
+        #--- button-dpad-down
         elif tag == 'button-dpad-down' and value == 1:
             #self.throttle_scale = max(0.0, self.throttle_scale - THROTTLE_SCALE_SHIFT)
             #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
