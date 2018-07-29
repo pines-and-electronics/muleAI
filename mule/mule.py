@@ -69,14 +69,13 @@ def drive(cfg):
 
     mule.stop()
     logging.info("Done with this driving session, exiting python.")
-cli.add_command(drive)
-
+    
 
 @cli.command()
 def train():
     pass
 
-
+cli.add_command(drive)
 
 if __name__ == '__main__':
     print('*** Welcome to Mule.AI ***')

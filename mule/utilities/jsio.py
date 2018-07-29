@@ -1,7 +1,10 @@
-
+import logging
 # TODO: log import errors
+logging.debug("jsio module".format())
 
 try:
+    logging.debug("Importing utilities._jsio".format())
+    raise ImportError
     from utilities._jsio import (retrieve_JSIOCGAXES,
                                  retrieve_JSIOCGBUTTONS,
                                  retrieve_JSIOCGNAME,
@@ -12,7 +15,11 @@ try:
                                  retrieve_JS_EVENT_AXIS,
                                  retrieve_JS_EVENT_BUTTON,
                                  retrieve_JS_EVENT_INIT)
+    
 except ImportError:
+    logging.debug("utilities._jsio import FAILED".format())
+    logging.debug("Hard-coding events".format())
+    
     # These constants can be retrieved manually by parsing and evaluating
     # code from the following header files in the raspbian linux source:
     # asm-generic/ioctl.h

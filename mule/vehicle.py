@@ -6,6 +6,7 @@ import logging
 #from numpy.core.multiarray_tests import npy_log10l
 
 import numpy as np
+
 class Vehicle():
     ''' Vehicle control
 
@@ -136,7 +137,7 @@ class Vehicle():
 
         logging.info("Starting drive loop at {} Hz".format(freq_hertz))
 
-        LOOP_VERBOSE = False
+        LOOP_VERBOSE = True
         LOOP_VERBOSITY = 20
         try:
             for loop_nr in regulate(count(), freq_hertz):
@@ -154,6 +155,7 @@ class Vehicle():
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour
         except KeyboardInterrupt:
+            logging.debug("KeyboardInterrupt".format())
             pass
 
 
@@ -162,3 +164,6 @@ class Vehicle():
         for part in reversed(self.parts):
             logging.debug("Stopping {} ...".format(part._class_string)) 
             part.stop()
+        
+        #TODO: Is this necesary at very end? 
+        #GPIO.cleanup()
