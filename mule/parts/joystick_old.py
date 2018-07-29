@@ -2,12 +2,10 @@
     The structure of JoystickDevice takes heavy inspiration from:
     https://gist.github.com/rdb/8864666
     released by rdb under the Unlicense
-
     There are a number of inaccuracies in the above implementation, to which
     the linux joystick api appears to be robust:
     e.g. JSIOCGBTNMAP == 0x84006a34 rather than 0x80406a34
          MAX_NR_BUTTONS == 0x200 == 512 rather than 200
-
     If you wish to obtain the values of JSIOCG[NAME/AXES/AXMAP/BUTTONS/BTNMAP]
     on your system, you will need to evaluate the appropriate quantities from
     your system header: linux/joystick.h
@@ -16,12 +14,10 @@
 import fcntl
 import array
 import struct
-#from collections import OrderedDict
-import collections
+from collections import OrderedDict
 from parts.base import BasePart, ThreadComponent
 import utilities.jsio as jsio
-import pprint
-import logging
+
 
 # TODO: potentially migrate from the older joystick interface 
 #       to the evdev interface
@@ -99,10 +95,8 @@ _BUTTON_NAME_LOOKUP = {
 
 class JoystickDevice:
     ''' Hardware interface to joystick
-
         Notes:
         * See: https://www.kernel.org/doc/html/v4.16/input/joydev/joystick-api.html
-
         * This object opens the device in blocking mode.  This means that the read 
           operation will block the thread on which it is running until it registers an
           event.  As a result, this device must definitely be threaded.
@@ -111,7 +105,6 @@ class JoystickDevice:
           One could open the device in non-blocking mode, but this comes with its own
           headaches (as a queue of events needs then to be processed) and probably does
           not make sense for this use case.
-
         * The _axes and _buttons variables are lists of names rather than dicts. The
           reason is that the js_event reserves a single byte with which to return the 
           key code.  This is not enough to return some of the hex codes so in the end
@@ -120,9 +113,7 @@ class JoystickDevice:
     '''
     def __init__(self, device_path='/dev/input/js0'):
         ''' Configure joystick device 
-
             Arguments
-
             device_path: str
                 path to the physical device
             '''
@@ -136,31 +127,22 @@ class JoystickDevice:
             self._configure(joystick)
 
     def open(self):
-        logging.debug("Opening {}".format(self._device_path))
         self.joystick = open(self._device_path, 'rb')
 
 
     def close(self):
-        logging.debug("self.joystick.closed = {}".format(self.joystick.closed))
-        
-        logging.debug("Closing {}".format(self.joystick))
-        
         self.joystick.close()
 
 
     def poll(self):
         ''' Reads joystick device for signals
-
             The read returns a wrapped js_event
-
             The underlying C struct for the js_event contains:
                 4-byte timestamp    --> in milliseconds
                 2-byte event value  --> {0,1} for buttons, [-MAX_AXIS_VALUE,MAX_AXIS_VALUE] for axes
                 1-byte event type   --> JS_EVENT_BUTTON/AXIS/INIT
                 1-byte event key    --> axis/button key
             and so expects to be populated with an 8-byte read from the device.
-
-
         ''' 
         # in principle a signed short ranges from -32768 to 32767 but the documentation
         # https://www.kernel.org/doc/html/v4.16/input/joydev/joystick-api.html
@@ -250,27 +232,19 @@ class JoystickDevice:
             self._buttons.append(button_name)
 
 
-    @property
-    def _class_string(self):
-        return "{} at {}".format(self.__class__.__name__, self.device_name)
 
 
 # TODO: MJ - {'steering':'human','throttle':'human','recording':False}  
 # TODO: MJ - assert d['steering'] in [human','ai']
 class Mode:
     ''' A plain old data class that holds the various driving modes
-
         Members
-
         steering: str
             either 'human' or 'ai'
-
         throttle: str
             either 'human' or 'ai'
-
         recording: bool
             either True or False
-
     '''
     def __init__(self, steering='human', throttle='human', recording=False):
         self.steering = steering
@@ -291,56 +265,21 @@ class PS3Controller(BasePart):
     output_keys = ('steering_signal', 'throttle_signal', 'mode')
 
     def __init__(self, device_path='/dev/input/js0', 
-                       steering='human',
-                       throttle='human',
+                       steering='human', 
+                       throttle='human', 
                        recording=False,
                        flip_steering=False, 
-                       flip_throttle=False,
-                       scale_throttle_forward=1.0,
-                       scale_throttle_back=1.0,
-                       scale_steer_left=1.0,
-                       scale_steer_right=1.0,
-                       ):
+                       flip_throttle=False):
 
         self.joystick = JoystickDevice(device_path)
         self.mode = {'steering': 'human', 'throttle': 'human', 'recording': False}
-        
+
         self.steering_signal = 0.0
         self.throttle_signal = 0.0
-        
-        # These values are adjustable
-        
-        self.adjustment_mode_dict = collections.OrderedDict()
-        
-        # Construct the dict modes
-        self.adjustment_mode_dict['scale_throttle_forward'] = dict()
-        self.adjustment_mode_dict['scale_throttle_back'] = dict()
-        self.adjustment_mode_dict['scale_steer_left'] = dict()
-        self.adjustment_mode_dict['scale_steer_right'] = dict()
-        
-        # Apply the adjustment values
-        self.adjustment_mode_dict['scale_throttle_forward']['value'] = scale_throttle_forward
-        self.adjustment_mode_dict['scale_throttle_back']['value'] = scale_throttle_back
-        self.adjustment_mode_dict['scale_steer_left']['value'] = scale_steer_left
-        self.adjustment_mode_dict['scale_steer_right']['value'] = scale_steer_right
 
-        # Apply the adjustment shifts
-        self.adjustment_mode_dict['scale_throttle_forward']['shift'] = 0.01
-        self.adjustment_mode_dict['scale_throttle_back']['shift'] = 0.01
-        self.adjustment_mode_dict['scale_steer_left']['shift'] = 0.01
-        self.adjustment_mode_dict['scale_steer_right']['shift'] = 0.01
-                
-        pprint.pprint(self.adjustment_mode_dict)
-        # This is the adjustment mode
-        #self.adjustment_mode_list = ['throttle forward','throttle_back','steer left','steer right']
-        
-        self.num_adjustment_modes = len(self.adjustment_mode_dict)
-        
-        self.adjustment_mode_index = 0
-        #list(ordered_dict.keys())
-        modes = list(self.adjustment_mode_dict.keys())
-        self.adjustment_mode = modes[self.adjustment_mode_index]
-        
+        self.steering_scale = 1.0;
+        self.throttle_scale = 1.0;
+
         self.steering_flip = -1.0 if flip_steering else 1.0
         self.throttle_flip = -1.0 if flip_throttle else 1.0
 
@@ -355,40 +294,29 @@ class PS3Controller(BasePart):
         state['steering_signal'] = self.steering_signal
         state['throttle_signal'] = self.throttle_signal
         state['mode'] = self.mode
-        #logging.debug("TEST".format())
-        
+
 
     def stop(self):
-        logging.debug("Stopping thread".format())
-        
         self.thread.stop()
-        logging.debug("Closing joystick {}".format(self.joystick))
-        
-        #self.joystick.close()
-        logging.debug("SKIP: Closing joystick!!! This hangs, SKIP!".format())
+        self.joystick.close()
+
 
     def _update(self):
         ''' Update steering and throttle signals
-
         * axis-thumb-left-x     | steering
         * axis-thumb-right-y    | throttle
-        * button-dpad-up        | adjustment 
-        * button-dpad-down      | adjustment
-        * button-dpad-left      | select adjustment 
-        * button-dpad-right     | select adjustment
-
+        * button-dpad-up        | increase throttle scale
+        * button-dpad-down      | decrease throttle scale
+        * button-dpad-left      | increase steering scale 
+        * button-dpad-right     | decrease steering scale
         * button-triangle       | toggle mode
         * button-circle         | toggle recording
         '''
-        
-        #THROTTLE_SCALE_SHIFT = 0.01
-        #STEERING_SCALE_SHIFT = 0.01
-        ADJUSTMENT_SHIFT = 0.01
-        logging.debug("_update".format())
+        THROTTLE_SCALE_SHIFT = 0.05
+        STEERING_SCALE_SHIFT = 0.05
 
         tag, value = self.joystick.poll()
-        logging.debug("tag {}, value {}".format(tag, value))
-        
+        print(tag, value)
         if tag == 'axis-thumb-left-x':
             # actuators expect:
             # +ve signal indicates left
@@ -398,10 +326,7 @@ class PS3Controller(BasePart):
             # -ve value indicates thumb was moved left
             # hence the presence of (-value)
             # to allow for an on the fly fudge factor, steering_flip can be activated
-            #print()
-            #self.steering_signal = self.steering_scale * self.steering_flip * (-value)
-            self.steering_signal = self.steering_flip * (-value)
-            #print("Steer:",self.steering_signal)
+            self.steering_signal = self.steering_scale * self.steering_flip * (-value)
 
         elif tag == 'axis-thumb-right-y':
             # actuators expect:
@@ -412,88 +337,35 @@ class PS3Controller(BasePart):
             # -ve value indicates thumb was pushed forward
             # hence the presence of (-value)
             # to allow for an on the fly fudge factor, throttle_flip can be activated
-            #self.throttle_signal =  self.throttle_scale * self.throttle_flip * (-value)
-            
-            # +ve throttle is +value (more intuitive!)
-            value = -value
-             
-            #print("Throttle original value",value)
-            if value > 0:
-                multiplier = self.adjustment_mode_dict['scale_throttle_forward']['value']
-                self.throttle_signal = multiplier * self.throttle_flip * (value)
-                #print("Throttle forward value",self.throttle_signal)
-            elif value < 0:
-                multiplier = self.adjustment_mode_dict['scale_throttle_back']['value']
-                self.throttle_signal = multiplier * self.throttle_flip * (value)
-                print("Throttle reverse value",self.throttle_signal)
-            else: 
-                self.throttle_signal =  self.throttle_flip * (value)
-                #print("Throttle neutral value",self.throttle_signal)
-        
-        #--- dpad-up
+            self.throttle_signal =  self.throttle_scale * self.throttle_flip * (-value)
+
         elif tag == 'button-dpad-up' and value == 1:
-            #self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
-            #print("")
-            #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
-            
-            adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
-            old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
-            new_value = old_value + adjust
-            self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
-            logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
+            self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
 
-        #--- dpad-down
         elif tag == 'button-dpad-down' and value == 1:
-            #self.throttle_scale = max(0.0, self.throttle_scale - THROTTLE_SCALE_SHIFT)
-            #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
-            adjust = -self.adjustment_mode_dict[self.adjustment_mode]['shift']
-            old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
-            new_value = old_value + adjust
-            self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
-            logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
-            
-        #--- dpad-right
-        elif tag == 'button-dpad-right' and value == 1:
-            self.adjustment_mode_index += 1
-            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
-            modes = list(self.adjustment_mode_dict.keys())
-            #print(modes,self.adjustment_mode_index)
-            self.adjustment_mode = modes[self.adjustment_mode_index]
-            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
-            #print(self.adjustment_mode_index, self.adjustment_mode)
-            logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))            
+            self.throttle_scale = max(0.0, self.throttle_scale - THROTTLE_SCALE_SHIFT)
 
-        #--- dpad-left
+        elif tag == 'button-dpad-right' and value == 1:
+            self.steering_scale = min(1.0, self.steering_scale + STEERING_SCALE_SHIFT)
+
         elif tag == 'button-dpad-left' and value == 1:
-            self.adjustment_mode_index += -1
-            self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
-            modes = list(self.adjustment_mode_dict.keys())
-            #print(modes,self.adjustment_mode_index)
-            self.adjustment_mode = modes[self.adjustment_mode_index]
-            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
-            logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))
-            
+            self.steering_scale = max(0.0, self.steering_scale - STEERING_SCALE_SHIFT)
+
         elif tag == 'button-triangle' and value == 1:
             self.mode['steering'] = 'human'
             self.mode['throttle'] = 'human'
-            logging.debug("{} mode = {}".format(tag,self.mode))
-            
+
         elif tag == 'button-square' and value == 1:
             self.mode['steering'] = 'human'
             self.mode['throttle'] = 'ai'
-            logging.debug("{} mode  = {}".format(tag,self.mode))
-            
+
         elif tag == 'button-circle' and value == 1:
             self.mode['steering'] = 'ai'
             self.mode['throttle'] = 'human'
-            logging.debug("{} mode = {}".format(tag,self.mode))
-            
+
         elif tag == 'button-cross' and value == 1:
             self.mode['steering'] = 'ai'
             self.mode['throttle'] = 'ai'
-            logging.debug("{} mode = {}".format(tag,self.mode))
-            
+
         elif tag == 'button-select' and value == 1:
             self.mode['recording'] = not self.mode['recording']
-            logging.debug("{} mode = {}".format(tag,self.mode))
-            

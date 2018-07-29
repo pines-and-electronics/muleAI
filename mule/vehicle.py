@@ -136,7 +136,7 @@ class Vehicle():
 
         logging.info("Starting drive loop at {} Hz".format(freq_hertz))
 
-        LOOP_VERBOSE = True
+        LOOP_VERBOSE = False
         LOOP_VERBOSITY = 20
         try:
             for loop_nr in regulate(count(), freq_hertz):

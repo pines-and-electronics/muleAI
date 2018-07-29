@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 import time
 from parts.base import BasePart, ThreadComponent
@@ -159,6 +158,7 @@ class WebCam(BaseCam):
     def start(self):
         ''' Start camera and set resolution 
         '''
+        import cv2 as cv2
         # 0 is default web camera device number
         self.camera = cv2.VideoCapture(0)
         # with limited success
