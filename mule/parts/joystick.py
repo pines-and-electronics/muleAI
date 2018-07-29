@@ -391,6 +391,7 @@ class PS3Controller(BasePart):
                        recording=False,
                        flip_steering=False, 
                        flip_throttle=False,
+                       adjustment_shift = 0.01,
                        scale_throttle_forward=1.0,
                        scale_throttle_back=1.0,
                        scale_steer_left=1.0,
@@ -412,19 +413,23 @@ class PS3Controller(BasePart):
         self.adjustment_mode_dict['scale_throttle_back'] = dict()
         self.adjustment_mode_dict['scale_steer_left'] = dict()
         self.adjustment_mode_dict['scale_steer_right'] = dict()
+        self.adjustment_mode_dict['adjustment_shift'] = dict() # Special treatment
         
         # Apply the adjustment values
         self.adjustment_mode_dict['scale_throttle_forward']['value'] = scale_throttle_forward
         self.adjustment_mode_dict['scale_throttle_back']['value'] = scale_throttle_back
         self.adjustment_mode_dict['scale_steer_left']['value'] = scale_steer_left
         self.adjustment_mode_dict['scale_steer_right']['value'] = scale_steer_right
+        self.adjustment_mode_dict['adjustment_shift']['value'] = adjustment_shift # Special treatment
+
 
         # Apply the adjustment shifts
-        self.adjustment_mode_dict['scale_throttle_forward']['shift'] = 0.01
-        self.adjustment_mode_dict['scale_throttle_back']['shift'] = 0.01
-        self.adjustment_mode_dict['scale_steer_left']['shift'] = 0.01
-        self.adjustment_mode_dict['scale_steer_right']['shift'] = 0.01
-            
+        self.adjustment_mode_dict['scale_throttle_forward']['shift'] = self.adjustment_mode_dict['adjustment_shift']
+        self.adjustment_mode_dict['scale_throttle_back']['shift'] = self.adjustment_mode_dict['adjustment_shift']
+        self.adjustment_mode_dict['scale_steer_left']['shift'] = self.adjustment_mode_dict['adjustment_shift']
+        self.adjustment_mode_dict['scale_steer_right']['shift'] = self.adjustment_mode_dict['adjustment_shift']
+        self.adjustment_mode_dict['adjustment_shift']['shift'] = 0.01 # Special treatment
+        
         print("Adjustment modes:")
         for k in self.adjustment_mode_dict:
             print(k, self.adjustment_mode_dict[k])
@@ -519,27 +524,48 @@ class PS3Controller(BasePart):
             elif value < 0:
                 multiplier = self.adjustment_mode_dict['scale_throttle_back']['value']
                 self.throttle_signal = multiplier * self.throttle_flip * (value)
-                print("Throttle reverse value",self.throttle_signal)
             else: 
                 self.throttle_signal =  self.throttle_flip * (value)
         
         #--- button-dpad-up
         elif tag == 'button-dpad-up' and value == 1:
-            adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
-            old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
-            new_value = old_value + adjust
-            self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
+            if self.adjustment_mode == 'adjustment_shift':
+                adjust = self.adjustment_mode_dict['adjustment_shift']['shift']
+                old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
+                new_value = old_value + adjust
+                self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value                
+            else:
+                #adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
+                adjust = self.adjustment_mode_dict['adjustment_shift']['value']
+                old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
+                new_value = old_value + adjust
+                self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
 
         #--- button-dpad-down
         elif tag == 'button-dpad-down' and value == 1:
-            adjust = -self.adjustment_mode_dict[self.adjustment_mode]['shift']
-            old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
-            new_value = old_value + adjust
-            self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
+            if self.adjustment_mode == 'adjustment_shift':
+                adjust = self.adjustment_mode_dict['adjustment_shift']['shift']
+                old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
+                new_value = old_value - adjust
+                self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value                
+            else:
+                #adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
+                adjust = self.adjustment_mode_dict['adjustment_shift']['value']
+                old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
+                new_value = old_value - adjust
+                self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
-            
-        #--- dpad-right
+
+#             
+#             #adjust = -self.adjustment_mode_dict[self.adjustment_mode]['shift']
+#             adjust = self.adjustment_mode_dict['adjustment_shift']['value']
+#             old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
+#             new_value = old_value - adjust
+#             self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
+#             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
+#             
+        #--- button-dpad-right
         elif tag == 'button-dpad-right' and value == 1:
             self.adjustment_mode_index += 1
             self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
@@ -547,7 +573,7 @@ class PS3Controller(BasePart):
             self.adjustment_mode = modes[self.adjustment_mode_index]
             logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))            
 
-        #--- dpad-left
+        #--- button-dpad-left
         elif tag == 'button-dpad-left' and value == 1:
             self.adjustment_mode_index += -1
             self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
