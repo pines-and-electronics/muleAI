@@ -490,30 +490,33 @@ class PS3Controller(BasePart):
             logging.debug("tag {}, value {}".format(tag, value))
         
         if tag == 'axis-thumb-left-x':
-            # actuators expect:
-            # +ve signal indicates left
-            # -ve signal indicated right
-            # however, from the joystick interface:
-            # +ve value indicates thumb was moved right
-            # -ve value indicates thumb was moved left
-            # hence the presence of (-value)
-            # to allow for an on the fly fudge factor, steering_flip can be activated
-            #print()
+            """
+            actuators expect:
+            +ve signal indicates left
+            -ve signal indicated right
+            however, from the joystick interface:
+            +ve value indicates thumb was moved right
+            -ve value indicates thumb was moved left
+            hence the presence of (-value)
+            to allow for an on the fly fudge factor, steering_flip can be activated
+            """
+            
             #self.steering_signal = self.steering_scale * self.steering_flip * (-value)
             self.steering_signal = self.steering_flip * (-value)
             #print("Steer:",self.steering_signal)
 
         elif tag == 'axis-thumb-right-y':
-            # actuators expect:
-            # +ve signal indicates forward
-            # -ve signal indicates reverse
-            # however, from the joystick interface:
-            # +ve value indicate the thumb was pulled back
-            # -ve value indicates thumb was pushed forward
-            # hence the presence of (-value)
-            # to allow for an on the fly fudge factor, throttle_flip can be activated
+            """
+            actuators expect:
+            +ve signal indicates forward
+            -ve signal indicates reverse
+            however, from the joystick interface:
+            +ve value indicate the thumb was pulled back
+            -ve value indicates thumb was pushed forward
+            hence the presence of (-value)
+            to allow for an on the fly fudge factor, throttle_flip can be activated
             #self.throttle_signal =  self.throttle_scale * self.throttle_flip * (-value)
-            
+            """
             # +ve throttle is +value (more intuitive!)
             value = -value
              
@@ -535,7 +538,6 @@ class PS3Controller(BasePart):
                 new_value = old_value + adjust
                 self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value                
             else:
-                #adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
                 adjust = self.adjustment_mode_dict['adjustment_shift']['value']
                 old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
                 new_value = old_value + adjust
@@ -550,21 +552,12 @@ class PS3Controller(BasePart):
                 new_value = old_value - adjust
                 self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value                
             else:
-                #adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
                 adjust = self.adjustment_mode_dict['adjustment_shift']['value']
                 old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
                 new_value = old_value - adjust
                 self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
 
-#             
-#             #adjust = -self.adjustment_mode_dict[self.adjustment_mode]['shift']
-#             adjust = self.adjustment_mode_dict['adjustment_shift']['value']
-#             old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
-#             new_value = old_value - adjust
-#             self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
-#             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
-#             
         #--- button-dpad-right
         elif tag == 'button-dpad-right' and value == 1:
             self.adjustment_mode_index += 1

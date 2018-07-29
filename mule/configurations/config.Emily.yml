@@ -1,6 +1,7 @@
 drive:
-    freq_hertz: 10
-
+    freq_hertz: 20
+    verbose: False
+    verbosity: 20
 parts:
  - led: 
       type: setup_GPIO
@@ -14,8 +15,8 @@ parts:
  - joystick:
       type: PS3Controller
       arguments:
-        scale_throttle_forward: 1.0
-        scale_throttle_back: 1.0
+        scale_throttle_forward: 0.48
+        scale_throttle_back: 1.1
         scale_steer_left: 1.0
         scale_steer_right: 1.0         
  - actuator:
@@ -40,7 +41,7 @@ parts:
         arguments:
             path: ~/mule_out
             flg_zip: 1
- - led: 
+ - led:
       type: record_LED
       arguments: 
         PIN_RED: 16
