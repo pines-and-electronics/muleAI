@@ -23,6 +23,12 @@ import utilities.jsio as jsio
 import pprint
 import logging
 
+
+from bitstring import BitArray
+
+
+TESTING = False
+
 # TODO: potentially migrate from the older joystick interface 
 #       to the evdev interface
 
@@ -43,7 +49,7 @@ import logging
            Using the order information from jstest, one can map physical axes/buttons
            to keys sent.
 '''
-_AXIS_NAME_LOOKUP = {                   # DEC   | linux jsio naming
+_AXIS_NAME_LOOKUP_OLD = {                   # DEC   | linux jsio naming
         0x00: 'axis-thumb-left-x',      # 0     | 'x'
         0x01: 'axis-thumb-left-y',      # 1     | 'y'
         0x02: 'axis-thumb-right-x',     # 2     | 'z'
@@ -73,7 +79,38 @@ _AXIS_NAME_LOOKUP = {                   # DEC   | linux jsio naming
         0x3e: 'axis-?-8'                # 62    |
         }
 
-_BUTTON_NAME_LOOKUP = {
+
+_AXIS_NAME_LOOKUP = {
+                    0x00 : 'axis-thumb-left-x',        
+                    0x01 : 'axis-thumb-left-y',        
+                    0x02 : 'axis-thumb-left-z',        
+                    0x03 : 'axis-thumb-right-x',        
+                    0x04 : 'axis-thumb-right-y',        
+                    0x05 : 'axis-thumb-right-z',        
+                    0x06 : 'trottle',        
+                    0x07 : 'rudder',        
+                    0x08 : 'wheel',        
+                    0x09 : 'gas',        
+                    0x0a : 'brake',        
+                    0x10 : 'hat0x',        
+                    0x11 : 'hat0y',        
+                    0x12 : 'hat1x',        
+                    0x13 : 'hat1y',        
+                    0x14 : 'hat2x',        
+                    0x15 : 'hat2y',        
+                    0x16 : 'hat3x',        
+                    0x17 : 'hat3y',        
+                    0x18 : 'pressure',        
+                    0x19 : 'distance',        
+                    0x1a : 'tilt_x',        
+                    0x1b : 'tilt_y',        
+                    0x1c : 'tool_width',        
+                    0x20 : 'volume',        
+                    0x28 : 'misc',    
+        }
+
+
+_BUTTON_NAME_LOOKUP_OLD = {
         0x120: 'button-select',         # 288   | 'trigger'
         0x121: 'button-thumb-left',     # 289   | 'thumb'
         0x122: 'button-thumb-right',    # 290   | 'thumb2'
@@ -96,13 +133,61 @@ _BUTTON_NAME_LOOKUP = {
         }
 
 
+_BUTTON_NAME_LOOKUP = {
+            0x120 : 'trigger',
+            0x121 : 'thumb',
+            0x122 : 'thumb2',
+            0x123 : 'top',
+            0x124 : 'top2',
+            0x125 : 'pinkie',
+            0x126 : 'base',
+            0x127 : 'base2',
+            0x128 : 'base3',
+            0x129 : 'base4',
+            0x12a : 'base5',
+            0x12b : 'base6',
+
+            #PS3 sixaxis specific
+            0x12c : "triangle",
+            0x12d : "circle",
+            0x12e : "cross",
+            0x12f : 'square',
+
+            0x130 : 'a',
+            0x131 : 'b',
+            0x132 : 'c',
+            0x133 : 'x',
+            0x134 : 'y',
+            0x135 : 'z',
+            0x136 : 'tl',
+            0x137 : 'tr',
+            0x138 : 'tl2',
+            0x139 : 'tr2',
+            0x13a : 'select',
+            0x13b : 'start',
+            0x13c : 'mode',
+            0x13d : 'thumbl',
+            0x13e : 'thumbr',
+
+            0x220 : 'button-dpad-up',
+            0x221 : 'button-dpad-down',
+            0x222 : 'button-dpad-left',
+            0x223 : 'button-dpad-right',
+
+            # XBox 360 controller uses these codes.
+            0x2c0 : 'dpad_left',
+            0x2c1 : 'dpad_right',
+            0x2c2 : 'dpad_up',
+            0x2c3 : 'dpad_down',
+        }
+
 
 class JoystickDevice:
     ''' Hardware interface to joystick
 
         Notes:
         * See: https://www.kernel.org/doc/html/v4.16/input/joydev/joystick-api.html
-
+button-
         * This object opens the device in blocking mode.  This means that the read 
           operation will block the thread on which it is running until it registers an
           event.  As a result, this device must definitely be threaded.
@@ -144,8 +229,8 @@ class JoystickDevice:
         logging.debug("self.joystick.closed = {}".format(self.joystick.closed))
         
         logging.debug("Closing {}".format(self.joystick))
-        
-        self.joystick.close()
+        logging.debug("-> SKIPPING THE CLOSE!!!".format())
+        #self.joystick.close()
 
 
     def poll(self):
@@ -173,10 +258,16 @@ class JoystickDevice:
         event = self.joystick.read(8)
 
         if event:
+            if TESTING:
+                #logging.debug("event hex: {}".format(event.hex()))
+                logging.debug("event: {}".format(BitArray(bytes=event)))
+                logging.debug("event: {}".format(BitArray(bytes=event).bin))
+
             # IhBB --> I: unsigned int (4-bytes), h: signed short (2-bytes), B: unsigned char (1-byte)
             timestamp, event_value, event_type, event_key = struct.unpack('IhBB', event)
-
-
+            if TESTING:
+                print("{} - {} - {} - {}".format(timestamp, event_value, event_type, event_key))
+            
             if event_type & self._JS_EVENT_INIT:
                 pass
 
@@ -213,8 +304,11 @@ class JoystickDevice:
         container = array.array('B', [0] * MAX_NAME_LENGTH)
 
         fcntl.ioctl(joystick, JSIOCGNAME, container)
+        
+        
         self.device_name = container.tobytes().decode('utf-8')
-
+        logging.debug("device_name: ".format(self.device_name))
+        
 
     def _retrieve_axes(self, joystick):
 
@@ -231,6 +325,7 @@ class JoystickDevice:
         for axis in container[:nr_axes]:
             axis_name = _AXIS_NAME_LOOKUP.get(axis, 'unexpected-({})'.format(axis))
             self._axes.append(axis_name)
+            logging.debug("axis_name: ".format(axis_name))
 
 
     def _retrieve_buttons(self, joystick):
@@ -248,7 +343,7 @@ class JoystickDevice:
         for button in container[:nr_buttons]:
             button_name = _BUTTON_NAME_LOOKUP.get(button, 'unexpected-({})'.format(button))
             self._buttons.append(button_name)
-
+            logging.debug("button_name: ".format(button_name))
 
     @property
     def _class_string(self):
@@ -329,8 +424,11 @@ class PS3Controller(BasePart):
         self.adjustment_mode_dict['scale_throttle_back']['shift'] = 0.01
         self.adjustment_mode_dict['scale_steer_left']['shift'] = 0.01
         self.adjustment_mode_dict['scale_steer_right']['shift'] = 0.01
-                
-        pprint.pprint(self.adjustment_mode_dict)
+            
+        print("Adjustment modes:")
+        for k in self.adjustment_mode_dict:
+            print(k, self.adjustment_mode_dict[k])
+        
         # This is the adjustment mode
         #self.adjustment_mode_list = ['throttle forward','throttle_back','steer left','steer right']
         
@@ -355,7 +453,6 @@ class PS3Controller(BasePart):
         state['steering_signal'] = self.steering_signal
         state['throttle_signal'] = self.throttle_signal
         state['mode'] = self.mode
-        #logging.debug("TEST".format())
         
 
     def stop(self):
@@ -364,7 +461,6 @@ class PS3Controller(BasePart):
         self.thread.stop()
         logging.debug("Closing joystick {}".format(self.joystick))
         self.joystick.close()
-        
         #logging.debug("SKIP: Closing joystick!!! This hangs, SKIP!".format())
 
     def _update(self):
@@ -381,13 +477,12 @@ class PS3Controller(BasePart):
         * button-circle         | toggle recording
         '''
         
-        #THROTTLE_SCALE_SHIFT = 0.01
-        #STEERING_SCALE_SHIFT = 0.01
         ADJUSTMENT_SHIFT = 0.01
-        logging.debug("_update".format())
 
         tag, value = self.joystick.poll()
-        logging.debug("tag {}, value {}".format(tag, value))
+        
+        if TESTING:
+            logging.debug("tag {}, value {}".format(tag, value))
         
         if tag == 'axis-thumb-left-x':
             # actuators expect:
@@ -421,31 +516,23 @@ class PS3Controller(BasePart):
             if value > 0:
                 multiplier = self.adjustment_mode_dict['scale_throttle_forward']['value']
                 self.throttle_signal = multiplier * self.throttle_flip * (value)
-                #print("Throttle forward value",self.throttle_signal)
             elif value < 0:
                 multiplier = self.adjustment_mode_dict['scale_throttle_back']['value']
                 self.throttle_signal = multiplier * self.throttle_flip * (value)
                 print("Throttle reverse value",self.throttle_signal)
             else: 
                 self.throttle_signal =  self.throttle_flip * (value)
-                #print("Throttle neutral value",self.throttle_signal)
         
-        #--- dpad-up
+        #--- button-dpad-up
         elif tag == 'button-dpad-up' and value == 1:
-            #self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
-            #print("")
-            #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
-            
             adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
             old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
             new_value = old_value + adjust
             self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
 
-        #--- dpad-down
+        #--- button-dpad-down
         elif tag == 'button-dpad-down' and value == 1:
-            #self.throttle_scale = max(0.0, self.throttle_scale - THROTTLE_SCALE_SHIFT)
-            #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
             adjust = -self.adjustment_mode_dict[self.adjustment_mode]['shift']
             old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
             new_value = old_value + adjust
@@ -457,10 +544,7 @@ class PS3Controller(BasePart):
             self.adjustment_mode_index += 1
             self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
             modes = list(self.adjustment_mode_dict.keys())
-            #print(modes,self.adjustment_mode_index)
             self.adjustment_mode = modes[self.adjustment_mode_index]
-            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
-            #print(self.adjustment_mode_index, self.adjustment_mode)
             logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))            
 
         #--- dpad-left
@@ -468,9 +552,7 @@ class PS3Controller(BasePart):
             self.adjustment_mode_index += -1
             self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
             modes = list(self.adjustment_mode_dict.keys())
-            #print(modes,self.adjustment_mode_index)
             self.adjustment_mode = modes[self.adjustment_mode_index]
-            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
             logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))
             
         elif tag == 'button-triangle' and value == 1:
