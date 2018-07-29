@@ -453,7 +453,6 @@ class PS3Controller(BasePart):
         state['steering_signal'] = self.steering_signal
         state['throttle_signal'] = self.throttle_signal
         state['mode'] = self.mode
-        #logging.debug("TEST".format())
         
 
     def stop(self):
@@ -479,15 +478,12 @@ class PS3Controller(BasePart):
         * button-circle         | toggle recording
         '''
         
-        #THROTTLE_SCALE_SHIFT = 0.01
-        #STEERING_SCALE_SHIFT = 0.01
         ADJUSTMENT_SHIFT = 0.01
-        #logging.debug("_update".format())
 
         tag, value = self.joystick.poll()
         
-        #if TESTING:
-        logging.debug("tag {}, value {}".format(tag, value))
+        if TESTING:
+            logging.debug("tag {}, value {}".format(tag, value))
         
         if tag == 'axis-thumb-left-x':
             # actuators expect:
@@ -521,21 +517,15 @@ class PS3Controller(BasePart):
             if value > 0:
                 multiplier = self.adjustment_mode_dict['scale_throttle_forward']['value']
                 self.throttle_signal = multiplier * self.throttle_flip * (value)
-                #print("Throttle forward value",self.throttle_signal)
             elif value < 0:
                 multiplier = self.adjustment_mode_dict['scale_throttle_back']['value']
                 self.throttle_signal = multiplier * self.throttle_flip * (value)
                 print("Throttle reverse value",self.throttle_signal)
             else: 
                 self.throttle_signal =  self.throttle_flip * (value)
-                #print("Throttle neutral value",self.throttle_signal)
         
         #--- button-dpad-up
         elif tag == 'button-dpad-up' and value == 1:
-            #self.throttle_scale = min(1.0, self.throttle_scale + THROTTLE_SCALE_SHIFT)
-            #print("")
-            #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
-            
             adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
             old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
             new_value = old_value + adjust
@@ -544,8 +534,6 @@ class PS3Controller(BasePart):
 
         #--- button-dpad-down
         elif tag == 'button-dpad-down' and value == 1:
-            #self.throttle_scale = max(0.0, self.throttle_scale - THROTTLE_SCALE_SHIFT)
-            #logging.debug("{} throttle_scale = {:.2f}".format(tag,self.throttle_scale))
             adjust = -self.adjustment_mode_dict[self.adjustment_mode]['shift']
             old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
             new_value = old_value + adjust
@@ -557,10 +545,7 @@ class PS3Controller(BasePart):
             self.adjustment_mode_index += 1
             self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
             modes = list(self.adjustment_mode_dict.keys())
-            #print(modes,self.adjustment_mode_index)
             self.adjustment_mode = modes[self.adjustment_mode_index]
-            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
-            #print(self.adjustment_mode_index, self.adjustment_mode)
             logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))            
 
         #--- dpad-left
@@ -568,9 +553,7 @@ class PS3Controller(BasePart):
             self.adjustment_mode_index += -1
             self.adjustment_mode_index = self.adjustment_mode_index % self.num_adjustment_modes
             modes = list(self.adjustment_mode_dict.keys())
-            #print(modes,self.adjustment_mode_index)
             self.adjustment_mode = modes[self.adjustment_mode_index]
-            #self.adjustment_mode = self.adjustment_mode_dict[self.adjustment_mode_index]
             logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))
             
         elif tag == 'button-triangle' and value == 1:
