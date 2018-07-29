@@ -1,6 +1,9 @@
-**muleAI** is a lightweight python library that facilitates research and development in autonomous mobility at RC-scale. 
-
 Mule: the love-child issuing from a male donkey (a jack) and a mare. Reliable. Sure footed. Even tempered. Gets you from point A to B. 
+
+---
+
+**muleAI** is a lightweight python library that facilitates research and development in autonomous mobility at RC-scale. **muleAI** is a foundation for further experiments in mobility, autonomous hardware, embedded AI, Internet Of Things, ...
+
 
 **muleAI** was inspired by the [DonkeyCar](http://www.donkeycar.com/) project. **muleAI** is a systematic ground-up re-implementation of some core functionality with some priorities in mind:
 * A project for more experienced developers
