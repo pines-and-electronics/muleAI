@@ -1,0 +1,8 @@
+name: env_name_here
+channels:
+  - defaults
+dependencies:
+  - pandas=0.23.3=py36h04863e7_0
+  - tensorflow=1.8.0=h57681fa_0
+prefix: empty 
+
