@@ -27,6 +27,9 @@ Tensor flow 1.8 (includes keras as `tf.keras`)
    * Include default behaviors such as class strings
 1. Extensive logging messages throughout the project, for faster debugging
 1. New adjustment method for PS3 controller, DPad selects a value, and up/down to change the value allowing performance changes as the car is driving
+   * D-pad left/right on the PS3 controller iterates over adjustment settings
+   * D-pad up/down on the PS3 controller adjusts that value by SHIFT amount
+   * Adjustment mode 4 is the SHIFT setting, allowing fast or slow adjustments
 1. Images are saved directly to numpy arrays
 
 ### Changes
