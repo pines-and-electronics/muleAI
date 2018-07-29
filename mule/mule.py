@@ -63,7 +63,10 @@ def drive(cfg):
 
     logging.info('Initiating drive loop')
 
-    mule.drive(freq_hertz=config['drive']['freq_hertz'])
+    mule.drive(freq_hertz=config['drive']['freq_hertz'],
+               verbose=config['drive']['verbose'],
+               verbosity=config['drive']['verbosity'],
+               )
 
     logging.info('Killing engine')
 
