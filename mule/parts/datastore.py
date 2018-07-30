@@ -10,8 +10,9 @@ from parts.base import BasePart
 import datetime
 #from samba.dcerpc.drsblobs import ldapControlDirSyncBlob
 import logging
-#import zipfile
+import zipfile
 import shutil
+import glob
 
 # TODO: add handler for multiple read/write stores
 # TODO: document properly
@@ -212,19 +213,6 @@ class WriteStore(BasePart):
 
         logging.debug("Session data folder created: {}".format(self._path))
 
-
-    def make_archive(self, source, destination):
-        base = os.path.basename(destination)
-        name = base.split('.')[0]
-        format = base.split('.')[1]
-        archive_from = os.path.dirname(source)
-        archive_to = os.path.basename(source.strip(os.sep))
-        #print(source, destination, archive_from, archive_to)
-        shutil.make_archive(name, format, archive_from, archive_to)
-        shutil.move('%s.%s'%(name,format), destination)
-        
-        logging.debug("Created archive {}".format(destination))
-        
     def start(self):
         pass
 
@@ -250,8 +238,9 @@ class WriteStore(BasePart):
             for key in self.input_keys:
                 if isinstance(state[key], np.ndarray):
                     filename = os.path.join(self.path,
-                            '{}_{}.{}'.format(key, timestamp, 'npy'))
+                            '{}.{}'.format(timestamp, 'npy'))
                     np.save(filename, state[key])
+                    #logging.debug("Saved array size {} to {}".format(state[key].shape,filename))
 
                 else:
                     local_state[key] = state[key]
@@ -261,31 +250,75 @@ class WriteStore(BasePart):
                 json.dump(local_state, fd)
 
 
+    def make_archive(self, source, destination):
+        base = os.path.basename(destination)
+        name = base.split('.')[0]
+        format = base.split('.')[1]
+        archive_from = os.path.dirname(source)
+        archive_to = os.path.basename(source.strip(os.sep))
+        #print(source, destination, archive_from, archive_to)
+        shutil.make_archive(name, format, archive_from, archive_to)
+        shutil.move('%s.%s'%(name,format), destination)
+        
+        logging.debug("Created archive {}".format(destination))
+        
+    #TODO: Merge these two functions
+    def zip_npy(self,npy_files):
+        target_path = os.path.join(self.path,'camera_numpy.zip')
+        with zipfile.ZipFile(target_path, 'w') as myzip:
+            for f in npy_files:
+                name = os.path.basename(f)
+                myzip.write(f,name)
+                os.remove(f)
+        logging.debug("Zipped {} npy to {}".format(len(npy_files),target_path))
+
+    def zip_json(self,json_files):
+        target_path = os.path.join(self.path,'json_records.zip')
+        with zipfile.ZipFile(target_path, 'w') as myzip:
+            for f in json_files:
+                name = os.path.basename(f)
+                myzip.write(f,name)
+                os.remove(f)
+        logging.debug("Zipped {} json to {}".format(len(json_files),target_path))
+
+
+        
     def stop(self):
 
         # Get statistics of the saved data
-        files = os.listdir(self.path)
-        npy_files = [f for f in files if os.path.splitext(f)[1]=='.npy']
-        json_files = [f for f in files if os.path.splitext(f)[1]=='.json']
-        other_files = [f for f in files if os.path.splitext(f)[1] not in ('.npy','.json')]
-        
+        #files = os.listdir(self.path)
+        #npy_files = [f for f in files if os.path.splitext(f)[1]=='.npy']
+        search_str = os.path.join(self.path, "*.npy" )
+        #print("search_str",search_str)
+        npy_files = glob.glob(os.path.join(self.path,"*.npy"))
+        #print("self.path",self.path)
+        #json_files = [f for f in files if os.path.splitext(f)[1]=='.json']
+        json_files = glob.glob(os.path.join(self.path,"*.json"))
+        #other_files = [f for f in files if os.path.splitext(f)[1] not in ('.npy','.json')]
+        all_files = glob.glob(os.path.join(self.path,"*.*"))
+        #print(npy_files)
+        #print(json_files)
         assert len(npy_files) == len(json_files)
         
-        logging.debug("{} states (.npy, .json pairs)saved to {}".format(len(json_files),self.path))
-        logging.debug("{} other files saved to {}".format(len(other_files),self.path))
+        #logging.debug("{} other files saved to {}".format(len(other_files),self.path))
         
-        self.make_archive(self.path,os.path.join(self.path,'state.zip'))
+        self.zip_npy(npy_files)
+        self.zip_json(json_files)
+
+        logging.debug("{} states (.npy, .json pairs) saved to {}".format(len(json_files),self.path))
+
         
-        # Remove all .npy files, confirm
-        [os.remove(os.path.join(self.path,f)) for f in npy_files]
-        #files = os.listdir(self.path)
-        npy_files = [f for f in os.listdir(self.path) if os.path.splitext(f)[1]=='.npy']
-        assert len(npy_files) == 0
-        logging.debug("Deleted all .npy files".format())
-        
-        # Remove all .json files, confirm
-        [os.remove(os.path.join(self.path,f)) for f in json_files]
-        #files = 
-        json_files = [f for f in os.listdir(self.path) if os.path.splitext(f)[1]=='.json']
-        assert len(json_files) == 0
-        logging.debug("Deleted all .json files".format())        
+        if 0:
+            self.make_archive(self.path,os.path.join(self.path,'state.zip'))
+            
+            # Remove all .npy files, confirm
+            [os.remove(os.path.join(self.path,f)) for f in npy_files]
+            npy_files = [f for f in os.listdir(self.path) if os.path.splitext(f)[1]=='.npy']
+            assert len(npy_files) == 0
+            logging.debug("Deleted all .npy files".format())
+            
+            # Remove all .json files, confirm
+            [os.remove(os.path.join(self.path,f)) for f in json_files]
+            json_files = [f for f in os.listdir(self.path) if os.path.splitext(f)[1]=='.json']
+            assert len(json_files) == 0
+            logging.debug("Deleted all .json files".format())        
