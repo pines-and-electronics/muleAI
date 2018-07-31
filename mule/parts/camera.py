@@ -1,7 +1,7 @@
 import numpy as np
 import time
 from parts.base import BasePart, ThreadComponent
-
+import logging
 
 
 class BaseCam(BasePart):
@@ -52,6 +52,9 @@ class BaseCam(BasePart):
             self._update()
 
         state['camera_array'] = self.frame
+        #logging.debug("Camera shape: {}, max_value: {}".format(state['camera_array'].shape, np.max(state['camera_array'])))
+        
+        
 
 
     def stop(self):
