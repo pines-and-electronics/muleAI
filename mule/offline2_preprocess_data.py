@@ -70,7 +70,8 @@ if 1:
     df_records.loc[:,'steering_signal'] = np.random.uniform(low=-1, high=1, size=len(df_records.loc[:,'steering_signal']))
 
 #%% Get y_labels
-y = df_records.loc[:,['steering_signal','throttle_signal']].values
+#y = df_records.loc[:,['steering_signal','throttle_signal']].values
+y = df_records.loc[:,['steering_signal']].values
 
 #%% Get X_train from zip
 def get_X_train(this_selected_data):
