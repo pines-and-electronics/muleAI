@@ -150,24 +150,7 @@ def select_data(this_df):
 selected_data = select_data(df_datasets)
 
 #%%
-del (df_datasets)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+del (df_datasets, util_path)
 
 
 
