@@ -148,23 +148,23 @@ _BUTTON_NAME_LOOKUP = {
             0x12b : 'base6',
 
             #PS3 sixaxis specific
-            0x12c : "triangle",
-            0x12d : "circle",
-            0x12e : "cross",
-            0x12f : 'square',
+            0x12c : "ps3-button-triangle",
+            0x12d : "ps3-button-circle",
+            0x12e : "ps3-button-cross",
+            0x12f : 'ps3-button-square',
 
-            0x130 : 'a',
-            0x131 : 'b',
+            0x130 : 'button-cross',      # 'a',
+            0x131 : 'button-circle',     #'b',
             0x132 : 'c',
-            0x133 : 'x',
-            0x134 : 'y',
+            0x133 : 'button-square',     #'x',
+            0x134 : 'button-triangle',   #'y',
             0x135 : 'z',
             0x136 : 'tl',
             0x137 : 'tr',
             0x138 : 'tl2',
             0x139 : 'tr2',
-            0x13a : 'select',
-            0x13b : 'start',
+            0x13a : 'button-select',
+            0x13b : 'button-start',
             0x13c : 'mode',
             0x13d : 'thumbl',
             0x13e : 'thumbr',
@@ -490,30 +490,33 @@ class PS3Controller(BasePart):
             logging.debug("tag {}, value {}".format(tag, value))
         
         if tag == 'axis-thumb-left-x':
-            # actuators expect:
-            # +ve signal indicates left
-            # -ve signal indicated right
-            # however, from the joystick interface:
-            # +ve value indicates thumb was moved right
-            # -ve value indicates thumb was moved left
-            # hence the presence of (-value)
-            # to allow for an on the fly fudge factor, steering_flip can be activated
-            #print()
+            """
+            actuators expect:
+            +ve signal indicates left
+            -ve signal indicated right
+            however, from the joystick interface:
+            +ve value indicates thumb was moved right
+            -ve value indicates thumb was moved left
+            hence the presence of (-value)
+            to allow for an on the fly fudge factor, steering_flip can be activated
+            """
+            
             #self.steering_signal = self.steering_scale * self.steering_flip * (-value)
             self.steering_signal = self.steering_flip * (-value)
             #print("Steer:",self.steering_signal)
 
         elif tag == 'axis-thumb-right-y':
-            # actuators expect:
-            # +ve signal indicates forward
-            # -ve signal indicates reverse
-            # however, from the joystick interface:
-            # +ve value indicate the thumb was pulled back
-            # -ve value indicates thumb was pushed forward
-            # hence the presence of (-value)
-            # to allow for an on the fly fudge factor, throttle_flip can be activated
+            """
+            actuators expect:
+            +ve signal indicates forward
+            -ve signal indicates reverse
+            however, from the joystick interface:
+            +ve value indicate the thumb was pulled back
+            -ve value indicates thumb was pushed forward
+            hence the presence of (-value)
+            to allow for an on the fly fudge factor, throttle_flip can be activated
             #self.throttle_signal =  self.throttle_scale * self.throttle_flip * (-value)
-            
+            """
             # +ve throttle is +value (more intuitive!)
             value = -value
              
@@ -535,7 +538,6 @@ class PS3Controller(BasePart):
                 new_value = old_value + adjust
                 self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value                
             else:
-                #adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
                 adjust = self.adjustment_mode_dict['adjustment_shift']['value']
                 old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
                 new_value = old_value + adjust
@@ -550,21 +552,12 @@ class PS3Controller(BasePart):
                 new_value = old_value - adjust
                 self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value                
             else:
-                #adjust = self.adjustment_mode_dict[self.adjustment_mode]['shift']
                 adjust = self.adjustment_mode_dict['adjustment_shift']['value']
                 old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
                 new_value = old_value - adjust
                 self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
 
-#             
-#             #adjust = -self.adjustment_mode_dict[self.adjustment_mode]['shift']
-#             adjust = self.adjustment_mode_dict['adjustment_shift']['value']
-#             old_value = self.adjustment_mode_dict[self.adjustment_mode]['value']
-#             new_value = old_value - adjust
-#             self.adjustment_mode_dict[self.adjustment_mode]['value'] = new_value
-#             logging.debug("Adjusted {} to {:.2f}".format(self.adjustment_mode, new_value))
-#             
         #--- button-dpad-right
         elif tag == 'button-dpad-right' and value == 1:
             self.adjustment_mode_index += 1
@@ -581,27 +574,41 @@ class PS3Controller(BasePart):
             self.adjustment_mode = modes[self.adjustment_mode_index]
             logging.debug("Adjustment mode {}, {}".format(self.adjustment_mode_index,self.adjustment_mode))
             
+        #--- button-triangle
         elif tag == 'button-triangle' and value == 1:
             self.mode['steering'] = 'human'
             self.mode['throttle'] = 'human'
+            logging.debug("Human driving".format())
             logging.debug("{} mode = {}".format(tag,self.mode))
-            
+
+        #--- button-square
         elif tag == 'button-square' and value == 1:
             self.mode['steering'] = 'human'
             self.mode['throttle'] = 'ai'
+            logging.debug("AI throttle".format())
             logging.debug("{} mode  = {}".format(tag,self.mode))
-            
+
+        #--- button-circle
         elif tag == 'button-circle' and value == 1:
             self.mode['steering'] = 'ai'
             self.mode['throttle'] = 'human'
+            logging.debug("AI steering".format())
             logging.debug("{} mode = {}".format(tag,self.mode))
-            
+
+        #--- button-cross
         elif tag == 'button-cross' and value == 1:
             self.mode['steering'] = 'ai'
             self.mode['throttle'] = 'ai'
+            logging.debug("AI pilot in the driver's seat! 'I'll take-over from here puny human.'".format())
+            logging.debug("{} mode = {}".format(tag,self.mode))
+
+        #--- button-select
+        elif tag == 'button-select' and value == 1:
+            self.mode['recording'] = not self.mode['recording']
             logging.debug("{} mode = {}".format(tag,self.mode))
             
-        elif tag == 'button-select' and value == 1:
+        #--- button-start
+        elif tag == 'button-start' and value == 1:
             self.mode['recording'] = not self.mode['recording']
             logging.debug("{} mode = {}".format(tag,self.mode))
             
