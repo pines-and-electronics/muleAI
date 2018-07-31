@@ -40,7 +40,7 @@ class AIController(BasePart):
         if state['mode'].steering == 'human' and state['mode'].throttle == 'human':
             pass
         else:
-            steering_signal, throttle_signal = self.model.predict('camera_array')
+            steering_signal, throttle_signal = self.model.predict(state['camera_array'])
 
             if state['mode']['steering'] == 'ai':
                 state['steering_signal'] = steering_signal
