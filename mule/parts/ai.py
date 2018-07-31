@@ -37,16 +37,19 @@ class AIController(BasePart):
 
     def transform(self, state):
         ''' Updates state with output of ai model '''
-        if state['mode'].steering == 'human' and state['mode'].throttle == 'human':
-            pass
-        else:
-            steering_signal, throttle_signal = self.model.predict(state['camera_array'])
+        if state['mode'].steering == 'ai':
+            state['steering_signal'] = self.model.predict(state['camera_array'])
 
-            if state['mode']['steering'] == 'ai':
-                state['steering_signal'] = steering_signal
-
-            if state['mode']['throttle'] == 'ai':
-                state['throttle_signal'] = throttle_signal
+#        if state['mode'].steering == 'human' and state['mode'].throttle == 'human':
+#            pass
+#        else:
+#            steering_signal, throttle_signal = self.model.predict(state['camera_array'])
+#
+#            if state['mode']['steering'] == 'ai':
+#                state['steering_signal'] = steering_signal
+#
+#            if state['mode']['throttle'] == 'ai':
+#                state['throttle_signal'] = throttle_signal
 
 
     def stop(self):
