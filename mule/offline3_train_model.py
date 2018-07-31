@@ -67,21 +67,20 @@ train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
 #        class_mode=None
 #        )
 
-
-
+flow_gen = train_datagen.flow(X_train,y)
 
 #%%
 # =============================================================================
 # Get the CNN
 # =============================================================================
-kl = KerasLinear()
+kl = KerasLinearMJ()
 kl.model.summary()
 
 
+kl.model.fit_generator(train_datagen.flow(X_train,y),epochs=10)
+kl.model.fit_generator(flow_gen)
 
-
-
-kl.model
+kl.model.fit
 
 
 
@@ -89,6 +88,28 @@ kl.model
 # =============================================================================
 # Define the models
 # =============================================================================
+
+
+class KerasLinearMJ(KerasPilot):
+    def __init__(self, model=None, num_outputs=None, *args, **kwargs):
+        super(KerasLinearMJ, self).__init__(*args, **kwargs)
+        if model:
+            self.model = model
+        elif num_outputs is not None:
+            self.model = default_n_linear(num_outputs)
+        else:
+            self.model = default_linearMJ()
+
+    def run(self, img_arr):
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        outputs = self.model.predict(img_arr)
+        # print(len(outputs), outputs)
+        steering = outputs[0]
+        throttle = outputs[1]
+        return steering[0][0], throttle[0][0]
+
+
+
 
 class KerasLinear(KerasPilot):
     def __init__(self, model=None, num_outputs=None, *args, **kwargs):
@@ -107,6 +128,36 @@ class KerasLinear(KerasPilot):
         steering = outputs[0]
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
+
+
+def default_linearMJ():
+    img_in = Input(shape=(120, 160, 3), name='img_in')
+    x = img_in
+    x = Convolution2D(24, (5, 5), strides=(2, 2), activation='relu')(x)
+    x = Convolution2D(32, (5, 5), strides=(2, 2), activation='relu')(x)
+    x = Convolution2D(64, (5, 5), strides=(2, 2), activation='relu')(x)
+    x = Convolution2D(64, (3, 3), strides=(2, 2), activation='relu')(x)
+    x = Convolution2D(64, (3, 3), strides=(1, 1), activation='relu')(x)
+
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='linear')(x)
+    x = Dropout(.1)(x)
+    x = Dense(50, activation='linear')(x)
+    x = Dropout(.1)(x)
+    # categorical output of the angle
+    angle_out = Dense(1, activation='linear', name='angle_out')(x)
+
+    # continous output of throttle
+    model = Model(inputs=[img_in], outputs=[angle_out])
+
+    model.compile(optimizer='adam',
+                  loss={'angle_out': 'mean_squared_error',
+                        },
+                  loss_weights={'angle_out': 0.5})
+
+    return model
+
+
 
 
 def default_linear():
