@@ -72,6 +72,42 @@ if 1:
 #%% Get y_labels
 #y = df_records.loc[:,['steering_signal','throttle_signal']].values
 y = df_records.loc[:,['steering_signal']].values
+#y = df_records.loc[:,['steering_signal','throttle_signal']].values
+    
+def linear_bin(a):
+    """
+    Convert a value to a categorical array.
+
+    Parameters
+    ----------
+    a : int or float
+        A value between -1 and 1
+
+    Returns
+    -------
+    list of int
+        A list of length 15 with one item set to 1, which represents the linear value, and all other items set to 0.
+    """
+    a = a + 1
+    b = round(a / (2 / 14))
+    arr = np.zeros(15)
+    arr[int(b)] = 1
+    return arr
+
+#a = el[0]
+
+#a= -1
+#%%
+binned_y= list()
+for i,el in df_records.loc[:,['steering_signal',]].iterrows():
+    binned = linear_bin(el[0])
+    #print(el, binned)
+    binned_y.append(binned)
+#%% 
+binned_y_matrix = np.array(binned_y)
+
+#%%
+y = df_records.loc[:,['steering_signal',]].values
 
 #%% Get X_train from zip
 def get_X_train(this_selected_data):

@@ -63,20 +63,22 @@ def drive(cfg):
 
     logging.info('Initiating drive loop')
 
-    mule.drive(freq_hertz=config['drive']['freq_hertz'])
+    mule.drive(freq_hertz=config['drive']['freq_hertz'],
+               verbose=config['drive']['verbose'],
+               verbosity=config['drive']['verbosity'],
+               )
 
     logging.info('Killing engine')
 
     mule.stop()
     logging.info("Done with this driving session, exiting python.")
-cli.add_command(drive)
-
+    
 
 @cli.command()
 def train():
     pass
 
-
+cli.add_command(drive)
 
 if __name__ == '__main__':
     print('*** Welcome to Mule.AI ***')

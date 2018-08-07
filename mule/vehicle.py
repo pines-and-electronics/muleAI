@@ -6,6 +6,7 @@ import logging
 #from numpy.core.multiarray_tests import npy_log10l
 
 import numpy as np
+
 class Vehicle():
     ''' Vehicle control
 
@@ -42,19 +43,13 @@ class Vehicle():
     def print_state(self):
         """Helper to print concise state"""
         state_strings = list()
-        #print(self.state)
         for key in self.state:
             
-            #print(key)
-            #print())
-            #if self.state[key] == 
-            #print(self.state[key])
             if type(self.state[key]) == np.ndarray:
                 this_variable = self.state[key].shape
             else:
                 this_variable = self.state[key]
             state_strings.append("{}={}".format(key,this_variable))
-        #raise
     
         return ", ".join(state_strings)
      
@@ -122,7 +117,7 @@ class Vehicle():
     # TODO: log moving average of loop times
     # TODO: implement maximum number of drive loops ???  
     #       I fail to see the usefulness at the moment
-    def drive(self, freq_hertz=10):
+    def drive(self, freq_hertz=10, verbose=False, verbosity = 20):
         ''' Engages drive loop
 
             Arguments
@@ -135,25 +130,33 @@ class Vehicle():
         '''
 
         logging.info("Starting drive loop at {} Hz".format(freq_hertz))
-
-        LOOP_VERBOSE = False
-        LOOP_VERBOSITY = 20
+        #if verbose == 'False':
+        #    verbose = False
+        #elif verbose == 'True':
+        #    verbose = True
+        #else:
+        #    raise Exception("Verbose flag must be string 'False' or 'True'. You passed: {}".format(verbose))
+        assert type(verbose) == bool
+        #LOOP_VERBOSE = verbose
+        #LOOP_VERBOSITY = verbosity
+        
         try:
             for loop_nr in regulate(count(), freq_hertz):
                 # For debugging: Print current status
-                if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
+                if verbose and loop_nr%verbosity == 0:
                     print("Loop",loop_nr, "Vehicle state variables: ",self.print_state())
                     
                 for part in self.parts:
                     part.transform(self.state)
                     
                     # For debugging: print each part
-                    if LOOP_VERBOSE and loop_nr%LOOP_VERBOSITY == 0:
+                    if verbose and loop_nr%verbosity == 0:
                             print("\t",part)
 
         # TODO: log detection of keyboard interrupt to screen
         #       and notify that this is expected behaviour
         except KeyboardInterrupt:
+            logging.debug("KeyboardInterrupt".format())
             pass
 
 
@@ -162,3 +165,6 @@ class Vehicle():
         for part in reversed(self.parts):
             logging.debug("Stopping {} ...".format(part._class_string)) 
             part.stop()
+        
+        #TODO: Is this necesary at very end? 
+        #GPIO.cleanup()
