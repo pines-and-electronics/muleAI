@@ -504,10 +504,10 @@ def my_default_categorical():
     return model
 #%%
 this_model = my_default_categorical()
-flowgen = train_datagen.flow(X_train,binned_y_matrix,batch_size=1)
+flowgen = train_datagen.flow(X_train[0:20],binned_y_matrix,batch_size=1)
 x_1, y_1 = flowgen.next()
 
-flowgen = train_datagen.flow(X_train,binned_y_matrix,batch_size=64)
+flowgen = train_datagen.flow(X_train[0:20],binned_y_matrix[0:20],batch_size=64)
 this_model.fit_generator(flowgen,epochs=20)
 
 
