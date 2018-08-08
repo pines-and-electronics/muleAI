@@ -7,41 +7,12 @@ import logging
 import zipfile
 #import re
 #import datetime
-import cv2
 import numpy as np
 
 #%% IO
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 
-#%% Generate JPG for feedback
-#this_selected_data = selected_data
-def write_jpg(this_selected_data):
-    path_npz = this_selected_data['camera_numpy_zip']
-    
-    arrays = np.load(path_npz)
-    timestamps = [k for k in arrays.keys()]
-    timestamps.sort()
-    
-    # Create a directory for the JPEGs
-    path_jpg = os.path.join(this_selected_data['this_dir'], 'jpg')
-    if not os.path.exists(path_jpg):
-        os.mkdir(path_jpg)
-    
-    # Print to .jpg
-    for k in timestamps:
-        #print(k, arrays[k].shape)
-        img = arrays[k]
-        arrays[k]
-        out_path = os.path.join(path_jpg,'{}.jpg'.format(k))
-        cv2.imwrite(out_path, img)
-    logging.debug("Wrote {} .jpg to {}".format(len(timestamps),path_jpg))
-    
-    #cv2.imshow('test',img)
-
-write_jpg(selected_data)
-
-#dataset_def['json_size_MB']
 
 
 #%% Get the JSON records
