@@ -17,6 +17,7 @@ assert os.path.exists(LOCAL_PROJECT_PATH)
 
 #%% Get the JSON records
 def get_records(this_selected_data):
+    raise "NOW LOAD THE PCK DIRECTLY"
     path_json = this_selected_data['json_record_zip']
     json_records = list()
 

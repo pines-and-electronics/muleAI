@@ -134,22 +134,18 @@ def write_videos(this_data_dir):
     # Iterate over each directory
     for i,this_dir in enumerate(directoy_list):
         logging.debug("Dataset {} {}".format(i, this_dir))
-
+        
         dataset_def = dict()
         dataset_def['this_dir'] = this_dir
-        # JPG zip
-        dataset_def = process_jpg_zip(dataset_def)
-        
-        
-        
-        #path_frame_zip = r"/home/batman/MULE DATA/20180807 201756/jpg_images.zip"
-        #path_video_out = r"/home/batman/MULE DATA/20180807 201756/this_vid.mp4"
-        
-        
-        frames = get_frames(dataset_def['jpg_zip'])
         dataset_def['path_video_out'] = os.path.join(dataset_def['this_dir'],'video.mp4')
-        
-        write_video(frames,dataset_def['path_video_out'])
+        print(os.path.exists(dataset_def['path_video_out']))
+        if not os.path.exists(dataset_def['path_video_out']):
+            # JPG zip
+            dataset_def = process_jpg_zip(dataset_def)
+            
+            frames = get_frames(dataset_def['jpg_zip'])
+            
+            write_video(frames,dataset_def['path_video_out'])
 #%% 
         
 write_videos(LOCAL_PROJECT_PATH)

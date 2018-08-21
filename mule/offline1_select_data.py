@@ -10,10 +10,10 @@ import logging
 import zipfile
 #import re
 import datetime
-#import cv2
 import cv2
 import shutil
-
+import json
+from tabulate import tabulate
 #%% LOGGING for Spyder! Disable for production. 
 logger = logging.getLogger()
 logger.handlers = []
@@ -43,23 +43,67 @@ LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 
 #%%
-#this_dir = LOCAL_PROJECT_PATH
+# =============================================================================
+# Check which files exist in all datasets
+# =============================================================================
+#proj_path = LOCAL_PROJECT_PATH
+CHECK_FILES = [
+    'jpg_images.zip',
+    'camera_numpy.zip',
+    'df_record.pck',
+    'json_records.zip',
+    'video.mp4',
+     ]
 
-def confirm_numpy(numpy_zip):
+def check_files_exist(proj_path,these_check_paths):
+    """Check if files exist in the data directory. 
+    Args:
+        proj_path: Project data directory path
+        these_check_paths: Relative paths of files to check
+
+    Returns:
+        df_checkfiles: A simple dataframe with the status of files. 
+    """
+    
+    directoy_list = glob.glob(os.path.join(proj_path,'*'))
+    
+    # Iterate over each directory
+    check_files = list()
+    for i,this_dir in enumerate(directoy_list):
+        this_check_dict = dict()
+        this_check_dict['this_dt_string'] = os.path.split(this_dir)[1]
+        this_check_dict['this_dir']  = this_dir
+        for path in these_check_paths:
+            this_check_dict[path] = os.path.exists(os.path.join(this_dir,path))
+        check_files.append(this_check_dict)
+    df_checkfiles = pd.DataFrame(check_files)
+    
+    df_checkfiles.set_index('this_dt_string',inplace=True)
+    df_checkfiles.sort_index(inplace=True)
+    return(df_checkfiles)
+
+df_checkfiles = check_files_exist(LOCAL_PROJECT_PATH,CHECK_FILES)
+print(tabulate(df_checkfiles[CHECK_FILES],headers="keys",disable_numparse=True))
+
+#%%
+# =============================================================================
+# Utility: Get timesteps for alignment
+# =============================================================================
+def check_numpy(numpy_zip):
+    """Get timestamps from zipped NPY files.
+    """
     # Look inside
     with zipfile.ZipFile(numpy_zip, "r") as f:
         fnames = (os.path.splitext(name) for name in f.namelist())
         timestamps, extensions = zip(*fnames)
-        assert all(ext == '.npy' for ext in extensions)
-        #[ts.isoformat() for ts in timestamps]
-        
-        #ts = timestamps[0]
-        datetime_stamps = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamps]
-        datetime_stamps.sort()
-        return datetime_stamps
+    assert all(ext == '.npy' for ext in extensions)
+    datetime_stamps = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamps]
+    datetime_stamps.sort()
+    return datetime_stamps
 
-#json_zip = dataset_def['json_record_zip']
-def confirm_json(json_zip):
+def check_json(json_zip):
+    """Get timestamps from zipped JSON records.
+    """
     # Look inside
     with zipfile.ZipFile(json_zip, "r") as f:
         fnames = (os.path.splitext(name) for name in f.namelist())
@@ -73,95 +117,35 @@ def confirm_json(json_zip):
         datetime_stamps.sort()
         return datetime_stamps
 
-def process_time_steps(dataset_def):
-    # Get the record timestamps
-    numpy_timestamps = confirm_numpy(dataset_def['camera_numpy_zip'])
-    json_timestamps = confirm_json(dataset_def['json_record_zip'])
-    
-    # Ensure timestamp alignment
-    assert numpy_timestamps == json_timestamps, "Temporal alignment failure"
-    
-    # Analysis of timesteps
-    timestamps = pd.Series(numpy_timestamps)
-    
-    dataset_def['num_records'] =  len(timestamps)
-    
-    dataset_def['elapsed_time'] = timestamps.iloc[-1] - timestamps.iloc[0]
-    dataset_def['elapsed_time_mins'] = dataset_def['elapsed_time'].total_seconds() / 60
-    
-    # Analysis of delta-times
-    ts_deltas = (timestamps-timestamps.shift()).fillna(0)
-    stats = ts_deltas[0:-1].describe()
-    
-    dataset_def['ts_deltas_mean'] = stats['mean'].total_seconds() * 1000
-    dataset_def['ts_deltas_std'] = stats['std'].total_seconds() * 1000
-    return dataset_def
+# =============================================================================
+# Utility: Get .npy zip size
+# =============================================================================
+def check_camera_zip(this_dir):
+    """Get the size of the stored camera arrays. 
+    """
+    return_dict = dict()
+    return_dict['camera_numpy_zip'] = glob.glob(os.path.join(this_dir,'camera_numpy.zip'))[0]
+    assert os.path.exists(return_dict['camera_numpy_zip'])
+    return_dict['camera_size_MB'] = os.path.getsize(return_dict['camera_numpy_zip'])/1000/1000
+    return return_dict
 
-def process_datetime(dataset_def):
-    dataset_def['this_dt_string'] = os.path.split(dataset_def['this_dir'])[1]
-    dataset_def['this_dt'] = datetime.datetime.strptime(dataset_def['this_dt_string'], '%Y%m%d %H%M%S')
-    dataset_def['this_dt_iso'] = dataset_def['this_dt'].isoformat()
-    dataset_def['this_dt_nice'] = dataset_def['this_dt'].strftime("%A %d %b %H:%M")
-    return dataset_def
-
-def process_camera_zip(dataset_def):
-    dataset_def['camera_numpy_zip'] = glob.glob(os.path.join(dataset_def['this_dir'],'camera_numpy.zip'))[0]
-    assert os.path.exists(dataset_def['camera_numpy_zip'])
-    dataset_def['camera_size_MB'] = os.path.getsize(dataset_def['camera_numpy_zip'])/1000/1000
-    return dataset_def
-
-def process_json_records(dataset_def):
-    dataset_def['json_record_zip'] = glob.glob(os.path.join(dataset_def['this_dir'],'json_records.zip'))[0]
-    dataset_def['json_size_MB'] = os.path.getsize(dataset_def['json_record_zip'])/1000/1000
-    #dataset_def['num_json'] = os.path.getsize(dataset_def['json_record_zip'])/1000/1000
-    return dataset_def
-
-def process_jpg_zip(dataset_def):
-    if os.path.exists(os.path.join(dataset_def['this_dir'],'jpg_images.zip')):
-        dataset_def['flg_jpg_zip_exists'] = True
-        dataset_def['jpg_zip'] = glob.glob(os.path.join(dataset_def['this_dir'],'jpg_images.zip'))[0]
-        dataset_def['jpg_zip_size_MB'] = os.path.getsize(dataset_def['jpg_zip'])/1000/1000
-        #dataset_def['num_json'] = os.path.getsize(dataset_def['json_record_zip'])/1000/1000
-        
+# =============================================================================
+# Utility: Process frames
+# =============================================================================
+def process_jpg_zip(this_dir):
+    return_dict = dict()
+    
+    if os.path.exists(os.path.join(this_dir,'jpg_images.zip')):
+        return_dict['jpg_zip'] = glob.glob(os.path.join(this_dir,'jpg_images.zip'))[0]
+        return_dict['jpg_zip_size_MB'] = os.path.getsize(return_dict['jpg_zip'])/1000/1000
         
         # Look inside
-        with zipfile.ZipFile(dataset_def['jpg_zip'], "r") as f:
+        with zipfile.ZipFile(return_dict['jpg_zip'], "r") as f:
             #fnames = (os.path.splitext(name) for name in f.namelist())
-            dataset_def['num_jpgs'] = len(f.namelist())
-    else: 
-        dataset_def['flg_jpg_zip_exists'] = False
-        
-        
-    return dataset_def
-
-#
-#def create_jpgs(dataset_def):
-#    dataset_def['folder_jpg'] = os.path.join(dataset_def['this_dir'],'jpg')
-#    if not os.path.exists(dataset_def['folder_jpg']):
-#        dataset_def['num_jpgs'] = 0
-#    else:
-#        dataset_def['num_jpgs'] = len(glob.glob(os.path.join(dataset_def['folder_jpg'],'*.jpg')))
-#    
-#    return dataset_def
-#
-
-
-#%% Zip the files
-    
-#def make_archive(self, source, destination):
-#    base = os.path.basename(destination)
-#    name = base.split('.')[0]
-#    format = base.split('.')[1]
-#    archive_from = os.path.dirname(source)
-#    archive_to = os.path.basename(source.strip(os.sep))
-#    #print(source, destination, archive_from, archive_to)
-#    shutil.make_archive(name, format, archive_from, archive_to)
-#    shutil.move('%s.%s'%(name,format), destination)
-#    
-#    logging.debug("Created archive {}".format(destination))
-
-
-#%% Generate JPG for feedback
+            return_dict['num_jpgs'] = len(f.namelist())
+    else:
+        raise
+    return return_dict
 
 def write_jpg(this_data_def):
     path_npz = this_data_def['camera_numpy_zip']
@@ -177,14 +161,12 @@ def write_jpg(this_data_def):
     
     # Print to .jpg
     for k in timestamps:
-        #print(k, arrays[k].shape)
         img = arrays[k]
         arrays[k]
         out_path = os.path.join(path_jpg,'{}.jpg'.format(k))
         cv2.imwrite(out_path, img)
     logging.debug("Wrote {} .jpg to {}".format(len(timestamps),path_jpg))
     return path_jpg
-    #cv2.imshow('test',img)
 
 def zip_jpgs(path_jpg, target_path):
     jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
@@ -195,8 +177,6 @@ def zip_jpgs(path_jpg, target_path):
             myzip.write(f,name)
             os.remove(f)
     logging.debug("Zipped {} to {}".format(len(jpg_files),target_path))
-
-    
     
 def delete_jpgs(path_jpg):
     jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
@@ -208,39 +188,133 @@ def delete_jpgs(path_jpg):
     assert len(jpg_files) == 0
     os.rmdir(path_jpg)
     logging.debug("Deleted all .jpg files".format())
+
+# =============================================================================
+# Process json
+# =============================================================================
+def process_time_steps(camera_zip_path, json_zip_path):
+    return_dict = dict()
+    # Get the record timestamps
+    numpy_timestamps = check_numpy(camera_zip_path)
+    json_timestamps = check_json(json_zip_path)
+    
+    # Ensure timestamp alignment
+    assert numpy_timestamps == json_timestamps, "Temporal alignment failure"
+    
+    # Analysis of timesteps
+    timestamps = pd.Series(numpy_timestamps)
+    
+    return_dict['num_records'] =  len(timestamps)
+    
+    return_dict['elapsed_time'] = timestamps.iloc[-1] - timestamps.iloc[0]
+    return_dict['elapsed_time_mins'] = return_dict['elapsed_time'].total_seconds() / 60
+    
+    # Analysis of delta-times
+    ts_deltas = (timestamps-timestamps.shift()).fillna(0)
+    stats = ts_deltas[0:-1].describe()
+    
+    return_dict['ts_deltas_mean'] = stats['mean'].total_seconds() * 1000
+    return_dict['ts_deltas_std'] = stats['std'].total_seconds() * 1000
+    return return_dict
+
+def process_datetime(index_timestamp):
+    return_dict = dict()
+    return_dict['this_dt'] = datetime.datetime.strptime(index_timestamp, '%Y%m%d %H%M%S')
+    return_dict['this_dt_iso'] = return_dict['this_dt'].isoformat()
+    return_dict['this_dt_nice'] = return_dict['this_dt'].strftime("%A %d %b %H:%M")
+    return return_dict
+
+
+def process_json_records(this_dir):
+    this_return_dict = dict()
+    this_return_dict['json_record_zip'] = glob.glob(os.path.join(this_dir,'json_records.zip'))[0]
+    this_return_dict['json_size_MB'] = os.path.getsize(this_return_dict['json_record_zip'])/1000/1000
+    #dataset_def['num_json'] = os.path.getsize(dataset_def['json_record_zip'])/1000/1000
+    
+    
+    this_return_dict['df_record'] = os.path.join(this_dir,'df_record.pck')
+    
+    if not os.path.exists(this_return_dict['df_record']):
+        create_record_df(this_return_dict['json_record_zip'],this_return_dict['df_record'])
+        assert os.path.exists(this_return_dict['df_record'])
+    
+    return this_return_dict
+
+
+def create_record_df(json_zip,out_path):
+    json_records = list()
+    with zipfile.ZipFile(json_zip, "r") as f:
+        json_file_paths = [name for name in f.namelist() if os.path.splitext(name)[1] =='.json']
+        
+        for json_file in json_file_paths:
+            this_fname = os.path.splitext(json_file)[0] 
+            this_timestep = this_fname.split('_')[1]
+            d = f.read(json_file)
+            d = json.loads(d.decode("utf-8"))
+            d['timestamp'] = this_timestep
+            json_records.append(d)
+    logging.debug("Returning {} json records from {}".format(len(json_file_paths),json_zip))
+    df_records = pd.DataFrame(json_records)  
+    
+    df_records.to_pickle(out_path)
+    logging.debug("Saved records to {}".format(out_path))
+
+
+
     
 #%% PROCESS ALL DATASETS!
 
-this_data_dir = LOCAL_PROJECT_PATH
-def get_datasets(this_data_dir):
-    directoy_list = glob.glob(os.path.join(this_data_dir,'*'))
+#this_data_dir = LOCAL_PROJECT_PATH
+
+
+#df_datasets = df_checkfiles
+def get_datasets(df_datasets):
     
-    # Iterate over each directory
+    """
+    Iterate over each dataset.
+    For each, create a new dictionary containing information. 
+    Create any new files that are missing. 
+    
+    """
+    
+    # Iterate over each dataset
     dataset_def_list = list()
-    for i,this_dir in enumerate(directoy_list):
+    for i,this_ds in df_datasets.iterrows():
+        logging.debug("***********************".format())
+        logging.debug("Dataset: {}".format(i))
+        
+        
         
         dataset_def = dict()
-        dataset_def['this_dir'] = this_dir
+        #dataset_def['this_dir'] = this_dir
+        #print(i,this_ds)
+        #continue
+        #return
+        #for i,this_ds in enumerate(df_datasets['this_dir']):
         
+        #    return
         # Date time from directory name
-        dataset_def = process_datetime(dataset_def)
+        dataset_def.update(process_datetime(i))
         
         # Numpy camera arrays
-        dataset_def = process_camera_zip(dataset_def)
+        dataset_def.update(check_camera_zip(this_ds['this_dir']))
         
         # json state records
-        dataset_def = process_json_records(dataset_def)
-        
+        dataset_def.update(process_json_records(this_ds['this_dir']))
+            
         # JPG zip
-        dataset_def = process_jpg_zip(dataset_def)
+        dataset_def.update(process_jpg_zip(this_ds['this_dir']))
+        
+        # Video
         
         # If the JPG zip doesn't exist, create it
-        if not dataset_def['flg_jpg_zip_exists']:
+        if not this_ds['jpg_images.zip']:
             # JPG images
             #dataset_def = create_jpgs(dataset_def)
     
             # Write the JPG's
             #if not dataset_def['num_jpgs']:
+            raise Exception("UPDATE THIS")
             path_jpg = write_jpg(dataset_def)
                 # Reload the jpg definition!
              #   dataset_def = process_jpgs(dataset_def)
@@ -254,15 +328,15 @@ def get_datasets(this_data_dir):
 
             dataset_def = process_jpg_zip(dataset_def)
             
-        #raise
         # Time step analysis
-        dataset_def = process_time_steps(dataset_def)
+        dataset_def.update(process_time_steps(dataset_def['camera_numpy_zip'], dataset_def['json_record_zip']))
+        
 
-        assert dataset_def['flg_jpg_zip_exists'], "jpg zip does not exist, {}".format(dataset_def)
+        #assert dataset_def['flg_jpg_zip_exists'], "jpg zip does not exist, {}".format(dataset_def)
         
         assert dataset_def['num_jpgs'] == dataset_def['num_records']
         
-        logging.debug("Dataset {}: /{}, recorded on {}".format(i, dataset_def['this_dt_string'],dataset_def['this_dt_nice']))
+        logging.debug("Dataset {}: recorded on {}".format(i, dataset_def['this_dt_nice']))
         
         # Summary of this dataset
         logging.debug("{} aligned records found over {:0.2f} minutes.".format(
@@ -276,31 +350,40 @@ def get_datasets(this_data_dir):
                       ))
         
         # Append
-        dataset_def_list.append(dataset_def)
-        
+        this_series = pd.Series(dataset_def)
+        this_series.name  = i
+        dataset_def_list.append(this_series)
+    
     # Done
     this_df_datasets = pd.DataFrame(dataset_def_list)
-    this_df_datasets = this_df_datasets.sort_values(['this_dt']).reset_index(drop=True)        
+    #this_df_datasets = this_df_datasets.sort_values(['this_dt']).reset_index(drop=True)        
+    
     return  this_df_datasets
 
-df_datasets = get_datasets(LOCAL_PROJECT_PATH)
+df_datasets_processed = get_datasets(df_checkfiles)
+df_all_datasets = df_checkfiles.join(df_datasets_processed)
 
 #%%
+
+print(tabulate(df_all_datasets.loc[:,['camera_size_MB','elapsed_time']],headers="keys"))
+
+for c in df_all_datasets.columns:
+    print(c)
+#%%
 def select_data(this_df):
-    row_str =  "{:<4} {:<20} {:<30} {:<12} {:<6.0f}"
-    head_str = "{:<4} {:<20} {:<30} {:<12} {:<6}"
-    
-    fields = ('this_dt_string','this_dt_nice','num_records','camera_size_MB')
+    head_str = "{:<20}  {:<30} {:<12} {:<15} {:>30}"
+    row_str =  "{:<20}  {:<30} {:<12} {:>15.0f} {:>20.1f}"
+    fields = ('this_dt_nice','num_records','camera_size_MB', 'elapsed_time_mins')
     head = ['idx'] + [*fields]
     print(head_str.format(*head))
     for i,r in this_df.iterrows():
         this_row_str = [r[fld] for fld in fields]
         print(row_str.format(i,*this_row_str))
     
-    ds_idx = int(input("Select dataset number:") )
-    this_dataset = this_df.iloc[ds_idx]
-    return this_dataset
-selected_data = select_data(df_datasets)
+    #ds_idx = int(input("Select dataset number:") )
+    #this_dataset = this_df.iloc[ds_idx]
+    #return this_dataset
+selected_data = select_data(df_all_datasets)
 
 #%%
 #del (df_datasets)
@@ -357,3 +440,31 @@ if 0:
     
     np.reshape(this_arr, (2, -1))
 
+
+
+#%% Zip the files
+    
+#def make_archive(self, source, destination):
+#    base = os.path.basename(destination)
+#    name = base.split('.')[0]
+#    format = base.split('.')[1]
+#    archive_from = os.path.dirname(source)
+#    archive_to = os.path.basename(source.strip(os.sep))
+#    #print(source, destination, archive_from, archive_to)
+#    shutil.make_archive(name, format, archive_from, archive_to)
+#    shutil.move('%s.%s'%(name,format), destination)
+#    
+#    logging.debug("Created archive {}".format(destination))
+
+
+
+#
+#def create_jpgs(dataset_def):
+#    dataset_def['folder_jpg'] = os.path.join(dataset_def['this_dir'],'jpg')
+#    if not os.path.exists(dataset_def['folder_jpg']):
+#        dataset_def['num_jpgs'] = 0
+#    else:
+#        dataset_def['num_jpgs'] = len(glob.glob(os.path.join(dataset_def['folder_jpg'],'*.jpg')))
+#    
+#    return dataset_def
+#
