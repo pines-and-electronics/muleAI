@@ -1,3 +1,5 @@
+raise USE JUPYTER
+
 import sys
 import glob,os
 import json
@@ -8,35 +10,57 @@ import zipfile
 #import re
 #import datetime
 import numpy as np
+import os
+import glob
+import matplotlib
+
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 #%% IO
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 
+#%% Get a dataset
+THIS_DATASET = '20180807 201756'
+df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'df_record.pck'))
 
+hist = df_records['steering_signal'].hist()
+hist = df_records['throttle_signal'].hist()
 
-#%% Get the JSON records
-def get_records(this_selected_data):
-    raise "NOW LOAD THE PCK DIRECTLY"
-    path_json = this_selected_data['json_record_zip']
-    json_records = list()
+frames=np.load(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'))
 
-    with zipfile.ZipFile(path_json, "r") as f:
-        json_file_paths = [name for name in f.namelist() if os.path.splitext(name)[1] =='.json']
-        
-        for json_file in json_file_paths:
-            this_fname = os.path.splitext(json_file)[0] 
-            this_timestep = this_fname.split('_')[1]
-            d = f.read(json_file)
-            d = json.loads(d.decode("utf-8"))
-            d['timestamp'] = this_timestep
-            json_records.append(d)
-    logging.debug("Returning {} json records from {}".format(len(json_file_paths),this_selected_data['json_record_zip']))
+#%%
+def get_record(df_records, frames, idx):
+    this_frame = frames[idx]
+    this_steering = df_records[df_records['timestamp'] == idx]['steering_signal']
+    #this_steering = df_records[idx]
+    return this_frame,this_steering
+
+##indices= sel_indices
+def get_n_records(df_records, frames, indices):
+    #this_frame = np.array[frames[idx] for idx in indices]
+    these_frames = [frames[idx] for idx in indices]
     
-    return pd.DataFrame(json_records)    
-df_records = get_records(selected_data)
+    frame_array = np.stack([frames[idx] for idx in indices], axis=0)
+    #this_steering = df_records[df_records['timestamp'] == idx]['steering_signal']
+    these_steering = df_records[df_records['timestamp'].isin(indices)]['steering_signal'].values
+    #this_steering = df_records[idx]
+    return frame_array,these_steering
 
 
+frame, steering = get_record(df_records,frames, '1533666134582')
+
+sel_indices = df_records.sample(5)['timestamp'].values
+sel_frames, sel_steerings = get_n_records(df_records, frames, sel_indices)
+
+#%%
+plt.figure(1)
+for f, s in zip(sel_frames, sel_steerings):
+    imgplot = plt.imshow(f)
+    plt.xticks([])
+    plt.yticks([])
+    print(f,s)
 #%% RANDOMIZE FOR TESTING
 if 1:
     df_records.loc[:,'steering_signal'] = np.random.uniform(low=-1, high=1, size=len(df_records.loc[:,'steering_signal']))
