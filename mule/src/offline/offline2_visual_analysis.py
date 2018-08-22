@@ -1,60 +1,9 @@
-
-# coding: utf-8
-
-# In[1]:
-
-
-import sys
-import glob,os
-import json
-import pandas as pd
-#import tensorflow as tf
-import logging
-import zipfile
-#import re
-#import datetime
-import numpy as np
-import os
-import glob
-import matplotlib
-import math
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import datetime
-import tensorflow as tf
-from tensorflow.python import keras as ks
-import sklearn as sk
-
-
-# In[2]:
-
-
-class LoggerCritical:
-    def __enter__(self):
-        my_logger = logging.getLogger()
-        my_logger.setLevel("CRITICAL")
-    def __exit__(self, type, value, traceback):
-        my_logger = logging.getLogger()
-        my_logger.setLevel("DEBUG")
-
-
-import logging
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-logging.debug("test")
-
-with LoggerCritical():
-    logging.debug("test block")
-
-
-# In[3]:
-
+#%% Select the directory
 
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 
-
-# In[4]:
+#%% Select the data
 
 
 THIS_DATASET = '20180807 201756'
@@ -66,7 +15,7 @@ df_records['steering_signal'] = df_records['steering_signal'].apply(lambda x: x*
 df_records.head()
 
 
-# In[5]:
+#%% Histogram: Steering
 
 
 fig=plt.figure(figsize=[10,5],facecolor='white')
