@@ -1,3 +1,9 @@
+"""
+Manage and analyze the Data Set directory.
+Iterate over each Data Set and check which data elements have been created. 
+
+"""
+
 import sys
 import glob,os
 import json
