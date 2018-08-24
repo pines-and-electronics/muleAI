@@ -22,7 +22,7 @@ logging.debug("Loaded {} records from {}".format(len(df_records),THIS_DATASET))
 
 #%% Invert the steering!, +1 = right turn
 df_records['steering_signal'] = df_records['steering_signal'].apply(lambda x: x*-1)
-logging.debug("Steering signal inverterted".format())
+logging.debug("Steering signal inverterted - WHY?".format())
 
 #%% Expand the steering signal
 df_records['steering_signal_cats'] = df_records['steering_signal'].apply(linear_bin)
@@ -49,7 +49,7 @@ if 0:
 
 #%% Plot a few samples
 # TURN OFF PLOTTING
-%matplotlib inline
+#%matplotlib inline
 
 # Right turn
 these_indices = df_records[df_records['steering_signal'] > 0.9].sample(4)['timestamp'].tolist()

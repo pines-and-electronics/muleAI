@@ -44,13 +44,15 @@ with LoggerCritical():
 
 #%% Turn off plotting
 # First. change the mode to GUI window output
-%matplotlib qt
+
+ 
+#%matplotlib qt
 # Then disable output
 plt.ioff()
 
 #%% Turn on plotting
 plt.ion()
-%matplotlib inline
+#%matplotlib inline
 
     
 # In[9]:
@@ -165,22 +167,24 @@ def get_full_records(this_frames, this_df_records, this_indices):
 
 
 #%%
-def get_predictions(model, frames_npz, df_records):
+def get_predictions(model, this_frames_npz, this_df_records):
     """Augment the df_records with the predictions
     """
-    df_records['steering_pred_cats'] = pd.Series(dtype=object)
+    this_df_records['steering_pred_cats'] = pd.Series(dtype=object)
     #df_records['steering_pred_argmax'] = 
-    for i,idx in enumerate(df_records.index):
+    for i,idx in enumerate(this_df_records.index):
         
-        this_frame = np.expand_dims(frames_npz[idx],0)
+        this_frame = np.expand_dims(this_frames_npz[idx],0)
         this_frame.shape
         this_pred = model.predict(this_frame)
-        df_records.loc[idx,'steering_pred_cats'] = [this_pred]
-        df_records.loc[idx,'steering_pred_argmax'] = np.argmax(df_records.loc[idx,'steering_pred_cats'])
-        df_records.loc[idx,'steering_pred_signal'] = linear_unbin(df_records.loc[idx,'steering_pred_cats'][0])
+        this_df_records.loc[idx,'steering_pred_cats'] = [this_pred]
+        this_df_records.loc[idx,'steering_pred_argmax'] = np.argmax(this_pred)
+        this_df_records.loc[idx,'steering_pred_signal'] = linear_unbin(this_df_records.loc[idx,'steering_pred_cats'][0])
         if i%100 == 0:
-            print(i)
-    return df_records
+            print(i,"|", end="")
+    logging.debug("Returning predictions. NB: Steering is INVERTED!!!".format())
+    
+    return this_df_records
 
 #%%
     
@@ -196,12 +200,51 @@ def get_fig_as_npy(this_fig):
     img = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(height, width, 3)
     return img
 
+#%%
+def plot_hist(history_dict, accuracy_name, model_title):
+    #fig = plt.figure(figsize=(5,4))
+    #fig=plt.figure(figsize=(20, 10),facecolor='white')
+
+    #f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 5),sharey=False,facecolor='white')
+    bgcolor = '0.15'
+    bgcolor = 'white'
+    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 5),sharey=False,facecolor=bgcolor)
+    
+    ax1.plot(history_dict['epoch'],  history_dict['history']['loss'],label="Train")
+    ax1.plot(history_dict['epoch'],  history_dict['history']['val_loss'],label="CV")
+    ax1.set_title("Loss function development - Training set vs CV set")
+    ax1.legend(loc='upper right')
+    ax1.set_xlabel('Epochs')
+    ax1.set_ylabel('Values')
+    
+    ax2.plot(history_dict['epoch'],  history_dict['history'][accuracy_name],label="Train")
+    ax2.plot(history_dict['epoch'],  history_dict['history']['val_'+accuracy_name],label="CV")
+    ax2.set_title("Accuracy development - Training set vs CV set")
+    ax2.legend(loc='upper right')
+    ax2.set_xlabel('Epochs')
+    ax2.set_ylabel('Values')
+    
+    plt.suptitle(model_title, fontsize=16)
+    
+    plt.show()
+
+
 
 #%%
 def plot_frames(records):
     """
     Render N records to analysis
     """
+    font_label_box = {
+        'color':'green',
+        'size':16,
+    }
+    font_steering = {'family': 'monospace',
+            #'color':  'darkred',
+            'weight': 'normal',
+            'size': 25,
+            }
+    
     fig=plt.figure(figsize=[20,18],facecolor='white')
     ROWS = 1
     COLS = 4
@@ -209,20 +252,41 @@ def plot_frames(records):
 
     for i,rec in enumerate(records):
 
-        steer_cat = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
+                
+        
         timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
         
         this_label = "{}\n{:0.2f} steering\n{:0.2f} throttle".format(rec['timestamp'],rec['steering_signal'],rec['throttle'])
-        y = fig.add_subplot(ROWS,COLS,i+1)
-        y.imshow(rec['frame'])
+        ax = fig.add_subplot(ROWS,COLS,i+1)
+        ax.imshow(rec['frame'])
         #plt.title(str_label)
-        y.axes.get_xaxis().set_visible(False)
-        y.axes.get_yaxis().set_visible(False)
-        t = y.text(5,25,this_label,color='green',alpha=1)
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
+        t = ax.text(5,25,this_label,color='green',alpha=1)
         #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
         t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-        y.text(80,105,steer_cat,fontsize=30,horizontalalignment='center',verticalalignment='center',color='green')
-        #plt.title()
+        
+        steer_cat = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
+        
+        if 'steering_pred_signal' in df_records.columns:
+            #steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
+            steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
+            
+            #print(steer_pred)
+            #ax.text(80,95,steer_pred,fontsize=30,horizontalalignment='center',verticalalignment='center',color='red')
+            #ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+            #ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+        else: 
+            steer_pred = ""
+            
+        hud_text =  steer_pred + "\n" + steer_cat
+        
+        #ax.text(80,105,steer_cat,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+        #ax.text(80,95,hud_text,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+        #ax.text(80,95,hud_text,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+        
+        ax.text(80,105,steer_cat,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')        
+        ax.text(80,105,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
         
 
 
@@ -283,7 +347,7 @@ def gen_one_record_frame(rec):
     text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
     
     if 'steering_pred_signal' in df_records.columns:
-        steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steer_pred'])])
+        steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
         text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
     
     return fig

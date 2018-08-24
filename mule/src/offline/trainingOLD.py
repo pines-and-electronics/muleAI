@@ -175,3 +175,66 @@ for i,this_ax in enumerate([f.axes[0] for f in frames]):
 #type(this)
 
 
+
+
+
+# In[ ]:
+
+
+# Predict the raw probability vectors
+def raw_predictions(model,frames):
+    frame_array = np.stack([frames[idx] for idx in frames], axis=0)
+    y_pred_categorical = model.predict(frame_array)
+    #print(y_pred_categorical)
+    #y_pred = unbin_Y(y_pred_categorical)
+    df_pred = pd.DataFrame(y_pred_categorical,index = [idx for idx in frames])
+    df_pred.sort_index(inplace = True)
+    return df_pred
+
+df_ypred_probs = raw_predictions(blmodel,frames)
+df_ypred_probs.head()
+
+
+
+
+# In[ ]:
+
+
+def get_n_predictions(model,frames,indices):
+    """Given a model and the input frames, select a subset (indices)
+    and return the predictions.
+    """
+    these_frames = [frames[idx] for idx in indices]
+    frame_array = np.stack([frames[idx] for idx in indices], axis=0)
+    y_pred_categorical = model.predict(frame_array)
+    #print(y_pred_categorical)
+    y_pred = unbin_Y(y_pred_categorical)
+    return y_pred
+
+
+# # Plot some results
+    
+
+
+
+# In[ ]:
+
+
+def get_n_records(df_records, frames, indices):
+    #this_frame = np.array[frames[idx] for idx in indices]
+    these_frames = [frames[idx] for idx in indices]
+    
+    frame_array = np.stack([frames[idx] for idx in indices], axis=0)
+    #this_steering = df_records[df_records['timestamp'] == idx]['steering_signal']
+    these_steering = df_records[df_records['timestamp'].isin(indices)]['steering_signal'].values
+    
+    these_throttle = df_records[df_records['timestamp'].isin(indices)]['throttle_signal'].values
+    
+    timestamps = df_records[df_records['timestamp'].isin(indices)]['timestamp'].values
+    #this_steering = df_records[idx]
+    
+    these_ts = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamps]
+    return frame_array,these_steering,these_throttle, these_ts
+
+
+# # Utility to get a number of dictionary records

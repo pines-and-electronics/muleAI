@@ -1,8 +1,28 @@
+"""
+From a list of records;
+1) Generate the frame figures
+2) Save the frame figuress as JPG into JPG_OUT_DIR
+3) Reload each JPG as a NPY, sorted by the timestep (name)
+4) Write an mp4 viedo toVIDEO_OUT_NAME
+
+"""
+JPG_OUT_DIR = 'frames_predicted_HUD'
+VIDEO_OUT_NAME = 'video_with_predicted_signals'
+
+JPG_OUT_DIR = 'frames_HUD'
+VIDEO_OUT_NAME = 'video_with_signals'
+
 
 #%% Render all to JPG
 """
 """
-path_video_frames_temp = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'temp_frames')
+#%matplotlib qt
+#
+
+%matplotlib qt
+plt.ioff()
+
+path_video_frames_temp = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,JPG_OUT_DIR)
 if not os.path.exists(path_video_frames_temp): os.makedirs(path_video_frames_temp)
 
 these_records = get_full_records(frames_npz, df_records, df_records.index)
@@ -75,8 +95,7 @@ def write_video(frames,path_video_out, fps, width, height):
     writer.release()
     cv2.destroyAllWindows()
     
-
-path_this_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'video_with_signals.mp4')
+path_this_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,VIDEO_OUT_NAME+'.mp4')
 frames_height = frames[0]['array'].shape[0]
 frames_width = frames[0]['array'].shape[1]
 write_video(frames,path_this_video_out, fps=30, width=frames_width, height=frames_height)
