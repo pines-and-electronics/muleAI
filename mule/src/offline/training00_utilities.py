@@ -40,6 +40,18 @@ logging.debug("test")
 
 with LoggerCritical():
     logging.debug("test block")
+
+
+#%% Turn on plotting
+plt.ion()
+%matplotlib inline
+
+#%% Turn off plotting
+# First. change the mode to GUI window output
+%matplotlib qt
+# Then disable output
+plt.ioff()
+
     
 # In[9]:
 
@@ -100,31 +112,41 @@ def get_n_records(df_records, frames, indices):
 #%%
 
 
-def get_full_records(this_frames, this_df_records, this_y_pred_floats, this_indices):
-    assert type(this_indices) == list or type(this_indices) == np.ndarray
-    """Given a list of indices (timestamps), return a list of records
+
+
+#%%
+def get_full_records(this_frames, this_df_records, this_indices):
+    #assert type(this_indices) == list or type(this_indices) == np.ndarray
+    """Given a list of indices (timestamps), return a list of "Records""
     
-    frames:
-        The frame images as a numpy array
-    df_records:
-        The steering at these times as a float
-        The throttle at these times as a float
-        The timestep as a datetime 
-    y_pred_floats:
-        The predicted steering at these times
+    A record is used for further visualization or analysis of a given timestep.
+    
+    A Record is a convenience dictionary with following keys: 
+    
+        frames          : The frame images as a numpy array, directly from NPZ
+        steering_signal : The steering at these times as a float
+        throttle        : The throttle at these times as a float
+        timestamp       : The timestep as a datetime object
+    
+        AND OPTIONALLY: 
+        df_records['steering_pred_signal'] : The model predicted steering at these times
+    
     """
     records = list()
     for this_idx in this_indices:
         #print(this_idx)
         rec = dict()
         rec['frame'] = this_frames[this_idx]
-        rec['steer'] = df_records.loc[this_idx]['steering_signal']
+        rec['steering_signal'] = df_records.loc[this_idx]['steering_signal']
         #print(rec['steer'])
         rec['throttle'] = df_records.loc[this_idx]['throttle_signal']
         rec['timestamp_raw'] = df_records.loc[this_idx]['timestamp']
-        print()
+        #print()
         rec['timestamp'] = datetime.datetime.fromtimestamp(int(rec['timestamp_raw'])/1000)
-        rec['steer_pred'] = y_pred_floats.loc[this_idx]['steering_pred']
+        if 'steering_pred_signal' in df_records.columns:
+            #'steering_signal' in df_records.columns
+            rec['steering_pred_signal'] = df_records.loc[this_idx]['steering_pred_signal']
+
         records.append(rec)
     logging.debug("Created {} record dictionaries".format(len(this_indices)))
     
@@ -138,7 +160,9 @@ def get_full_records(this_frames, this_df_records, this_y_pred_floats, this_indi
 #         timestamp = df_records[df_records['timestamp'].isin(this_idx)]['timestamp'].values
 #         rec['timestamp'] = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamp]
 #         rec['steer_pred'] = y_pred_floats[y_pred_floats.index.isin(this_idx)]['steering_pred'].values 
-#
+
+
+
 #%%
 def get_predictions(model, frames_npz, df_records):
     """Augment the df_records with the predictions
@@ -164,6 +188,66 @@ def get_predictions(model, frames_npz, df_records):
 #joined['steering_pred_argmax'] = joined['steering_pred_cats'].apply(np.argmax)
 
 
+
+def gen_one_record_frame(rec):
+    """From a Record dictionary, create a single summary image of that timestep. 
+    
+    The figure has no border (full image)
+    
+    Show a data box with throttle and steering values. 
+    Show also the predicted values, if available. 
+    
+    Show a steering widget to visualize the current steering signal. 
+    Show also the predicted value, if available. 
+    
+    """
+    font_label_box = {
+        'color':'green',
+        'size':16,
+    }
+    font_steering = {'family': 'monospace',
+            #'color':  'darkred',
+            'weight': 'normal',
+            'size': 45,
+            }
+    SCALE = 50
+    HEIGHT_INCHES = 160*2.54/SCALE
+    WIDTH_INCHES =  120*2.54/SCALE
+    fig = plt.figure(frameon=False,figsize=(HEIGHT_INCHES,WIDTH_INCHES))
+    #fig.set_size_inches(w,h)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(rec['frame'])
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
+    
+    ######## The data box ########
+    timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
+    if 'steering_pred_signal' in df_records.columns:
+        this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['steering_pred_signal'],rec['throttle'])
+    else: 
+        this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle'])
+    t1 = ax.text(2,15,this_label,fontdict=font_label_box)
+    t1.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+
+    ######## The steering widget HUD ########
+    # Steering HUD : Actual steering signal
+    # Steering HUD: Predicted steering angle
+    steer_actual = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
+    text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+    
+    if 'steering_pred_signal' in df_records.columns:
+        steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steer_pred'])])
+        text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+    
+    
+    #### SAVE #####
+    #this_fname = os.path.join(save_folder_path,rec['timestamp_raw'] + '.jpg')
+    #logging.debug("Saved {}".format(this_fname))
+    #print(fig)
+    #fig.savefig(this_fname)
+    return fig
 
 #%%
 def get_frames(path_frames,frame_ids):

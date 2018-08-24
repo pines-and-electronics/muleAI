@@ -83,16 +83,12 @@ with LoggerCritical():
 history_dict = history.__dict__
 
 
-#%% Make predictions
-df_records['steering_signal_cats'] = df_records['steering_signal'].apply(linear_bin)
-df_records['steering_signal_argmax'] = df_records['steering_signal_cats'].apply(np.argmax)
+#%% Make predictions and augment the records frame 
 
 df_records = get_predictions(blmodel, frames_npz, df_records)
 sum(df_records['steering_pred_argmax'] == df_records['steering_signal_argmax'])/len(df_records)
 #df_records.columns
 #%%
-
-
 records = get_full_records(frames, df_records, y_pred_floats, [sel_indices[0]])
 
 
@@ -318,35 +314,7 @@ records = get_full_records(frames, df_records, y_pred_floats, sel_indices)
 # In[ ]:
 
 
-def gen_sample_frames(records):
-    fig=plt.figure(figsize=[20,18],facecolor='white')
 
-    for i,rec in enumerate(records):
-        font_label_box = {
-            'color':'green',
-            'size':16,
-        }
-        font_steering = {'family': 'monospace',
-                #'color':  'darkred',
-                'weight': 'normal',
-                'size': 25,
-                }
-        steer_actual = ''.join(['x' if v else '-' for v in linear_bin(rec['steer'])])
-        steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steer_pred'])])
-        timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
-
-        this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,rec['steer'],rec['steer_pred'],rec['throttle'])
-        y = fig.add_subplot(ROWS,COLS,i+1)
-        y.imshow(rec['frame'])
-        y.axes.get_xaxis().set_visible(False)
-        y.axes.get_yaxis().set_visible(False)
-        t = y.text(5,25,this_label,color='green',alpha=1)
-        t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-
-        y.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-        y.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-
-gen_sample_frames(records)
 
 
 # In[ ]:
