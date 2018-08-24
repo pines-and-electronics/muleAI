@@ -1,18 +1,32 @@
 
-# In[ ]:
+#%% Render all to JPG
+"""
+"""
 path_video_frames_temp = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'temp_frames')
 if not os.path.exists(path_video_frames_temp): os.makedirs(path_video_frames_temp)
-for i,index in enumerate(df_records.index):
+
+these_records = get_full_records(frames_npz, df_records, df_records.index)
+for i,rec in enumerate(these_records):
     if i%10 == 0:
-        print(i) #This doesn't show if capture is on! 
+        print(i,"|",end="") #This doesn't show if capture is on! 
     with LoggerCritical():
-        this_rec = get_full_records(frames_npz, df_records, [index])[0]
-        gen_one_record_frame(this_rec,save_folder_path = path_video_frames_temp)
+        # Get a frame figure object
+        record_figure = gen_one_record_frame(rec)
         
-#%%
+        # Save it to jpg
+        this_fname = os.path.join(path_video_frames_temp,rec['timestamp_raw'] + '.jpg')
+        logging.debug("Saved {}".format(this_fname))
+        #print(fig)
+        record_figure.savefig(this_fname)
+        
+        
+#%% Reload the JPG back to NPY arrays
+
 #path_frames_dir = path_video_frames_temp
 def get_sorted_jpg_frames(path_frames_dir):
     """From a directory holding .jpg images, load as NPY, and sort on timestamp
+    
+    All arrays are stored in a dictionary with the timestamp for sorting.
     """
     # Look inside
     frames = list()
@@ -47,42 +61,27 @@ with LoggerCritical():
     frames = get_sorted_jpg_frames(path_video_frames_temp)
 
 #%%
-
-#%%
 def write_video(frames,path_video_out, fps, width, height):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v') # Be sure to use lower case
-    #fourcc = cv2.VideoWriter_fourcc(*'XVID') # Be sure to use lower case
-    writer = cv2.VideoWriter(path_this_video_out, cv2.VideoWriter_fourcc(*"MJPG"), 30,(width,height))
+    
+    # This is extremely picky, and can fail (create empty file) with no warning !!
+    writer = cv2.VideoWriter(path_this_video_out, cv2.VideoWriter_fourcc(*"MJPG"), fps, (width,height))
 
-    #fourcc = cv2.VideoWriter_fourcc(*'DIVX') # Be sure to use lower case
-    #writer = cv2.VideoWriter(path_video_out, fourcc, fps, (width,height))
-    #writer = cv2.VideoWriter(path_video_out, fourcc, 20, (width,height))
-    #-1
-    #writer=cv2.VideoWriter("test1.avi", cv2.CV_FOURCC(*''), 25, (640,480))
-    
     for this_frame_dict in frames:
-            
-        #image_path = os.path.join(dir_path, image)
-        frame = this_frame_dict['array']
-        
-        writer.write(frame) # Write out frame to video
+        writer.write(this_frame_dict['array']) # Write out frame to video
     
-        #cv2.imshow('video',frame)
-        #if (cv2.waitKey(1) & 0xFF) == ord('q'): # Hit `q` to exit
-        #    break
     logging.debug("Wrote {} frames to {}".format(len(frames),path_video_out))
     
     writer.release()
     cv2.destroyAllWindows()
+    
+
 path_this_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'video_with_signals.mp4')
-#path_this_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'video_with_signals.avi')
-#write_video(frames[0:10],path_this_video_out)
+frames_height = frames[0]['array'].shape[0]
+frames_width = frames[0]['array'].shape[1]
+write_video(frames,path_this_video_out, fps=30, width=frames_width, height=frames_height)
 
-H = frames[0]['array'].shape[0]
-W = frames[0]['array'].shape[1]
-write_video(frames,path_this_video_out, fps=10, width=W, height=H)
-
-#%% TEST VIDEO
+#%% TEST VIDEO WITH RANDOM NOISE
 if 0:
     frames[0]['array'].shape
     frames[0]['array'].dtype

@@ -42,15 +42,15 @@ with LoggerCritical():
     logging.debug("test block")
 
 
-#%% Turn on plotting
-plt.ion()
-%matplotlib inline
-
 #%% Turn off plotting
 # First. change the mode to GUI window output
 %matplotlib qt
 # Then disable output
 plt.ioff()
+
+#%% Turn on plotting
+plt.ion()
+%matplotlib inline
 
     
 # In[9]:
@@ -88,6 +88,7 @@ def unbin_Y(Y):
 #%%
 ##indices= sel_indices
 def get_n_records(df_records, frames, indices):
+    raise
     """
     """
     #this_frame = np.array[frames[idx] for idx in indices]
@@ -181,6 +182,50 @@ def get_predictions(model, frames_npz, df_records):
             print(i)
     return df_records
 
+#%%
+    
+def get_fig_as_npy(this_fig):
+    raise
+    """Take a matplotlib.figure.Figure and return it as a static npy RGB array 
+    """
+    canvas = mpl.backends.backend_agg.FigureCanvas(this_fig)
+    canvas.draw() 
+    width, height = this_fig.get_size_inches() * this_fig.get_dpi()
+    width = int(width)
+    height = int(height)
+    img = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(height, width, 3)
+    return img
+
+
+#%%
+def plot_frames(records):
+    """
+    Render N records to analysis
+    """
+    fig=plt.figure(figsize=[20,18],facecolor='white')
+    ROWS = 1
+    COLS = 4
+    NUM_IMAGES = ROWS * COLS
+
+    for i,rec in enumerate(records):
+
+        steer_cat = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
+        timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
+        
+        this_label = "{}\n{:0.2f} steering\n{:0.2f} throttle".format(rec['timestamp'],rec['steering_signal'],rec['throttle'])
+        y = fig.add_subplot(ROWS,COLS,i+1)
+        y.imshow(rec['frame'])
+        #plt.title(str_label)
+        y.axes.get_xaxis().set_visible(False)
+        y.axes.get_yaxis().set_visible(False)
+        t = y.text(5,25,this_label,color='green',alpha=1)
+        #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
+        t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+        y.text(80,105,steer_cat,fontsize=30,horizontalalignment='center',verticalalignment='center',color='green')
+        #plt.title()
+        
+
+
 
 #%%
 
@@ -241,12 +286,6 @@ def gen_one_record_frame(rec):
         steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steer_pred'])])
         text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
     
-    
-    #### SAVE #####
-    #this_fname = os.path.join(save_folder_path,rec['timestamp_raw'] + '.jpg')
-    #logging.debug("Saved {}".format(this_fname))
-    #print(fig)
-    #fig.savefig(this_fname)
     return fig
 
 #%%

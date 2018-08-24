@@ -77,3 +77,101 @@ def gen_sample_frames(records):
 gen_sample_frames(records)
 
 
+
+#%%
+
+
+
+#%%
+#these_frames = 
+frames = list()
+for rec in these_records:
+    frame = gen_one_record_frame(rec)
+    #frames.append(frame)
+    this_np_frame = get_fig_as_npy(frame)
+    fig = plt.figure(frameon=False,figsize=(HEIGHT_INCHES,WIDTH_INCHES))
+    fig = plt.figure()
+    #fig.set_size_inches(w,h)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(this_np_frame)
+    
+    
+type(frame)
+dir(frame)
+frame.axes[0]
+di
+#plot_frames(these_indices,df_records, frames_npz)
+
+
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+fig = mpl.figure.Figure()
+mpl.backends.backend_agg.FigureCanvasAgg
+this_fig = frame
+type(frame)
+
+
+    
+    
+#ax = fig.gca()
+
+
+#width = int(np.floor(width))
+
+
+
+
+#ax.text(0.0,0.0,"Test", fontsize=45)
+#ax.axis('off')
+
+      # draw the canvas, cache the renderer
+
+image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+plt.imshow(image)
+
+#%%
+%matplotlib inline
+plt.ion()
+
+
+plot_frames(plot_frames(these_indices,df_records, frames_npz))
+
+
+
+
+fig2 = plt.figure()
+fig2.axes.append(this_ax)
+
+plt.show()
+
+
+fig = plt.figure(facecolor='white')
+
+frames[0]
+
+ROWS = 1
+COLS = 4
+for i,this_ax in enumerate([f.axes[0] for f in frames]):
+    print(this_ax)
+    fig = fig.axes.append(this_ax)
+    fig
+    new_sub = fig.add_subplot(ROWS,COLS,i+1)
+    new_sub.axes = this_ax
+    fig.add_artist()
+    this_ax.plot()
+    
+    dir(this_ax)
+    
+#%%
+# TURN OFF PLOTTING
+
+
+#records = get_full_records(frames_npz, df_records, df_records.index[0:3])
+#for r in records:
+#    this = gen_one_record_frame(r,"")
+#type(this)
+
+
