@@ -1,16 +1,23 @@
 """
 From a list of records;
 1) Generate the frame figures
+    - Plot the image, and th HUD
+    - If available, plot also the predicted steering
 2) Save the frame figuress as JPG into JPG_OUT_DIR
 3) Reload each JPG as a NPY, sorted by the timestep (name)
-4) Write an mp4 viedo toVIDEO_OUT_NAME
+4) Write an mp4 viedo to VIDEO_OUT_NAME
 
 """
-JPG_OUT_DIR = 'frames_predicted_HUD'
-VIDEO_OUT_NAME = 'video_with_predicted_signals'
+#JPG_OUT_DIR = 'frames_predicted_HUD'
+#VIDEO_OUT_NAME = 'video_with_predicted_signals'
 
-JPG_OUT_DIR = 'frames_HUD'
-VIDEO_OUT_NAME = 'video_with_signals'
+#JPG_OUT_DIR = 'frames_HUD'
+#VIDEO_OUT_NAME = 'video_with_signals'
+
+
+JPG_OUT_DIR = 'salient_frames_HUD'
+VIDEO_OUT_NAME = 'video_with_saliency_HUD'
+path_video_frames_temp = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,JPG_OUT_DIR)
 
 
 #%% Render all to JPG
@@ -19,27 +26,46 @@ VIDEO_OUT_NAME = 'video_with_signals'
 #%matplotlib qt
 #
 
-%matplotlib qt
-plt.ioff()
+#%matplotlib qt
+#plt.ioff()
+df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',THIS_MODEL_ID+' predicted.pck'))
 
-path_video_frames_temp = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,JPG_OUT_DIR)
+img_files_list = glob.glob(os.path.join(path_saliency_blend_frames,'*.png'))
+saliency_img_dict = dict()
+for f in img_files_list:
+    _, fname_ext = os.path.split(f)
+    fname, _ = os.path.splitext(fname_ext)
+    saliency_img_dict[fname] = plt.imread(f)
+    #print(f)
+
+
+#%%
+def write_video_figures(records,path_out):
+    """For each record, generate a MPL Figure object. 
+    
+    Write each object to JPG. 
+    """
+    for i,rec in enumerate(these_records):
+        if i%10 == 0:
+            print(i,"|",end="") #This doesn't show if capture is on! 
+        with LoggerCritical():
+            # Get a frame figure object
+            record_figure = gen_one_record_frame(rec)
+            
+            # Save it to jpg
+            this_fname = os.path.join(path_out,rec['timestamp_raw'] + '.jpg')
+            logging.debug("Saved {}".format(this_fname))
+            #print(fig)
+            record_figure.savefig(this_fname)
+
+
 if not os.path.exists(path_video_frames_temp): os.makedirs(path_video_frames_temp)
 
-these_records = get_full_records(frames_npz, df_records, df_records.index)
-for i,rec in enumerate(these_records):
-    if i%10 == 0:
-        print(i,"|",end="") #This doesn't show if capture is on! 
-    with LoggerCritical():
-        # Get a frame figure object
-        record_figure = gen_one_record_frame(rec)
-        
-        # Save it to jpg
-        this_fname = os.path.join(path_video_frames_temp,rec['timestamp_raw'] + '.jpg')
-        logging.debug("Saved {}".format(this_fname))
-        #print(fig)
-        record_figure.savefig(this_fname)
-        
-        
+#these_records = get_full_records(frames_npz, df_records, df_records.index)
+these_records = get_full_records(saliency_img_dict,df_records,df_records.index)
+
+write_video_figures(these_records,path_video_frames_temp)
+     
 #%% Reload the JPG back to NPY arrays
 
 #path_frames_dir = path_video_frames_temp
@@ -82,6 +108,10 @@ with LoggerCritical():
 
 #%%
 def write_video(frames,path_video_out, fps, width, height):
+    """From a list of frames objects, generate a MP4. 
+    
+    The frames objects are dictionaries with NPY arrays and the timestamp.
+    """
     fourcc = cv2.VideoWriter_fourcc(*'mp4v') # Be sure to use lower case
     
     # This is extremely picky, and can fail (create empty file) with no warning !!

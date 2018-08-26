@@ -36,7 +36,7 @@ last_batch = validation_generator[len(validation_generator)]
 def baseline_steering_model():
     model = ks.models.Sequential()
     model.add(ks.layers.Conv2D(24, (5,5), strides=(2, 2), activation = "relu", input_shape=(120,160,3)))
-    model.add(ks.layers.Conv2D(32, (5,5), strides=(2, 2), activation = "relu"))
+    model.add(ks.layers.Conv2D(32, (5,5), strides=(2, 2), acpath_video_frames_temptivation = "relu"))
     model.add(ks.layers.Conv2D(64, (5,5), strides=(2, 2), activation = "relu"))
     model.add(ks.layers.Conv2D(64, (3,3), strides=(2, 2), activation = "relu"))
     model.add(ks.layers.Conv2D(64, (3,3), strides=(1, 1), activation = "relu"))
@@ -57,7 +57,7 @@ blmodel.summary()
 #%% TRAIN
 
 EPOCHS = 10
-with LoggerCritical():
+with LoggerCritical():path_video_frames_temp
     history = blmodel.fit_generator(generator=training_generator,
                       validation_data=validation_generator,
                       use_multiprocessing=True,
@@ -66,23 +66,91 @@ with LoggerCritical():
                       verbose=1,)
 history_dict = history.__dict__
 
-
-#%% Plot training history
-%matplotlib inline
-#model_title = "10 Epochs"
-
-plot_hist(history_dict,'categorical_accuracy',model_title="")
-
+this_timestamp = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
+logging.debug("Finished training model {}".format(this_timestamp))
 
 #%% Make predictions and augment the records frame with predicted values
 
 df_records = get_predictions(blmodel, frames_npz, df_records)
 # The manually calculated accuracy: 
 #sum(df_records['steering_pred_argmax'] == df_records['steering_signal_argmax'])/len(df_records)
-
+sum(df_records['steering_pred_argmax'] == df_records['steering_signal_argmax'])/len(df_records)
 # Invert the steering! WHY>?
 df_records['steering_pred_signal'] = df_records['steering_pred_signal'].apply(lambda x: x*-1)
 logging.debug("Steering signal inverterted - WHY?".format())
+
+#%% =============================================================================
+# Plot analysis of model
+# =============================================================================
+# Plot training history
+#%matplotlib inline
+#model_title = "10 Epochs"
+
+plot_hist(history_dict,'categorical_accuracy',model_title="")
+
+# Plot a few samples
+# TURN OFF PLOTTING
+#%matplotlib inline
+
+# Right turn
+these_indices = df_records[df_records['steering_signal'] > 0.9].sample(4)['timestamp'].tolist()
+these_records = get_full_records(frames_npz, df_records, these_indices)
+plot_frames(these_records)
+
+# Left turn
+these_indices = df_records[df_records['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
+these_records = get_full_records(frames_npz, df_records, these_indices)
+plot_frames(these_records)
+
+# Straight
+these_indices = df_records[(df_records['steering_signal'] > -0.1) & (df_records['steering_signal'] < 0.1)].sample(4)['timestamp'].tolist()
+these_records = get_full_records(frames_npz, df_records, these_indices)
+plot_frames(these_records)path_model_h5
+
+
+#%% =============================================================================
+# Saving the model
+# =============================================================================
+# Save the model weights, architecture, configuration, and state
+# serialize weights to HDF5
+path_model_h5 = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',this_timestamp + ' model.h5')
+model_dir = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model')
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)
+blmodel.save(path_model_h5)
+logging.debug("Saved complete model hd5 to disk".format())
+
+# Save just the architecture to JSON
+path_model_json = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',this_timestamp + ' model.json')
+model_json = blmodel.to_json()
+with open(path_model_json, "w") as json_file:
+    json_file.write(model_json)
+logging.debug("Saved model configuration json to disk".format())
+
+# Save the history to JSON
+path_history_json = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',this_timestamp + ' history.json')
+with open(path_history_json, "w") as json_file:
+    if 'model' in history_dict: 
+        history_dict.pop('model')
+    json.dump(history_dict,json_file)
+logging.debug("Saved model history json to disk".format())
+
+# Save the predicted dataframe
+path_records_json = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',this_timestamp + ' predicted.pck')
+df_records.to_pickle(path_records_json)
+
+#%%
+if 0:
+    test = ks.models.load_model(path_model_h5)
+    
+    test.summary()
+    test.metrics
+    dir(test)
+
+
+
+
+
 
 #%% Manual and Keras metric calculations
 if 0:
@@ -116,26 +184,6 @@ if 0:
         #sums_cumul.append(part_sum)
     print("Total sum:",sum(sums_cumul))
     print("Categorical Accuracy: {:0.1f}%".format(sum(sums_cumul)/N*100))
-
-
-#%% Plot a few samples
-# TURN OFF PLOTTING
-%matplotlib inline
-
-# Right turn
-these_indices = df_records[df_records['steering_signal'] > 0.9].sample(4)['timestamp'].tolist()
-these_records = get_full_records(frames_npz, df_records, these_indices)
-plot_frames(these_records)
-
-# Left turn
-these_indices = df_records[df_records['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
-these_records = get_full_records(frames_npz, df_records, these_indices)
-plot_frames(these_records)
-
-# Straight
-these_indices = df_records[(df_records['steering_signal'] > -0.1) & (df_records['steering_signal'] < 0.1)].sample(4)['timestamp'].tolist()
-these_records = get_full_records(frames_npz, df_records, these_indices)
-plot_frames(these_records)
 
 
 

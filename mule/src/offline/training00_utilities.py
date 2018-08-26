@@ -22,7 +22,11 @@ import sklearn as sk
 import cv2
 
 #%% Logging
-
+#>>> import warnings
+#>>> image = np.array([0, 0.5, 1], dtype=float)
+#>>> with warnings.catch_warnings():
+#...     warnings.simplefilter("ignore")
+#...     img_as_ubyte(image)
 
 class LoggerCritical:
     def __enter__(self):

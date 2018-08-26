@@ -1,7 +1,17 @@
 """
 Select a single data set for training
-Load the records and frames>
-Plot some analysis
+Load the records and frames
+    frames_npz : A numpy zip object containing the raw arrays on disk
+    df_records : A dataframe containing all other information at each timestep
+                 Columns: 
+                     Index - the timestamp string
+                     mode  - control modes dictionary
+                     steering_signal - 
+                     throttle_signal - 
+                    
+                 This dataframe will be augmented with:
+                     steering_pred_signal - 
+                     
 """ 
 
 #%% Select the directory
@@ -12,7 +22,9 @@ assert os.path.exists(LOCAL_PROJECT_PATH)
 #%% Select the data set
 
 #THIS_DATASET = '20180807 201756'
-THIS_DATASET = '20180801 160056'
+#THIS_DATASET = '20180801 160056'
+THIS_DATASET = '20180807 194733'
+
 df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'df_record.pck'))
 frames_npz=np.load(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'))
 df_records.index = df_records['timestamp']
@@ -35,7 +47,7 @@ hist_steering = df_records['steering_signal'].hist()
 #%% Histogram: Throttle
 fig=plt.figure(figsize=[10,5],facecolor='white')
 hist_throttle = df_records['throttle_signal'].hist()
-plot_url = py.plot_mpl(fig)
+#plot_url = py.plot_mpl(fig)
 
 #%% Ignore throttle = 0 images
 if 0:
