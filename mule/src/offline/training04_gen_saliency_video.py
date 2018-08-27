@@ -40,6 +40,9 @@ import cv2
 import time
 from PIL import Image
 
+#%%
+#these_records = these_records[0:100]
+
 #%% Logging
 
 
@@ -81,7 +84,13 @@ if not os.path.exists(path_saliency_blend_frames):
     os.makedirs(path_saliency_blend_frames)
 
 #THIS_DATASET = '20180807 201756'
-
+    
+RAW_FRAME_DIR = 'frames_raw'
+path_raw_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,RAW_FRAME_DIR)
+if not os.path.exists(path_raw_frames): 
+    os.makedirs(path_raw_frames)
+    
+#%% Load
 df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',THIS_MODEL_ID+' predicted.pck'))
 frames_npz=np.load(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'))
 df_records.index = df_records['timestamp']
@@ -219,9 +228,9 @@ for rec in these_records:
 #this_ts = these_records[0]['timestamp_raw']
 
 #raw_frame = these_records[0]['frame']
-npz_object = frames_npz
-path_img_msk_pngs = path_saliency_frames 
-rec = these_records[0]
+#npz_object = frames_npz
+#path_img_msk_pngs = path_saliency_frames 
+#rec = these_records[0]
 def blend_frame_and_save(npz_object,path_img_msk_pngs,rec):
     BLUR_SIZE = 8
     #BLUR_FACTOR = 1/25
@@ -369,92 +378,143 @@ plt.imshow(this_blended)
 this_blended = blend_frame_and_save(frames_npz,path_saliency_frames,these_records[500])
 plt.imshow(this_blended)
 #%% TESTING
-rec = these_records[500]
-path_this_salient_frame = os.path.join(path_saliency_frames,rec['timestamp_raw']+'.png')
-#sframe = plt.imread(path_this_salient_frame)
-sframe = PIL.Image.open(path_this_salient_frame)
 
-path_raw_frame = os.path.join(path_raw_frames,rec['timestamp_raw']+'.png')
-#frame = plt.imread(path_this_salient_frame)
-#frame = npz_object[rec['timestamp_raw']]
-frame = PIL.Image.open(path_raw_frame)
-red, green, blue, alpha = frame.split()
+def blend_frame_and_save2(npz_object,path_img_msk_pngs,rec,blur_rad,map_name,strength):
+    #rec = these_records[500]
+    path_this_salient_frame = os.path.join(path_saliency_frames,rec['timestamp_raw']+'.png')
+    #sframe = plt.imread(path_this_salient_frame)
+    sframe = PIL.Image.open(path_this_salient_frame)
+    
+    path_raw_frame = os.path.join(path_raw_frames,rec['timestamp_raw']+'.png')
+    #frame = plt.imread(path_this_salient_frame)
+    #frame = npz_object[rec['timestamp_raw']]
+    frame = PIL.Image.open(path_raw_frame)
+    red, green, blue, alpha = frame.split()
+    
+    #frame.show()
+    #figure(figsize = (20,20))
+    #plt.imshow(sframe)
+    #plt.imshow(frame)
+    
+    
+    # Blur
+    blurred_image = sframe.filter(PIL.ImageFilter.GaussianBlur(radius=blur_rad))
+    #plt.imshow(blurred_image)
+    
+    # Contrast 
+    contrast = PIL.ImageEnhance.Contrast(blurred_image)
+    #contrast = contrast.enhance(3)
+    contrast = contrast.enhance(strength)
+    
+    ##plt.imshow(contrast)
+    red, green, blue, alpha = contrast.split()
+    raw_alpha_mask = red
+    contrast.putalpha(raw_alpha_mask)
+    
+    # Color
+    cm_hot = mpl.cm.get_cmap('inferno')
+    cm_hot = mpl.cm.get_cmap('plasma')
+    
+    cm_hot = mpl.cm.get_cmap('jet')
+    cm_hot = mpl.cm.get_cmap('magma')
+    cm_hot = mpl.cm.get_cmap('ocean')
+    
+    #cm_hot = mpl.cm.get_cmap('copper')
+    #cm_hot = mpl.cm.get_cmap('hot')
+    #cm_hot = mpl.cm.get_cmap('rainbow')
+    
+    #cm_hot.set_under(color="black", alpha="0")
+    cm_hot = mpl.cm.get_cmap('hot')
+    cm_hot = mpl.cm.get_cmap('jet')
+    cm_hot = mpl.cm.get_cmap(map_name)
+    contrastL = contrast.convert('L')
+    constrast_arr = cm_hot(np.array(contrastL))
+    colored = np.uint8(constrast_arr * 255)
+    colored = Image.fromarray(colored)
+    #colored.putalpha(raw_alpha_mask)
+    #plt.imshow(colored)
+    red, green, blue, alpha = colored.split()
+    #im.mode
+    #im.alpha_composite()
+    
+    # Paste
+    pasted = frame.copy()
+    pasted.paste(colored,mask=raw_alpha_mask)
+    #plt.imshow(pasted)
+    return pasted
 
-#frame.show()
+    if 0:
+        # Subtract 
+        subtracted = PIL.ImageChops.subtract(frame,contrast)
+        
+        # Added
+        added = PIL.ImageChops.add(frame,colored)
+        plt.imshow(added)
+        
+        
+        # Composited
+        composite = PIL.ImageChops.composite(frame, colored, raw_alpha_mask)
+        plt.imshow(composite)
+        
+        
+        raw_alpha_mask.alpha
+        
+        
+        
+        # BLend
+        alphaBlended1 = PIL.Image.blend(frame, colored, alpha=0.5)
+        plt.imshow(alphaBlended1)
+        
+        
+        
+        # Composite
+        mask = blurred_image.convert('L')
+        mask.mode, mask.size, 
+        dir(mask)
+        maskarr = np.array(mask)
+        this = PIL.Image.composite(frame, im, mask)
+        plt.imshow(this)
+        
+        
+        # BLend
+        alphaBlended1 = PIL.Image.blend(frame, im, alpha=.2)
+        plt.imshow(alphaBlended1)
+        
+        #PIL.ImageColor.colormap[]
+        #EDGE_ENHANCE
+        #edge = PIL.ImageEnhance.EDGE_ENHANCE(blurred_image)
+        #contrast = contrast.enhance(3)
+        #plt.imshow(contrast,cmap='hot')
+        #plt.imshow(im, 
+        # Color
+        #cm = plt.get_cmap('gist_rainbow')
+        #im = np.array(contrast)
+        #colored_image = cm(im)
+        #im = Image.fromarray(colored_image)
+        
+        
+        
+        #PIL.ImageEnhance
+#['viridis', 'plasma', 'inferno', 'magma']
+this_map = 'viridis'
 
-plt.imshow(sframe)
-plt.imshow(frame)
+this_map = 'seismic'
+this_map = 'summer'
+this_map = 'magma'
+this_map = 'hot'
+this_strength = 1.7
+this_blur = 1
+this_blended1 = blend_frame_and_save2(frames_npz,path_saliency_frames,these_records[0],this_blur,this_map,this_strength)
+plt.imshow(this_blended1)
+
+this_blended2 = blend_frame_and_save2(frames_npz,path_saliency_frames,these_records[100],this_blur,this_map,this_strength)
+plt.imshow(this_blended2)
 
 
-# Blur
-blurred_image = sframe.filter(PIL.ImageFilter.GaussianBlur(radius=2))
-plt.imshow(blurred_image)
-
-# Contrast 
-contrast = PIL.ImageEnhance.Contrast(blurred_image)
-contrast = contrast.enhance(3)
-plt.imshow(contrast)
-red, green, blue, alpha = contrast.split()
-raw_alpha_mask = red
-
-# Color
-cm_hot = mpl.cm.get_cmap('hot')
-#cm_hot = mpl.cm.get_cmap('jet')
-contrastL = contrast.convert('L')
-constrast_arr = cm_hot(np.array(contrastL))
-colored = np.uint8(constrast_arr * 255)
-colored = Image.fromarray(colored)
-colored.putalpha(raw_alpha_mask)
-plt.imshow(colored)
-red, green, blue, alpha = colored.split()
-#im.mode
-#im.alpha_composite()
-
-
-# BLend
-alphaBlended1 = PIL.Image.blend(frame, colored, alpha=1)
-plt.imshow(alphaBlended1)
-
-# Paste
-new = frame.paste(colored,[0,0],colored)
-plt.imshow(new)
-
-
-# Composite
-mask = blurred_image.convert('L')
-mask.mode, mask.size, 
-dir(mask)
-maskarr = np.array(mask)
-this = PIL.Image.composite(frame, im, mask)
-plt.imshow(this)
-
-
-# BLend
-alphaBlended1 = PIL.Image.blend(frame, im, alpha=.2)
-plt.imshow(alphaBlended1)
-
-#PIL.ImageColor.colormap[]
-#EDGE_ENHANCE
-#edge = PIL.ImageEnhance.EDGE_ENHANCE(blurred_image)
-#contrast = contrast.enhance(3)
-#plt.imshow(contrast,cmap='hot')
-#plt.imshow(im, 
-# Color
-#cm = plt.get_cmap('gist_rainbow')
-#im = np.array(contrast)
-#colored_image = cm(im)
-#im = Image.fromarray(colored_image)
-
-
-
-#PIL.ImageEnhance
+this_blended3 = blend_frame_and_save2(frames_npz,path_saliency_frames,these_records[500],this_blur,this_map,this_strength)
+plt.imshow(this_blended3)
+ 
 #%% Write NPZ to PNG
-
-RAW_FRAME_DIR = 'frames_raw'
-path_raw_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,RAW_FRAME_DIR)
-if not os.path.exists(path_raw_frames): 
-    os.makedirs(path_raw_frames)
-
 
 for rec in these_records:
     frame = npz_object[rec['timestamp_raw']]
@@ -463,12 +523,23 @@ for rec in these_records:
     plt.imsave(path_out, frame)
 
 #%%
-
-
+#%matplotlib qt
+#%matplotlib inline
+# Then disable output
+    
+    
+if not os.path.exists(path_saliency_blend_frames): 
+    os.makedirs(path_saliency_blend_frames)
+    
+plt.ioff()    
+this_map = 'hot'
+this_strength = 1.7
+this_blur = 1
 for rec in these_records:
-    this_blended = blend_frame_and_save(frames_npz,path_saliency_frames,rec)
-    path_out = os.path.join(path_saliency_blend_frames,rec['timestamp_raw']+'.png')
-    plt.imsave(path_out, this_blended)
+    with LoggerCritical():   
+        this_blended = blend_frame_and_save2(frames_npz,path_saliency_frames,rec,this_blur,this_map,this_strength)
+        path_out = os.path.join(path_saliency_blend_frames,rec['timestamp_raw']+'.png')
+        plt.imsave(path_out, this_blended)
 
 #plt.imshow(this_blended)
 #frames_npz[0]

@@ -19,7 +19,7 @@ JPG_OUT_DIR = 'salient_frames_HUD'
 VIDEO_OUT_NAME = 'video_with_saliency_HUD'
 path_video_frames_temp = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,JPG_OUT_DIR)
 
-
+path_saliency_blend_frames
 #%% Render all to JPG
 """
 """
@@ -37,7 +37,14 @@ for f in img_files_list:
     fname, _ = os.path.splitext(fname_ext)
     saliency_img_dict[fname] = plt.imread(f)
     #print(f)
+    
+#%%
+these_records = get_full_records(frames_npz, df_records, df_records.index)
+#test = rec['frame']
 
+#%% !!! REPLACE THE FRAMES WITH SALIENCY FRAMES IN EACH RECORD!!! 
+for rec in these_records:
+    rec['frame'] = saliency_img_dict[rec['timestamp_raw']]
 
 #%%
 def write_video_figures(records,path_out):
@@ -45,7 +52,8 @@ def write_video_figures(records,path_out):
     
     Write each object to JPG. 
     """
-    for i,rec in enumerate(these_records):
+    print('Start')
+    for i,rec in enumerate(records):
         if i%10 == 0:
             print(i,"|",end="") #This doesn't show if capture is on! 
         with LoggerCritical():
@@ -61,8 +69,7 @@ def write_video_figures(records,path_out):
 
 if not os.path.exists(path_video_frames_temp): os.makedirs(path_video_frames_temp)
 
-#these_records = get_full_records(frames_npz, df_records, df_records.index)
-these_records = get_full_records(saliency_img_dict,df_records,df_records.index)
+#
 
 write_video_figures(these_records,path_video_frames_temp)
      
