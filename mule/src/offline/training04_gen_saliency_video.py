@@ -368,7 +368,99 @@ plt.imshow(this_blended)
 
 this_blended = blend_frame_and_save(frames_npz,path_saliency_frames,these_records[500])
 plt.imshow(this_blended)
+#%% TESTING
+rec = these_records[500]
+path_this_salient_frame = os.path.join(path_saliency_frames,rec['timestamp_raw']+'.png')
+#sframe = plt.imread(path_this_salient_frame)
+sframe = PIL.Image.open(path_this_salient_frame)
 
+path_raw_frame = os.path.join(path_raw_frames,rec['timestamp_raw']+'.png')
+#frame = plt.imread(path_this_salient_frame)
+#frame = npz_object[rec['timestamp_raw']]
+frame = PIL.Image.open(path_raw_frame)
+red, green, blue, alpha = frame.split()
+
+#frame.show()
+
+plt.imshow(sframe)
+plt.imshow(frame)
+
+
+# Blur
+blurred_image = sframe.filter(PIL.ImageFilter.GaussianBlur(radius=2))
+plt.imshow(blurred_image)
+
+# Contrast 
+contrast = PIL.ImageEnhance.Contrast(blurred_image)
+contrast = contrast.enhance(3)
+plt.imshow(contrast)
+red, green, blue, alpha = contrast.split()
+raw_alpha_mask = red
+
+# Color
+cm_hot = mpl.cm.get_cmap('hot')
+#cm_hot = mpl.cm.get_cmap('jet')
+contrastL = contrast.convert('L')
+constrast_arr = cm_hot(np.array(contrastL))
+colored = np.uint8(constrast_arr * 255)
+colored = Image.fromarray(colored)
+colored.putalpha(raw_alpha_mask)
+plt.imshow(colored)
+red, green, blue, alpha = colored.split()
+#im.mode
+#im.alpha_composite()
+
+
+# BLend
+alphaBlended1 = PIL.Image.blend(frame, colored, alpha=1)
+plt.imshow(alphaBlended1)
+
+# Paste
+new = frame.paste(colored,[0,0],colored)
+plt.imshow(new)
+
+
+# Composite
+mask = blurred_image.convert('L')
+mask.mode, mask.size, 
+dir(mask)
+maskarr = np.array(mask)
+this = PIL.Image.composite(frame, im, mask)
+plt.imshow(this)
+
+
+# BLend
+alphaBlended1 = PIL.Image.blend(frame, im, alpha=.2)
+plt.imshow(alphaBlended1)
+
+#PIL.ImageColor.colormap[]
+#EDGE_ENHANCE
+#edge = PIL.ImageEnhance.EDGE_ENHANCE(blurred_image)
+#contrast = contrast.enhance(3)
+#plt.imshow(contrast,cmap='hot')
+#plt.imshow(im, 
+# Color
+#cm = plt.get_cmap('gist_rainbow')
+#im = np.array(contrast)
+#colored_image = cm(im)
+#im = Image.fromarray(colored_image)
+
+
+
+#PIL.ImageEnhance
+#%% Write NPZ to PNG
+
+RAW_FRAME_DIR = 'frames_raw'
+path_raw_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,RAW_FRAME_DIR)
+if not os.path.exists(path_raw_frames): 
+    os.makedirs(path_raw_frames)
+
+
+for rec in these_records:
+    frame = npz_object[rec['timestamp_raw']]
+    #this_blended = blend_frame_and_save(frames_npz,path_saliency_frames,rec)
+    path_out = os.path.join(path_raw_frames,rec['timestamp_raw']+'.png')
+    plt.imsave(path_out, frame)
 
 #%%
 
