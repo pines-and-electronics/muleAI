@@ -23,7 +23,8 @@ assert os.path.exists(LOCAL_PROJECT_PATH)
 
 #THIS_DATASET = '20180807 201756'
 #THIS_DATASET = '20180801 160056'
-THIS_DATASET = '20180807 194733'
+#THIS_DATASET = '20180807 194733'
+THIS_DATASET = '20180828 223214'
 
 df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'df_record.pck'))
 frames_npz=np.load(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'))

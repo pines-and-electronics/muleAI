@@ -309,7 +309,10 @@ def get_datasets(df_datasets):
         dataset_def.update(process_json_records(this_ds['this_dir']))
             
         # JPG zip
-        dataset_def.update(process_jpg_zip(this_ds['this_dir']))
+        try:
+            dataset_def.update(process_jpg_zip(this_ds['this_dir']))
+        except:
+            pass
         
         # Video
         

@@ -36,7 +36,7 @@ last_batch = validation_generator[len(validation_generator)]
 def baseline_steering_model():
     model = ks.models.Sequential()
     model.add(ks.layers.Conv2D(24, (5,5), strides=(2, 2), activation = "relu", input_shape=(120,160,3)))
-    model.add(ks.layers.Conv2D(32, (5,5), strides=(2, 2), acpath_video_frames_temptivation = "relu"))
+    model.add(ks.layers.Conv2D(32, (5,5), strides=(2, 2), activation = "relu"))
     model.add(ks.layers.Conv2D(64, (5,5), strides=(2, 2), activation = "relu"))
     model.add(ks.layers.Conv2D(64, (3,3), strides=(2, 2), activation = "relu"))
     model.add(ks.layers.Conv2D(64, (3,3), strides=(1, 1), activation = "relu"))
@@ -56,14 +56,15 @@ blmodel.summary()
 
 #%% TRAIN
 
-EPOCHS = 10
-with LoggerCritical():path_video_frames_temp
+EPOCHS = 20
+with LoggerCritical():
     history = blmodel.fit_generator(generator=training_generator,
                       validation_data=validation_generator,
                       use_multiprocessing=True,
                       workers=6,
                       epochs=EPOCHS,
                       verbose=1,)
+
 history_dict = history.__dict__
 
 this_timestamp = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
@@ -105,7 +106,7 @@ plot_frames(these_records)
 # Straight
 these_indices = df_records[(df_records['steering_signal'] > -0.1) & (df_records['steering_signal'] < 0.1)].sample(4)['timestamp'].tolist()
 these_records = get_full_records(frames_npz, df_records, these_indices)
-plot_frames(these_records)path_model_h5
+plot_frames(these_records)
 
 
 #%% =============================================================================
