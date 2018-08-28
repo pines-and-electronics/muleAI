@@ -24,7 +24,7 @@ parts:
  - ai:
     type: AIController
     arguments:
-        model_path: "/home/pi/mule_out/20180801 132303/model/AFA01.hd5"
+        model_path: "/home/pi/mule_out/20180828 223214/model/20180828 230712 model.h5"
  - actuator:
         type: ThrottleController
         arguments:
