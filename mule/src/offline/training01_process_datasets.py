@@ -42,6 +42,15 @@ handler.setFormatter(formatter)
 logger.handlers = [handler]
 logger.critical("Logging started")
 
+class LoggerCritical:
+    def __enter__(self):
+        my_logger = logging.getLogger()
+        my_logger.setLevel("CRITICAL")
+    def __exit__(self, type, value, traceback):
+        my_logger = logging.getLogger()
+        my_logger.setLevel("DEBUG")
+
+
 #logging.getLogger("tensorflow").setLevel(logging.WARNING)
 
 #%% Data set class
@@ -57,7 +66,6 @@ class AIDataSet():
     path_frames_npz : str
         Path to frames numpy zip object. Can be accessed directly by np.load.
     """
-
     
     def __init__(self,path_data,data_folder):
         # Check the data folder
@@ -82,14 +90,14 @@ class AIDataSet():
         logging.debug("Frames npz is {:0.2f} MB, {} records".format(self.frames_size,len(frames_timestamps)))
         
         # Assert timestep alignment
-        assert all(self.df['timestamp'] == frames_timestamps), "Misaligned timestamps"
+        assert all(self.df.index == frames_timestamps), "Misaligned timestamps"
         
         # JPG folder
         JPG_FOLDER_NAME = "jpg_images"
         self.path_jpgs_dir = os.path.join(self.path_dataset,JPG_FOLDER_NAME)
 
     # =============================================================================
-    # Query
+    #--- Query
     # =============================================================================
     @property
     def datetime_string(self):
@@ -127,11 +135,50 @@ class AIDataSet():
         # Sorted and reindexed! 
         return pd.Series(timestamps).sort_values().reset_index(drop=True)
     
-    #def jpg_frames():
-        
+    @property
+    def int_index(self,timestamp):
+        # Helper to swap timestamp string <> integer index on df
+        return self.df[self.df['timestamp']==timestamp]
+
+
+    @property
+    def timestamp(self,int_index):
+        # Helper to swap timestamp string <> integer index on df
+        return self.df[int_index]['timestamp']
+                
     
     # =============================================================================
-    # Load into memory
+    #--- Utility
+    # =============================================================================
+    # Conversion between categorical and floating point steering
+    def linear_bin(self,a):
+        a = a + 1
+        b = round(a / (2 / 14))
+        arr = np.zeros(15)
+        arr[int(b)] = 1
+        return arr
+    
+    
+    def linear_unbin(self,arr):
+        if not len(arr) == 15:
+            raise ValueError('Illegal array length, must be 15')
+        b = np.argmax(arr)
+        a = b * (2 / 14) - 1
+        return a
+    
+    
+    def bin_Y(self,Y):
+        d = [ linear_bin(y) for y in Y ]
+        return np.array(d)
+    
+    
+    def unbin_Y(self,Y):
+        d = [ linear_unbin(y) for y in Y ]
+        return np.array(d)    
+    
+    
+    # =============================================================================
+    #--- Load into memory
     # =============================================================================
     def load_records_df(self):
         """Get DataFrame from zipped JSON records. Return sorted pd.DataFrame. 
@@ -152,11 +199,18 @@ class AIDataSet():
                 d = json.loads(d.decode("utf-8"))
                 d['timestamp'] = this_timestep
                 json_records.append(d)
-        # Sorted and reindexed! 
-        return pd.DataFrame(json_records).sort_values(by='timestamp').reset_index(drop=True)
+        # Sorted and reindexed!
+        this_df = pd.DataFrame(json_records).sort_values(by='timestamp')
+        this_df.index = this_df['timestamp']
+        #.reset_index(drop=True)
+        this_df['steering_signal'] = this_df['steering_signal'].apply(lambda x: x*-1)
+        logging.debug("Steering signal inverterted - WHY?".format())
+        
+        return this_df
+        #return pd.DataFrame(json_records).sort_values(by='timestamp').reset_index(drop=True)
     
     # =============================================================================
-    # Timestep analysis and processing
+    #--- Timestep analysis and processing
     # =============================================================================
     def augment_df_datetime(self):
         def convert_datetime(x):
@@ -188,7 +242,7 @@ class AIDataSet():
                       ))        
     
     # =============================================================================
-    # Plotting
+    #--- Plotting
     # =============================================================================
     def histogram_steering(self):
         fig=plt.figure(figsize=[10,5],facecolor='white')
@@ -198,11 +252,30 @@ class AIDataSet():
     def histogram_throttle(self):
         fig=plt.figure(figsize=[10,5],facecolor='white')
         hist_throttle = self.df['throttle_signal'].hist()
-        #plot_url = py.plot_mpl(fig)    
+        #plot_url = py.plot_mpl(fig)
+    
+    def write_frames(self):
+        OUT_DIR = 'Video Frames'
+        OUT_PATH=os.path.join(self.path_dataset,OUT_DIR)
+        if not os.path.exists(OUT_PATH):
+            os.mkdir(OUT_PATH)
+        logging.debug("Writing frames to {}".format(OUT_PATH))            
+        #return
+        with LoggerCritical():
+            for idx in tqdm.tqdm(self.df.index):
+                this_frame = self.gen_record_frame(idx)
+    
+                # Save it to jpg
+                this_fname = os.path.join(OUT_PATH,idx + '.jpg')
+                this_frame.savefig(this_fname)
+
+        
+        
+    
     # =============================================================================
-    # Video
+    #--- Video
     # =============================================================================
-    def gen_one_record_frame(self, ts_string_index=None, int_index=None, source_jpg_folder='jpg_images'):
+    def gen_record_frame(self, ts_string_index, source_jpg_folder='jpg_images'):
         """From a Record dictionary, create a single summary image of that timestep. 
         
         The figure has no border (full image)
@@ -214,7 +287,7 @@ class AIDataSet():
         Show also the predicted value, if available. 
         
         """
-        this_ts = self.df[t]
+        rec = self.df.loc[ts_string_index]
         # Settings ############################################################
         font_label_box = {
             'color':'green',
@@ -231,41 +304,185 @@ class AIDataSet():
         
         # Figure ##############################################################
         fig = plt.figure(frameon=False,figsize=(HEIGHT_INCHES,WIDTH_INCHES))
-        ax = plt.Axes(fig, [0., 0., 1., 1.])
+        ax = mpl.axes.Axes(fig, [0., 0., 1., 1.])
         ax.set_axis_off()
         fig.add_axes(ax)
         
         # Main Image ##########################################################
-        jpg_path = os.path.join(self.path_dataset,source_jpg_folder)
+        jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
         assert os.path.exists(jpg_path)
         img = mpl.image.imread(jpg_path)
         ax.imshow(img)
-        raise
-        self.df
+        #raise
         
-        ax.axes.get_xaxis().set_visible(False)
-        ax.axes.get_yaxis().set_visible(False)
         
-        ######## The data box ########
-        timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
-        if 'steering_pred_signal' in df_records.columns:
-            this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['steering_pred_signal'],rec['throttle'])
+        #ax.axes.get_xaxis().set_visible(False)
+        #ax.axes.get_yaxis().set_visible(False)
+        
+        # Data box ########################################################
+        timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
+        if 'steering_pred_signal' in self.df.columns:
+            this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
+                          rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
         else: 
-            this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle'])
+            this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
         t1 = ax.text(2,15,this_label,fontdict=font_label_box)
         t1.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-    
-        ######## The steering widget HUD ########
-        # Steering HUD : Actual steering signal
-        # Steering HUD: Predicted steering angle
-        steer_actual = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
+        # Steering widget HUD #################################################
+        # Steering HUD: Actual steering signal
+        steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
         text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-        
-        if 'steering_pred_signal' in df_records.columns:
-            steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
+        # Steering HUD: Predicted steering angle
+        if 'steering_pred_signal' in self.df.columns:
+            steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
             text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
         
-        return fig    
+        return fig
+
+    def plot4(self,ts_string_indices, source_jpg_folder='jpg_images'):
+        """
+        Render N records to analysis
+        """
+        # Settings ############################################################
+        font_label_box = {
+            'color':'green',
+            'size':16,
+        }
+        font_steering = {'family': 'monospace',
+                #'color':  'darkred',
+                'weight': 'normal',
+                'size': 25,
+                }
+        ROWS = 1
+        COLS = 4
+        NUM_IMAGES = ROWS * COLSmpl.pyplot.close(fig)
+        
+        # Figure ##############################################################
+        fig=plt.figure(figsize=[20,18],facecolor='white')
+
+        
+        for i,ts_string_index in enumerate(ts_string_indices):
+            rec = self.df.loc[ts_string_index]
+
+            timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
+            
+            if 'steering_pred_signal' in self.df.columns:
+                this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
+                              rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
+            else: 
+                this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
+                
+            ax = fig.add_subplot(ROWS,COLS,i+1)
+
+            # Main Image ##########################################################
+            jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
+            assert os.path.exists(jpg_path)
+            img = mpl.image.imread(jpg_path)
+            ax.imshow(img)
+            #plt.title(str_label)
+            
+            # Data box ########################################################
+            
+            #ax.axes.get_xaxis().set_visible(False)
+            #ax.axes.get_yaxis().set_visible(False)
+            t = ax.text(5,25,this_label,color='green',alpha=1)
+            #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
+            t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+            
+            # Steering widget HUD #################################################
+            # Steering HUD: Actual steering signal
+            steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
+            text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+            # Steering HUD: Predicted steering angle
+            if 'steering_pred_signal' in self.df.columns:
+                steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
+                text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+
+
+    def plot12(self,ts_string_indices, source_jpg_folder='jpg_images'):
+        """
+        Render N records to analysis
+        """
+        # Settings ############################################################
+        font_label_box = {
+            'color':'green',
+            'size':16,
+        }
+        font_steering = {'family': 'monospace',
+                #'color':  'darkred',
+                'weight': 'normal',
+                'size': 25,
+                }
+        ROWS = 3
+        COLS = 4
+        NUM_IMAGES = ROWS * COLS
+        
+        # Figure ##############################################################
+        # figsize = [width, height]
+        fig=plt.figure(figsize=[20,18],facecolor='white')
+
+        
+        for i,ts_string_index in enumerate(ts_string_indices):
+            rec = self.df.loc[ts_string_index]
+
+            timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
+            
+            if 'steering_pred_signal' in self.df.columns:
+                this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
+                              rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
+            else: 
+                this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
+                
+            ax = fig.add_subplot(ROWS,COLS,i+1)
+
+            # Main Image ##########################################################
+            jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
+            assert os.path.exists(jpg_path)
+            img = mpl.image.imread(jpg_path)
+            ax.imshow(img)
+            #plt.title(str_label)
+            
+            # Data box ########################################################
+            
+            #ax.axes.get_xaxis().set_visible(False)
+            #ax.axes.get_yaxis().set_visible(False)
+            t = ax.text(5,25,this_label,color='green',alpha=1)
+            #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
+            t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+            
+            # Steering widget HUD #################################################
+            # Steering HUD: Actual steering signal
+            steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
+            text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+            # Steering HUD: Predicted steering angle
+            if 'steering_pred_signal' in self.df.columns:
+                steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
+                text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+
+
+    def plot_turning_frames(self):
+        # Right turn
+        these_indices = self.df[self.df['steering_signal'] > 0.9].sample(4)['timestamp'].tolist()
+        #self.plot4(these_indices)
+        #these_records = self.get_full_records(frames_npz, df_records, these_indices)
+        #plot_frames(these_records)
+        
+        # Left turn
+        #these_indices += df_records[self.df['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
+        these_indices += self.df[self.df['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
+        #self.plot4(these_indices)        
+        #these_records = get_full_records(frames_npz, df_records, these_indices)
+        #plot_frames(these_records)
+        
+        # Straight
+        
+        #these_indices += df_records[(self.df['steering_signal'] > -0.1) & (df_records['steering_signal'] < 0.1)].sample(4)['timestamp'].tolist()
+        these_indices += self.df[(self.df['steering_signal']  > -0.1) & (self.df['steering_signal']  < 0.1)].sample(4)['timestamp'].tolist()
+        #self.plot4(these_indices)
+        self.plot12(these_indices)
+        #these_records = get_full_records(frames_npz, df_records, these_indices)
+        #plot_frames(these_records)    
+    
     
     # =============================================================================
     # Process frames to JPG
@@ -320,17 +537,37 @@ class AIDataSet():
         logging.debug("Deleted all .jpg files".format())
 
 #%%
-
+#%matplotlib inline
+plt.ion()
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 data1 = AIDataSet(LOCAL_PROJECT_PATH,"20180829 194519")
 data1.augment_df_datetime()
 data1.process_time_steps()
 data1.write_jpgs(overwrite=False)
-#data1.histogram_steering()
-#data1.histogram_throttle()
-data1.gen_one_record_frame(0)
 
+
+#r = data1.df.head()
+#data1.df.loc[0]
+#data1.df.loc['1535564758226']
+#data1.gen_record_frame('1535564758226')
+
+#%% Turn on plotting, show analysis:
+
+plt.ion()
+plt.ioff()
+
+
+#%% Turn off plotting, write frames and videos
+# First. change the mode to GUI window output
+
+#%matplotlib qt
+# Then disable output
+plt.ioff()
+data1.histogram_steering()
+data1.histogram_throttle()
+data1.plot_turning_frames()
+data1.write_frames()
 
 raise
 #%%
