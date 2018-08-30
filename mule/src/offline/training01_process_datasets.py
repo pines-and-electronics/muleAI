@@ -317,7 +317,8 @@ def get_datasets(df_datasets):
         # Video
         
         # If the JPG zip doesn't exist, create it
-        if not this_ds['jpg_images.zip']:
+        # THIS IS CURRENTLY DISABLED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if not this_ds['jpg_images.zip'] and False:
             # JPG images
             #dataset_def = create_jpgs(dataset_def)
     

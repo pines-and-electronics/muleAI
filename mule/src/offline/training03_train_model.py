@@ -56,7 +56,7 @@ blmodel.summary()
 
 #%% TRAIN
 
-EPOCHS = 20
+EPOCHS = 10
 with LoggerCritical():
     history = blmodel.fit_generator(generator=training_generator,
                       validation_data=validation_generator,
