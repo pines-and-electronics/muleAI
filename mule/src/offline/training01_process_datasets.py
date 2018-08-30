@@ -20,6 +20,8 @@ import cv2
 import shutil
 import json
 from tabulate import tabulate
+import tqdm
+
 #%% LOGGING for Spyder! Disable for production. 
 logger = logging.getLogger()
 logger.handlers = []
@@ -42,12 +44,295 @@ logger.critical("Logging started")
 
 #logging.getLogger("tensorflow").setLevel(logging.WARNING)
 
+#%% Data set class
+class AIDataSet():
+    """A single datafolder object
+    
+    Description text
+    
+    Attributes
+    ----------
+    df : pandas.DataFrame
+        The dataframe object, with the 'timestamp' column for indexing. 
+    path_frames_npz : str
+        Path to frames numpy zip object. Can be accessed directly by np.load.
+    """
 
-#%% IO
+    
+    def __init__(self,path_data,data_folder):
+        # Check the data folder
+        self.path_data = path_data
+        assert os.path.exists(self.path_data)
+        self.data_folder = data_folder
+        self.path_dataset = os.path.join(self.path_data,self.data_folder)
+        assert os.path.exists(self.path_dataset)
+        
+        logging.debug("Data set {}, recorded on {}".format(self.data_folder,self.datetime_string))
+
+        # Check the raw records zip, load to DataFrame
+        self.path_records_zip = os.path.join(self.path_dataset,"json_records.zip")
+        assert os.path.exists(self.path_records_zip)   
+        self.df = self.load_records_df()
+        logging.debug("Records {}".format(len(self.df)))
+        
+        # Check the raw frames zip, no need to unzip
+        self.path_frames_npz = os.path.join(self.path_dataset,"camera_numpy.zip")
+        assert os.path.exists(self.path_frames_npz)
+        frames_timestamps = self.get_frames_timesteps() 
+        logging.debug("Frames npz is {:0.2f} MB, {} records".format(self.frames_size,len(frames_timestamps)))
+        
+        # Assert timestep alignment
+        assert all(self.df['timestamp'] == frames_timestamps), "Misaligned timestamps"
+        
+        # JPG folder
+        JPG_FOLDER_NAME = "jpg_images"
+        self.path_jpgs_dir = os.path.join(self.path_dataset,JPG_FOLDER_NAME)
+
+    # =============================================================================
+    # Query
+    # =============================================================================
+    @property
+    def datetime_string(self):
+        dt_obj = datetime.datetime.strptime(self.data_folder, '%Y%m%d %H%M%S')
+        return dt_obj.strftime("%A %d %b %H:%M")
+
+    @property
+    def datetime_string_iso(self):
+        dt_obj = datetime.datetime.strptime(self.data_folder , '%Y%m%d %H%M%S')
+        return dt_obj.isoformat()
+
+    @property
+    def frames_size(self):
+        """Size of frames npz array in MB
+        """
+        print(self.path_frames_npz)
+        return os.path.getsize(self.path_frames_npz)/1000/1000
+    
+    def get_frames_timesteps(self):
+        """Get timestamps from zipped NPY files. Return sorted pd.Series. 
+        """
+        # Open zip
+        with zipfile.ZipFile(self.path_frames_npz, "r") as f:
+            # Get the file names
+            fnames = (os.path.splitext(name) for name in f.namelist()) 
+            # Split and save
+            timestamps, extensions = zip(*fnames)
+        assert all(ext == '.npy' for ext in extensions)
+        
+        # Convert to datetime
+        #datetime_stamps = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamps]
+        # SORT!
+        #datetime_stamps.sort()
+        
+        # Sorted and reindexed! 
+        return pd.Series(timestamps).sort_values().reset_index(drop=True)
+    
+    #def jpg_frames():
+        
+    
+    # =============================================================================
+    # Load into memory
+    # =============================================================================
+    def load_records_df(self):
+        """Get DataFrame from zipped JSON records. Return sorted pd.DataFrame. 
+        
+        All record columns created
+        Timestamp column added (mtime)
+        Sort the DF on timestamp
+        Reindex        
+        """        
+        json_records = list()
+        with zipfile.ZipFile(self.path_records_zip, "r") as f:
+            json_file_paths = [name for name in f.namelist() if os.path.splitext(name)[1] =='.json']
+            # Each record is a seperate json file
+            for json_file in json_file_paths:
+                this_fname = os.path.splitext(json_file)[0] 
+                this_timestep = this_fname.split('_')[1]
+                d = f.read(json_file)
+                d = json.loads(d.decode("utf-8"))
+                d['timestamp'] = this_timestep
+                json_records.append(d)
+        # Sorted and reindexed! 
+        return pd.DataFrame(json_records).sort_values(by='timestamp').reset_index(drop=True)
+    
+    # =============================================================================
+    # Timestep analysis and processing
+    # =============================================================================
+    def augment_df_datetime(self):
+        def convert_datetime(x):
+            return datetime.datetime.fromtimestamp(int(x)/1000)
+            #return datetime.datetime.strptime(x, '%Y%m%d %H%M%S')
+        self.df['datetime'] = self.df['timestamp'].apply(convert_datetime)
+        logging.debug("Augmented df with 'datetime' column".format())
+        
+    def process_time_steps(self):
+        """Analysis of timestamps. Add some attributes to the class. 
+        """
+        assert 'datetime' in self.df.columns
+        # Analysis of timesteps
+        self.elapsed_time = self.df['datetime'].iloc[-1] - self.df['datetime'].iloc[0]
+        self.elapsed_time_min = self.elapsed_time.total_seconds() / 60
+        
+        # Analysis of delta-times
+        ts_deltas = (self.df['datetime']-self.df['datetime'].shift()).fillna(0)
+        stats = ts_deltas[0:-1].describe()
+        
+        self.ts_deltas_mean = stats['mean'].total_seconds() * 1000
+        self.ts_deltas_std = stats['std'].total_seconds() * 1000
+        
+        logging.debug("{:0.2f} minutes elapsed between start and stop".format(self.elapsed_time_min))
+
+        logging.debug("Timestep analysis: {:0.0f} +/- {:0.0f} ms".format(
+                      self.ts_deltas_mean,
+                      self.ts_deltas_std
+                      ))        
+    
+    # =============================================================================
+    # Plotting
+    # =============================================================================
+    def histogram_steering(self):
+        fig=plt.figure(figsize=[10,5],facecolor='white')
+        hist_steering = self.df['steering_signal'].hist()
+        return hist_steering
+   
+    def histogram_throttle(self):
+        fig=plt.figure(figsize=[10,5],facecolor='white')
+        hist_throttle = self.df['throttle_signal'].hist()
+        #plot_url = py.plot_mpl(fig)    
+    # =============================================================================
+    # Video
+    # =============================================================================
+    def gen_one_record_frame(self, ts_string_index=None, int_index=None, source_jpg_folder='jpg_images'):
+        """From a Record dictionary, create a single summary image of that timestep. 
+        
+        The figure has no border (full image)
+        
+        Show a data box with throttle and steering values. 
+        Show also the predicted values, if available. 
+        
+        Show a steering widget to visualize the current steering signal. 
+        Show also the predicted value, if available. 
+        
+        """
+        this_ts = self.df[t]
+        # Settings ############################################################
+        font_label_box = {
+            'color':'green',
+            'size':16,
+        }
+        font_steering = {'family': 'monospace',
+                #'color':  'darkred',
+                'weight': 'normal',
+                'size': 45,
+                }
+        SCALE = 50
+        HEIGHT_INCHES = 160*2.54/SCALE
+        WIDTH_INCHES =  120*2.54/SCALE
+        
+        # Figure ##############################################################
+        fig = plt.figure(frameon=False,figsize=(HEIGHT_INCHES,WIDTH_INCHES))
+        ax = plt.Axes(fig, [0., 0., 1., 1.])
+        ax.set_axis_off()
+        fig.add_axes(ax)
+        
+        # Main Image ##########################################################
+        jpg_path = os.path.join(self.path_dataset,source_jpg_folder)
+        assert os.path.exists(jpg_path)
+        img = mpl.image.imread(jpg_path)
+        ax.imshow(img)
+        raise
+        self.df
+        
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
+        
+        ######## The data box ########
+        timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
+        if 'steering_pred_signal' in df_records.columns:
+            this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['steering_pred_signal'],rec['throttle'])
+        else: 
+            this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle'])
+        t1 = ax.text(2,15,this_label,fontdict=font_label_box)
+        t1.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+    
+        ######## The steering widget HUD ########
+        # Steering HUD : Actual steering signal
+        # Steering HUD: Predicted steering angle
+        steer_actual = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
+        text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+        
+        if 'steering_pred_signal' in df_records.columns:
+            steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
+            text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+        
+        return fig    
+    
+    # =============================================================================
+    # Process frames to JPG
+    # =============================================================================
+    def write_jpgs(self, overwrite = False):
+        """Write JPGs to disk from numpy zip file
+        
+        """
+        jpg_files = glob.glob(os.path.join(self.path_jpgs_dir,'*.jpg'))
+        if len(jpg_files) == len(self.df) and not overwrite:
+            logging.debug("{} jpg files already exist, skip unless overwrite=True".format(len(self.df)))
+            return
+        
+        # Open zip
+        arrays = np.load(self.path_frames_npz)
+        timestamps = [k for k in arrays.keys()]
+        timestamps.sort()
+        
+        # Create a directory for the JPEGs
+        path_jpg = os.path.join(self.path_dataset, self.path_jpgs_dir)
+        if not os.path.exists(path_jpg):
+            os.mkdir(path_jpg)
+        
+        # Print to .jpg
+        for k in tqdm.tqdm(timestamps):
+            img = arrays[k]
+            arrays[k]
+            out_path = os.path.join(path_jpg,'{}.jpg'.format(k))
+            cv2.imwrite(out_path, img)
+        logging.debug("Wrote {} .jpg to {}".format(len(timestamps),path_jpg))
+        #return path_jpg
+    
+    def zip_jpgs(path_jpg, target_path):
+        jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
+        
+        with zipfile.ZipFile(target_path, 'w') as myzip:
+            for f in jpg_files:
+                name = os.path.basename(f)
+                myzip.write(f,name)
+                os.remove(f)
+        logging.debug("Zipped {} to {}".format(len(jpg_files),target_path))
+        
+    def delete_jpgs(path_jpg):
+        jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
+        
+        # Remove all .npy files, confirm
+        [os.remove(f) for f in jpg_files]
+        
+        jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
+        assert len(jpg_files) == 0
+        os.rmdir(path_jpg)
+        logging.debug("Deleted all .jpg files".format())
+
+#%%
+
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
-#LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE_DATA2'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
+data1 = AIDataSet(LOCAL_PROJECT_PATH,"20180829 194519")
+data1.augment_df_datetime()
+data1.process_time_steps()
+data1.write_jpgs(overwrite=False)
+#data1.histogram_steering()
+#data1.histogram_throttle()
+data1.gen_one_record_frame(0)
 
+
+raise
 #%%
 # =============================================================================
 # Check which files exist in all datasets
@@ -271,7 +556,6 @@ def create_record_df(json_zip,out_path):
 #%% PROCESS ALL DATASETS!
 
 #this_data_dir = LOCAL_PROJECT_PATH
-
 
 #df_datasets = df_checkfiles
 def get_datasets(df_datasets):

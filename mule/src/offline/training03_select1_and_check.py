@@ -43,8 +43,8 @@ df_records['steering_signal_cats'] = df_records['steering_signal'].apply(linear_
 df_records['steering_signal_argmax'] = df_records['steering_signal_cats'].apply(np.argmax)
 
 #%% Histogram: Steering
-fig=plt.figure(figsize=[10,5],facecolor='white')
-hist_steering = df_records['steering_signal'].hist()
+#fig=plt.figure(figsize=[10,5],facecolor='white')
+#hist_steering = df_records['steering_signal'].hist()
 
 #%% Histogram: Throttle
 fig=plt.figure(figsize=[10,5],facecolor='white')

@@ -393,13 +393,14 @@ class MuleDataGenerator(ks.utils.Sequence):
                                                                                    math.ceil(len(list_IDs)/self.batch_size),))
         
     def __len__(self):
-        'Denotes the number of batches per epoch'
+        """Keras generator method - Denotes the number of batches per epoch
+        """        
         return int(np.floor(len(self.list_IDs) / self.batch_size))
     
     # GET A BATCH!
     def __getitem__(self, index): 
-        'Generate one batch of data'
-        
+        """Generate one batch of data
+        """         
         logging.debug("Generating batch {}".format(index))
         
         # Generate indexes of the batch
@@ -414,14 +415,18 @@ class MuleDataGenerator(ks.utils.Sequence):
         return X, y
 
     def on_epoch_end(self):
-        'Updates indexes after each epoch'
+        """Keras generator method - Updates indexes after each epoch
+        """
         self.indexes = np.arange(len(self.list_IDs))
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
 
             
     def __get_npy_arrays(self,list_IDs_temp):
-        """Open the npz file and load n frames into memory"""
+        """Custom method - get the X input arrays
+        
+        Open the npz file and load n frames into memory
+        """
         # This is a pointer to the file
         npz_file=np.load(self.path_frames)
         #for k in list_ID_temp:
@@ -434,7 +439,8 @@ class MuleDataGenerator(ks.utils.Sequence):
         return frames_array
     
     def __get_records(self,list_IDs_temp):
-        
+        """Custom method - get the y labels
+        """
         # Load the saved records
         df_records = pd.read_pickle(self.path_records)
         # Set the index to match
@@ -458,9 +464,9 @@ class MuleDataGenerator(ks.utils.Sequence):
         #raise
     
     def __data_generation(self, list_IDs_temp):
+        """Keras generator method - Generates data containing batch_size samples
         """
-        """
-        'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
+        # X : (n_samples, *dim, n_channels)
         # Initialization
         #X = np.empty((self.batch_size, *self.dim, self.n_channels))
         #y = np.empty((self.batch_size), dtype=int)
