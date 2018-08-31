@@ -7,6 +7,8 @@ From a list of records;
 3) Reload each JPG as a NPY, sorted by the timestep (name)
 4) Write an mp4 viedo to VIDEO_OUT_NAME
 
+Standalone script. 
+
 """
 #%%
 import glob
@@ -63,6 +65,11 @@ class NoPlots:
 #%%
 
 class VideoWriter:
+    """From a folder containing jpg images - create a video. 
+    
+    
+    """
+    
     def __init__(self,jpg_folder, path_vid_out, fps):
         self.jpg_folder = jpg_folder
         self.path_vid_out = path_vid_out
@@ -146,7 +153,7 @@ class VideoWriter:
         logging.debug("Wrote test video to {}".format(self.path_vid_out))
 
 
-#%%
+#%% Initialize the video writer object
     
 path_video_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_FRAMES_DIR)
 path_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,OUTPUT_VID_NAME)

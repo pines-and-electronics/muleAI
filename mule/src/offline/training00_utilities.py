@@ -1,25 +1,25 @@
-import sys
-import glob,os
-import json
+#import sys
+#import glob,os
+#import json
 import pandas as pd
 #import tensorflow as tf
 import logging
-import zipfile
+#import zipfile
 #import re
 #import datetime
 import numpy as np
-import os
-import glob
+#import os
+#import glob
 #import matplotlib
 import math
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import datetime
-import tensorflow as tf
+#import matplotlib.pyplot as plt
+#import matplotlib.image as mpimg
+#import datetime
+#import tensorflow as tf
+#import sklearn as sk
 from tensorflow.python import keras as ks
-import sklearn as sk
 
-import cv2
+#import cv2
 
 #%% Logging
 #>>> import warnings
@@ -46,96 +46,7 @@ with LoggerCritical():
     logging.debug("test block")
 
 
-#%% Turn off plotting
-# First. change the mode to GUI window output
 
- 
-#%matplotlib qt
-# Then disable output
-plt.ioff()
-
-#%% Turn on plotting
-plt.ion()
-#%matplotlib inline
-
-    
-
-#%%
-##indices= sel_indices
-def get_n_records(df_records, frames, indices):
-    raise
-    """
-    """
-    #this_frame = np.array[frames[idx] for idx in indices]
-    these_frames = [frames[idx] for idx in indices]
-    
-    frame_array = np.stack([frames[idx] for idx in indices], axis=0)
-    #this_steering = df_records[df_records['timestamp'] == idx]['steering_signal']
-    these_steering = df_records[df_records['timestamp'].isin(indices)]['steering_signal'].values
-    
-    these_throttle = df_records[df_records['timestamp'].isin(indices)]['throttle_signal'].values
-    
-    timestamps = df_records[df_records['timestamp'].isin(indices)]['timestamp'].values
-    #this_steering = df_records[idx]
-    
-    these_ts = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamps]
-    return frame_array,these_steering,these_throttle, these_ts
-    
-
-#frame, steering = get_record(df_records,frames, '1533666134582')
-
-
-#%%
-
-
-
-
-#%%
-def get_full_records(this_frames, this_df_records, this_indices):
-    #assert type(this_indices) == list or type(this_indices) == np.ndarray
-    """Given a list of indices (timestamps), return a list of "Records""
-    
-    A record is used for further visualization or analysis of a given timestep.
-    
-    A Record is a convenience dictionary with following keys: 
-    
-        frames          : The frame images as a numpy array, directly from NPZ
-        steering_signal : The steering at these times as a float
-        throttle        : The throttle at these times as a float
-        timestamp       : The timestep as a datetime object
-    
-        AND OPTIONALLY: 
-        df_records['steering_pred_signal'] : The model predicted steering at these times
-    
-    """
-    records = list()
-    for this_idx in this_indices:
-        #print(this_idx)
-        rec = dict()
-        rec['frame'] = this_frames[this_idx]
-        rec['steering_signal'] = df_records.loc[this_idx]['steering_signal']
-        #print(rec['steer'])
-        rec['throttle'] = df_records.loc[this_idx]['throttle_signal']
-        rec['timestamp_raw'] = df_records.loc[this_idx]['timestamp']
-        #print()
-        rec['timestamp'] = datetime.datetime.fromtimestamp(int(rec['timestamp_raw'])/1000)
-        if 'steering_pred_signal' in df_records.columns:
-            #'steering_signal' in df_records.columns
-            rec['steering_pred_signal'] = df_records.loc[this_idx]['steering_pred_signal']
-
-        records.append(rec)
-    logging.debug("Created {} record dictionaries".format(len(this_indices)))
-    
-    return records
-    #record = dict()
-    #record['frame'] 
-#     OLD METHOD, VECTORIZED:
-#         rec['frame'] = np.stack(this_frames[this_idx] for idx in this_idx], axis=0)
-#         rec['steer'] = df_records[df_records['timestamp'].isin(this_idx)]['steering_signal'].values
-#         rec['throttle'] = df_records[df_records['timestamp'].isin(this_idx)]['throttle_signal'].values
-#         timestamp = df_records[df_records['timestamp'].isin(this_idx)]['timestamp'].values
-#         rec['timestamp'] = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamp]
-#         rec['steer_pred'] = y_pred_floats[y_pred_floats.index.isin(this_idx)]['steering_pred'].values 
 
 
 
@@ -159,298 +70,98 @@ def get_predictions(model, this_frames_npz, this_df_records):
     
     return this_df_records
 
-#%%
-    
-def get_fig_as_npy(this_fig):
-    raise
-    """Take a matplotlib.figure.Figure and return it as a static npy RGB array 
-    """
-    canvas = mpl.backends.backend_agg.FigureCanvas(this_fig)
-    canvas.draw() 
-    width, height = this_fig.get_size_inches() * this_fig.get_dpi()
-    width = int(width)
-    height = int(height)
-    img = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(height, width, 3)
-    return img
 
-#%%
-def plot_hist(history_dict, accuracy_name, model_title):
-    #fig = plt.figure(figsize=(5,4))
-    #fig=plt.figure(figsize=(20, 10),facecolor='white')
-
-    #f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 5),sharey=False,facecolor='white')
-    bgcolor = '0.15'
-    bgcolor = 'white'
-    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 5),sharey=False,facecolor=bgcolor)
-    
-    ax1.plot(history_dict['epoch'],  history_dict['history']['loss'],label="Train")
-    ax1.plot(history_dict['epoch'],  history_dict['history']['val_loss'],label="CV")
-    ax1.set_title("Loss function development - Training set vs CV set")
-    ax1.legend(loc='upper right')
-    ax1.set_xlabel('Epochs')
-    ax1.set_ylabel('Values')
-    
-    ax2.plot(history_dict['epoch'],  history_dict['history'][accuracy_name],label="Train")
-    ax2.plot(history_dict['epoch'],  history_dict['history']['val_'+accuracy_name],label="CV")
-    ax2.set_title("Accuracy development - Training set vs CV set")
-    ax2.legend(loc='upper right')
-    ax2.set_xlabel('Epochs')
-    ax2.set_ylabel('Values')
-    
-    plt.suptitle(model_title, fontsize=16)
-    
-    plt.show()
-
-
-
-#%%
-def plot_frames(records):
-    """
-    Render N records to analysis
-    """
-    font_label_box = {
-        'color':'green',
-        'size':16,
-    }
-    font_steering = {'family': 'monospace',
-            #'color':  'darkred',
-            'weight': 'normal',
-            'size': 25,
-            }
-    
-    fig=plt.figure(figsize=[20,18],facecolor='white')
-    ROWS = 1
-    COLS = 4
-    NUM_IMAGES = ROWS * COLS
-
-    for i,rec in enumerate(records):
-
-                
-        
-        timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
-        
-        this_label = "{}\n{:0.2f} steering\n{:0.2f} throttle".format(rec['timestamp'],rec['steering_signal'],rec['throttle'])
-        ax = fig.add_subplot(ROWS,COLS,i+1)
-        ax.imshow(rec['frame'])
-        #plt.title(str_label)
-        ax.axes.get_xaxis().set_visible(False)
-        ax.axes.get_yaxis().set_visible(False)
-        t = ax.text(5,25,this_label,color='green',alpha=1)
-        #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
-        t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-        
-        steer_cat = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
-        
-        if 'steering_pred_signal' in df_records.columns:
-            #steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
-            steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
-            
-            #print(steer_pred)
-            #ax.text(80,95,steer_pred,fontsize=30,horizontalalignment='center',verticalalignment='center',color='red')
-            #ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-            #ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-        else: 
-            steer_pred = ""
-            
-        hud_text =  steer_pred + "\n" + steer_cat
-        
-        #ax.text(80,105,steer_cat,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-        #ax.text(80,95,hud_text,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-        #ax.text(80,95,hud_text,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-        
-        ax.text(80,105,steer_cat,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')        
-        ax.text(80,105,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-        
-
-
-
-#%%
-
-#joined['steering_pred_cats'] = joined['steering_pred'].apply(linear_bin)
-#joined['steering_pred_argmax'] = joined['steering_pred_cats'].apply(np.argmax)
-
-
-
-def gen_one_record_frame(rec):
-    """From a Record dictionary, create a single summary image of that timestep. 
-    
-    The figure has no border (full image)
-    
-    Show a data box with throttle and steering values. 
-    Show also the predicted values, if available. 
-    
-    Show a steering widget to visualize the current steering signal. 
-    Show also the predicted value, if available. 
-    
-    """
-    font_label_box = {
-        'color':'green',
-        'size':16,
-    }
-    font_steering = {'family': 'monospace',
-            #'color':  'darkred',
-            'weight': 'normal',
-            'size': 45,
-            }
-    SCALE = 50
-    HEIGHT_INCHES = 160*2.54/SCALE
-    WIDTH_INCHES =  120*2.54/SCALE
-    fig = plt.figure(frameon=False,figsize=(HEIGHT_INCHES,WIDTH_INCHES))
-    #fig.set_size_inches(w,h)
-    ax = plt.Axes(fig, [0., 0., 1., 1.])
-    ax.set_axis_off()
-    fig.add_axes(ax)
-    ax.imshow(rec['frame'])
-    ax.axes.get_xaxis().set_visible(False)
-    ax.axes.get_yaxis().set_visible(False)
-    
-    ######## The data box ########
-    timestamp_string = rec['timestamp'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['timestamp'].microsecond))
-    if 'steering_pred_signal' in df_records.columns:
-        this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['steering_pred_signal'],rec['throttle'])
-    else: 
-        this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle'])
-    t1 = ax.text(2,15,this_label,fontdict=font_label_box)
-    t1.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-
-    ######## The steering widget HUD ########
-    # Steering HUD : Actual steering signal
-    # Steering HUD: Predicted steering angle
-    steer_actual = ''.join(['|' if v else '-' for v in linear_bin(rec['steering_signal'])])
-    text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-    
-    if 'steering_pred_signal' in df_records.columns:
-        steer_pred = ''.join(['◈' if v else ' ' for v in linear_bin(rec['steering_pred_signal'])])
-        text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-    
-    return fig
-
-#%%
-def get_frames(path_frames,frame_ids):
-    """From a list of ID strings, fetch the npy arrays from the zip. 
-    """
-    if type(frame_ids) == str:
-        frame_ids = [frame_ids]
-    npz_file=np.load(path_frames)
-    frames_array = np.stack([npz_file[idx] for idx in frame_ids], axis=0)
-    logging.debug("Returning frames array {}".format(frames_array.shape))
-    return frames_array
-
-#%% Data gen
+#%% DATAGEN
 class MuleDataGenerator(ks.utils.Sequence):
     """Generates data for Keras"""
-    def __init__(self, list_IDs, path_frames, path_records, 
+    def __init__(self, indices, dataset, 
                  batch_size=32, dim=None, n_channels=None, n_classes=15, shuffle=True):
-        'Initialization'
-        self.dim = dim
+        """Keras data generator
+        
+        Aggregates the AIDataSet class
+        
+        Attributes:
+            indices (str): The allowed timestamps for data generation
+            dataset (AIDataSet): The dataset object with it's df and npz
+            batch_size : 
+            dim : 
+            n_channels : 
+            n_classes :
+            shuffle :
+        """
+        self.indices = indices
+        self.dataset = dataset
         self.batch_size = batch_size
-        #self.labels = labels
-        self.list_IDs = list_IDs
+        self.dim = dim
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.on_epoch_end()
-        self.path_frames = path_frames
-        assert os.path.exists(self.path_frames)
-        self.path_records = path_records
-        assert os.path.exists(self.path_records)
+
         logging.debug("** Initialize datagen **".format())
-        logging.debug("Frames stored at: {}".format(self.path_frames))
-        logging.debug("Records stored at: {}".format(self.path_records))
-        logging.debug("{} samples over batch size {} yields {} batches".format(len(list_IDs),
+        logging.debug("{} of {} total records used for generation".format(len(self.indices), len(self.dataset.df)))
+        logging.debug("Frames NPZ located at: {}".format(self.dataset.path_frames_npz))
+        logging.debug("{} samples over batch size {} yields {} batches".format(len(self.indices),
                                                                                    self.batch_size,
-                                                                                   math.ceil(len(list_IDs)/self.batch_size),))
+                                                                                   math.ceil(len(self.indices)/self.batch_size),))
         
     def __len__(self):
         """Keras generator method - Denotes the number of batches per epoch
         """        
-        return int(np.floor(len(self.list_IDs) / self.batch_size))
+        return int(np.floor(len(self.indices) / self.batch_size))
     
     # GET A BATCH!
     def __getitem__(self, index): 
-        """Generate one batch of data
+        """Keras generator method - Generate one batch of data
         """         
         logging.debug("Generating batch {}".format(index))
         
         # Generate indexes of the batch
-        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-        
-        # Find list of IDs
-        list_IDs_temp = [self.list_IDs[k] for k in indexes]
+        batch_indices = self.indices[index*self.batch_size:(index+1)*self.batch_size]
 
         # Generate data by selecting these IDs
-        X, y = self.__data_generation(list_IDs_temp)
+        X, y = self.__data_generation(batch_indices)
 
         return X, y
 
     def on_epoch_end(self):
-        """Keras generator method - Updates indexes after each epoch
+        """Keras generator method - Shuffles indices after each epoch
         """
-        self.indexes = np.arange(len(self.list_IDs))
+        #self.indexes = np.arange(len(self.indices))
         if self.shuffle == True:
-            np.random.shuffle(self.indexes)
-
+            # Shuffle is in-place! 
+            np.random.shuffle(self.indices)
             
-    def __get_npy_arrays(self,list_IDs_temp):
+    def __get_npy_arrays(self,batch_indices):
         """Custom method - get the X input arrays
         
         Open the npz file and load n frames into memory
         """
         # This is a pointer to the file
-        npz_file=np.load(self.path_frames)
-        #for k in list_ID_temp:
-        #    npy_records.append(npz_file[k])
-        #X_train = np.array(npy_records)
+        npz_file=np.load(self.dataset.path_frames_npz)
         
-        frames_array = np.stack([npz_file[idx] for idx in list_IDs_temp], axis=0)
+        frames_array = np.stack([npz_file[idx] for idx in batch_indices], axis=0)
         logging.debug("Generating {} frames: {}".format(frames_array.shape[0], frames_array.shape))
         
         return frames_array
     
-    def __get_records(self,list_IDs_temp):
+    def __get_records(self,batch_indices):
         """Custom method - get the y labels
         """
-        # Load the saved records
-        df_records = pd.read_pickle(self.path_records)
-        # Set the index to match
-        df_records.index = df_records['timestamp']
-        # Subset
-        this_batch_steering = df_records.loc[list_IDs_temp]
-        
-        steering_values = this_batch_steering['steering_signal'].values
-        
-        #print(steering_values)
-        steering_records_array = bin_Y(steering_values)
-        
-        #df_categorical_steering = df_records['steering_signal']
-        #
-        
-        
-        #records_array = df_records[]
+        this_batch_df = self.dataset.df.loc[batch_indices]
+        steering_values = this_batch_df['steering_signal'].values
+        steering_records_array = self.dataset.bin_Y(steering_values)
         logging.debug("Generating {} records {}:".format(steering_records_array.shape[0],steering_records_array.shape))
         return steering_records_array
         
-        #raise
-    
-    def __data_generation(self, list_IDs_temp):
+    def __data_generation(self, batch_indices):
         """Keras generator method - Generates data containing batch_size samples
         """
-        # X : (n_samples, *dim, n_channels)
-        # Initialization
-        #X = np.empty((self.batch_size, *self.dim, self.n_channels))
-        #y = np.empty((self.batch_size), dtype=int)
-        
-        X = self.__get_npy_arrays(list_IDs_temp)
-        y = self.__get_records(list_IDs_temp)
-        
-        # Generate data
-        #for i, ID in enumerate(list_IDs_temp):
-            # Store sample
-            #X[i,] = np.load('data/' + ID + '.npy')
 
-            # Store class
-            #y[i] = self.labels[ID]
-        #    pass
+        X = self.__get_npy_arrays(batch_indices)
+        y = self.__get_records(batch_indices)
 
         return X, y
+  
+
 
