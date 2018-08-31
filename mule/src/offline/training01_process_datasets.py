@@ -21,6 +21,8 @@ import shutil
 import json
 from tabulate import tabulate
 import tqdm
+from IPython import get_ipython
+
 
 #%% LOGGING for Spyder! Disable for production. 
 logger = logging.getLogger()
@@ -32,7 +34,7 @@ logger.setLevel(logging.DEBUG)
 # Create formatter
 #FORMAT = "%(asctime)s - %(levelno)s - %(module)-15s - %(funcName)-15s - %(message)s"
 #FORMAT = "%(asctime)s L%(levelno)s: %(message)s"
-FORMAT = "%(asctime)s - %(funcName)-20s: %(message)s"
+FORMAT = "%(asctime)s - %(levelname)s - %(funcName) -20s: %(message)s"
 DATE_FMT = "%Y-%m-%d %H:%M:%S"
 formatter = logging.Formatter(FORMAT, DATE_FMT)
 
@@ -49,6 +51,15 @@ class LoggerCritical:
     def __exit__(self, type, value, traceback):
         my_logger = logging.getLogger()
         my_logger.setLevel("DEBUG")
+
+
+class NoPlots:
+    def __enter__(self):
+        get_ipython().run_line_magic('matplotlib', 'qt')
+        plt.ioff()
+    def __exit__(self, type, value, traceback):
+        get_ipython().run_line_magic('matplotlib', 'inline')
+        plt.ion()
 
 
 #logging.getLogger("tensorflow").setLevel(logging.WARNING)
@@ -253,24 +264,7 @@ class AIDataSet():
         fig=plt.figure(figsize=[10,5],facecolor='white')
         hist_throttle = self.df['throttle_signal'].hist()
         #plot_url = py.plot_mpl(fig)
-    
-    def write_frames(self):
-        OUT_DIR = 'Video Frames'
-        OUT_PATH=os.path.join(self.path_dataset,OUT_DIR)
-        if not os.path.exists(OUT_PATH):
-            os.mkdir(OUT_PATH)
-        logging.debug("Writing frames to {}".format(OUT_PATH))            
-        #return
-        with LoggerCritical():
-            for idx in tqdm.tqdm(self.df.index):
-                this_frame = self.gen_record_frame(idx)
-    
-                # Save it to jpg
-                this_fname = os.path.join(OUT_PATH,idx + '.jpg')
-                this_frame.savefig(this_fname)
 
-        
-        
     
     # =============================================================================
     #--- Video
@@ -339,7 +333,7 @@ class AIDataSet():
         
         return fig
 
-    def plot4(self,ts_string_indices, source_jpg_folder='jpg_images'):
+    def plot12(self,ts_string_indices, source_jpg_folder='jpg_images', rows=3, cols=4):
         """
         Render N records to analysis
         """
@@ -353,68 +347,8 @@ class AIDataSet():
                 'weight': 'normal',
                 'size': 25,
                 }
-        ROWS = 1
-        COLS = 4
-        NUM_IMAGES = ROWS * COLSmpl.pyplot.close(fig)
-        
-        # Figure ##############################################################
-        fig=plt.figure(figsize=[20,18],facecolor='white')
-
-        
-        for i,ts_string_index in enumerate(ts_string_indices):
-            rec = self.df.loc[ts_string_index]
-
-            timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
-            
-            if 'steering_pred_signal' in self.df.columns:
-                this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
-                              rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
-            else: 
-                this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
-                
-            ax = fig.add_subplot(ROWS,COLS,i+1)
-
-            # Main Image ##########################################################
-            jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
-            assert os.path.exists(jpg_path)
-            img = mpl.image.imread(jpg_path)
-            ax.imshow(img)
-            #plt.title(str_label)
-            
-            # Data box ########################################################
-            
-            #ax.axes.get_xaxis().set_visible(False)
-            #ax.axes.get_yaxis().set_visible(False)
-            t = ax.text(5,25,this_label,color='green',alpha=1)
-            #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
-            t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-            
-            # Steering widget HUD #################################################
-            # Steering HUD: Actual steering signal
-            steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
-            text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-            # Steering HUD: Predicted steering angle
-            if 'steering_pred_signal' in self.df.columns:
-                steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
-                text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-
-
-    def plot12(self,ts_string_indices, source_jpg_folder='jpg_images'):
-        """
-        Render N records to analysis
-        """
-        # Settings ############################################################
-        font_label_box = {
-            'color':'green',
-            'size':16,
-        }
-        font_steering = {'family': 'monospace',
-                #'color':  'darkred',
-                'weight': 'normal',
-                'size': 25,
-                }
-        ROWS = 3
-        COLS = 4
+        ROWS = rows
+        COLS = cols
         NUM_IMAGES = ROWS * COLS
         
         # Figure ##############################################################
@@ -488,7 +422,7 @@ class AIDataSet():
     # Process frames to JPG
     # =============================================================================
     def write_jpgs(self, overwrite = False):
-        """Write JPGs to disk from numpy zip file
+        """Write pure JPGs to disk from numpy zip file
         
         """
         jpg_files = glob.glob(os.path.join(self.path_jpgs_dir,'*.jpg'))
@@ -515,7 +449,37 @@ class AIDataSet():
         logging.debug("Wrote {} .jpg to {}".format(len(timestamps),path_jpg))
         #return path_jpg
     
+    def write_frames(self, output_dir_name = 'Video Frames', overwrite=False):
+        """From a JPG image, overlay information with matplotlib, save to disk.
+        
+        Skip if directory already full. 
+        """
+        OUT_DIR = output_dir_name
+        OUT_PATH=os.path.join(self.path_dataset,OUT_DIR)
+        if not os.path.exists(OUT_PATH):
+            os.mkdir(OUT_PATH)
+        
+        jpg_files = glob.glob(os.path.join(OUT_PATH,'*.jpg'))
+        if len(jpg_files) == len(self.df) and not overwrite:
+            logging.debug("{} jpg files already exist here, skip unless overwrite=True".format(len(self.df)))
+            return
+        
+        logging.debug("Writing frames to {}".format(OUT_PATH))            
+
+        with LoggerCritical(),NoPlots():
+            for idx in tqdm.tqdm(self.df.index):
+                # Get the frame figure
+                frame_figure = self.gen_record_frame(idx)
+    
+                # Save it to jpg
+                path_jpg = os.path.join(OUT_PATH,idx + '.jpg')
+                frame_figure.savefig(path_jpg)
+                
+        logging.debug("Wrote {} jpg files to {}".format(len(self.df),OUT_PATH))
+
+    
     def zip_jpgs(path_jpg, target_path):
+        raise
         jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
         
         with zipfile.ZipFile(target_path, 'w') as myzip:
@@ -526,6 +490,7 @@ class AIDataSet():
         logging.debug("Zipped {} to {}".format(len(jpg_files),target_path))
         
     def delete_jpgs(path_jpg):
+        raise
         jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
         
         # Remove all .npy files, confirm
@@ -538,7 +503,7 @@ class AIDataSet():
 
 #%%
 #%matplotlib inline
-plt.ion()
+#plt.ion()
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 data1 = AIDataSet(LOCAL_PROJECT_PATH,"20180829 194519")
@@ -552,110 +517,20 @@ data1.write_jpgs(overwrite=False)
 #data1.df.loc['1535564758226']
 #data1.gen_record_frame('1535564758226')
 
-#%% Turn on plotting, show analysis:
-
-plt.ion()
-plt.ioff()
-
-
 #%% Turn off plotting, write frames and videos
 # First. change the mode to GUI window output
 
 #%matplotlib qt
 # Then disable output
-plt.ioff()
+plt.ion()
 data1.histogram_steering()
 data1.histogram_throttle()
 data1.plot_turning_frames()
 data1.write_frames()
 
-raise
-#%%
-# =============================================================================
-# Check which files exist in all datasets
-# =============================================================================
-#proj_path = LOCAL_PROJECT_PATH
-CHECK_FILES = [
-    'jpg_images.zip',
-    'camera_numpy.zip',
-    'df_record.pck',
-    'json_records.zip',
-    'video.mp4',
-     ]
 
-def check_files_exist(proj_path,these_check_paths):
-    """Check if files exist in the data directory. 
-    Args:
-        proj_path: Project data directory path
-        these_check_paths: Relative paths of files to check
-
-    Returns:
-        df_checkfiles: A simple dataframe with the status of files. 
-    """
-    
-    directoy_list = glob.glob(os.path.join(proj_path,'*'))
-    
-    # Iterate over each directory
-    check_files = list()
-    for i,this_dir in enumerate(directoy_list):
-        this_check_dict = dict()
-        this_check_dict['this_dt_string'] = os.path.split(this_dir)[1]
-        this_check_dict['this_dir']  = this_dir
-        for path in these_check_paths:
-            this_check_dict[path] = os.path.exists(os.path.join(this_dir,path))
-        check_files.append(this_check_dict)
-    df_checkfiles = pd.DataFrame(check_files)
-    
-    df_checkfiles.set_index('this_dt_string',inplace=True)
-    df_checkfiles.sort_index(inplace=True)
-    return(df_checkfiles)
-
-df_checkfiles = check_files_exist(LOCAL_PROJECT_PATH,CHECK_FILES)
-print(tabulate(df_checkfiles[CHECK_FILES],headers="keys",disable_numparse=True))
 
 #%%
-# =============================================================================
-# Utility: Get timesteps for alignment
-# =============================================================================
-def check_numpy(numpy_zip):
-    """Get timestamps from zipped NPY files.
-    """
-    # Look inside
-    with zipfile.ZipFile(numpy_zip, "r") as f:
-        fnames = (os.path.splitext(name) for name in f.namelist())
-        timestamps, extensions = zip(*fnames)
-    assert all(ext == '.npy' for ext in extensions)
-    datetime_stamps = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamps]
-    datetime_stamps.sort()
-    return datetime_stamps
-
-def check_json(json_zip):
-    """Get timestamps from zipped JSON records.
-    """
-    # Look inside
-    with zipfile.ZipFile(json_zip, "r") as f:
-        fnames = (os.path.splitext(name) for name in f.namelist())
-        timestamps, extensions = zip(*fnames)
-        assert all(ext == '.json' for ext in extensions)
-        #[ts.isoformat() for ts in timestamps]
- 
-        timestamps = [ts.split('_')[1] for ts in timestamps]
-        #ts = timestamps[0]
-        datetime_stamps = [datetime.datetime.fromtimestamp(int(ts)/1000) for ts in timestamps]
-        datetime_stamps.sort()
-        return datetime_stamps
-
-# =============================================================================
-# Utility: Get .npy zip size
-# =============================================================================
-def check_camera_zip(this_dir):
-    """Get the size of the stored camera arrays. 
-    """
-    return_dict = dict()
-    return_dict['camera_numpy_zip'] = glob.glob(os.path.join(this_dir,'camera_numpy.zip'))[0]
-    assert os.path.exists(return_dict['camera_numpy_zip'])
-    return_dict['camera_size_MB'] = os.path.getsize(return_dict['camera_numpy_zip'])/1000/1000
-    return return_dict
 
 # =============================================================================
 # Utility: Process frames
@@ -674,48 +549,6 @@ def process_jpg_zip(this_dir):
     else:
         raise
     return return_dict
-
-def write_jpg(this_data_def):
-    path_npz = this_data_def['camera_numpy_zip']
-    
-    arrays = np.load(path_npz)
-    timestamps = [k for k in arrays.keys()]
-    timestamps.sort()
-    
-    # Create a directory for the JPEGs
-    path_jpg = os.path.join(this_data_def['this_dir'], 'jpg')
-    if not os.path.exists(path_jpg):
-        os.mkdir(path_jpg)
-    
-    # Print to .jpg
-    for k in timestamps:
-        img = arrays[k]
-        arrays[k]
-        out_path = os.path.join(path_jpg,'{}.jpg'.format(k))
-        cv2.imwrite(out_path, img)
-    logging.debug("Wrote {} .jpg to {}".format(len(timestamps),path_jpg))
-    return path_jpg
-
-def zip_jpgs(path_jpg, target_path):
-    jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
-    
-    with zipfile.ZipFile(target_path, 'w') as myzip:
-        for f in jpg_files:
-            name = os.path.basename(f)
-            myzip.write(f,name)
-            os.remove(f)
-    logging.debug("Zipped {} to {}".format(len(jpg_files),target_path))
-    
-def delete_jpgs(path_jpg):
-    jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
-    
-    # Remove all .npy files, confirm
-    [os.remove(f) for f in jpg_files]
-    
-    jpg_files = glob.glob(os.path.join(path_jpg,'*.jpg'))
-    assert len(jpg_files) == 0
-    os.rmdir(path_jpg)
-    logging.debug("Deleted all .jpg files".format())
 
 # =============================================================================
 # Process json
@@ -915,87 +748,3 @@ def select_data(this_df):
     #this_dataset = this_df.iloc[ds_idx]
     #return this_dataset
 selected_data = select_data(df_all_datasets)
-
-#%%
-#del (df_datasets)
-
-
-#%%
-if 0:
-    
-    #%%
-    npy_records = list()
-    json_records = list()
-    with zipfile.ZipFile(this_dataset['zip'], "r") as f:
-        
-        npy_file_paths = [name for name in f.namelist() if os.path.splitext(name)[1] =='.npy']
-        json_file_paths = [name for name in f.namelist() if os.path.splitext(name)[1] =='.json']
-        
-        for npy_file in npy_file_paths:
-            data = f.read(npy_file)
-            npy_records.append(np.frombuffer(data))
-        for json_file in json_file_paths:
-            d = f.read(json_file)
-            d = json.loads(d.decode("utf-8"))
-            json_records.append(d)
-    
-    logging.debug("{} json and {} npy records loads".format(len(json_records),len(npy_records)))
-    
-    #print(f)
-    
-    #%%
-    
-    single_path = r"/home/batman/MULE DATA/20180730 230317/camera_numpy.zip"
-    this = np.load(single_path)
-    
-    
-    #%%
-    #zip_path = r"/home/batman/MULE DATA/TEST/camera_array_1532981378805.npy"
-    this2 = np.load(this_dataset['zip'])
-    for k in this2.keys():
-        print(k)
-        #print(this2[k].shape)
-    #this2.f
-    
-    #%% 
-    for rec in npy_records:
-        print(rec)
-    
-    #%%
-    this_arr = npy_records[0]
-    this_arr.shape
-    this_arr.ndim
-    #this
-    np.reshape(this_arr, (120, 160,3))
-    
-    
-    np.reshape(this_arr, (2, -1))
-
-
-
-#%% Zip the files
-    
-#def make_archive(self, source, destination):
-#    base = os.path.basename(destination)
-#    name = base.split('.')[0]
-#    format = base.split('.')[1]
-#    archive_from = os.path.dirname(source)
-#    archive_to = os.path.basename(source.strip(os.sep))
-#    #print(source, destination, archive_from, archive_to)
-#    shutil.make_archive(name, format, archive_from, archive_to)
-#    shutil.move('%s.%s'%(name,format), destination)
-#    
-#    logging.debug("Created archive {}".format(destination))
-
-
-
-#
-#def create_jpgs(dataset_def):
-#    dataset_def['folder_jpg'] = os.path.join(dataset_def['this_dir'],'jpg')
-#    if not os.path.exists(dataset_def['folder_jpg']):
-#        dataset_def['num_jpgs'] = 0
-#    else:
-#        dataset_def['num_jpgs'] = len(glob.glob(os.path.join(dataset_def['folder_jpg'],'*.jpg')))
-#    
-#    return dataset_def
-#

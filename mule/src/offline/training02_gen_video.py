@@ -8,152 +8,149 @@ From a list of records;
 4) Write an mp4 viedo to VIDEO_OUT_NAME
 
 """
-#JPG_OUT_DIR = 'frames_predicted_HUD'
-#VIDEO_OUT_NAME = 'video_with_predicted_signals'
-
-#JPG_OUT_DIR = 'frames_HUD'
-#VIDEO_OUT_NAME = 'video_with_signals'
-
-
-JPG_OUT_DIR = 'salient_frames_HUD'
-VIDEO_OUT_NAME = 'video_with_saliency_HUD'
-path_video_frames_temp = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,JPG_OUT_DIR)
-
-path_saliency_blend_frames
-#%% Render all to JPG
-"""
-"""
-#%matplotlib qt
-#
-
-#%matplotlib qt
-#plt.ioff()
-df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',THIS_MODEL_ID+' predicted.pck'))
-
-img_files_list = glob.glob(os.path.join(path_saliency_blend_frames,'*.png'))
-saliency_img_dict = dict()
-for f in img_files_list:
-    _, fname_ext = os.path.split(f)
-    fname, _ = os.path.splitext(fname_ext)
-    saliency_img_dict[fname] = plt.imread(f)
-    #print(f)
-    
 #%%
-these_records = get_full_records(frames_npz, df_records, df_records.index)
-#test = rec['frame']
-
-#%% !!! REPLACE THE FRAMES WITH SALIENCY FRAMES IN EACH RECORD!!! 
-for rec in these_records:
-    rec['frame'] = saliency_img_dict[rec['timestamp_raw']]
+import glob
+import os
+import logging
+import sys
+import cv2
+import tqdm
 
 #%%
-def write_video_figures(records,path_out):
-    """For each record, generate a MPL Figure object. 
-    
-    Write each object to JPG. 
-    """
-    print('Start')
-    for i,rec in enumerate(records):
-        if i%10 == 0:
-            print(i,"|",end="") #This doesn't show if capture is on! 
-        with LoggerCritical():
-            # Get a frame figure object
-            record_figure = gen_one_record_frame(rec)
-            
-            # Save it to jpg
-            this_fname = os.path.join(path_out,rec['timestamp_raw'] + '.jpg')
-            logging.debug("Saved {}".format(this_fname))
-            #print(fig)
-            record_figure.savefig(this_fname)
-
-
-if not os.path.exists(path_video_frames_temp): os.makedirs(path_video_frames_temp)
-
-#
-
-write_video_figures(these_records,path_video_frames_temp)
-     
-#%% Reload the JPG back to NPY arrays
-
-#path_frames_dir = path_video_frames_temp
-def get_sorted_jpg_frames(path_frames_dir):
-    """From a directory holding .jpg images, load as NPY, and sort on timestamp
-    
-    All arrays are stored in a dictionary with the timestamp for sorting.
-    """
-    # Look inside
-    frames = list()
-    frame_files_list = glob.glob(os.path.join(path_frames_dir,'*.jpg'))
-    for this_img_path in frame_files_list:
-        this_frame_dict = dict()
-        #print(this_jpg)
-        _, this_img_fname = os.path.split(this_img_path)
-        timestamp = os.path.splitext(this_img_fname)[0]
-        datetime_stamp = datetime.datetime.fromtimestamp(int(timestamp)/1000)
-        datetime_str = datetime_stamp.isoformat()
-        #img_bytes = this_img.read(this_img)
-        #img_uint8 = plt.imread(this_img_path)
-        img = cv2.imread(this_img_path)
-        #img.shape
-        ##img = cv2.imdecode(np.frombuffer(img_bytes, dtype=np.uint8), -1)
-        #img = cv2.imdecode(img_uint8, -1)
-        #cv2.imdecode(img_uint8)
-        #frames[datetime_str] = img
-        this_frame_dict['array'] = img
-        this_frame_dict['datetime_stamp'] = datetime_stamp
-        this_frame_dict['datetime_str'] = datetime_str
-        frames.append(this_frame_dict)
-
-    # Sort the frames!
-    frames = sorted(frames, key=lambda k: k['datetime_stamp'])
-    logging.debug("Collected {} frames".format(len(frames)))
-
-    return frames
-
-with LoggerCritical():
-    frames = get_sorted_jpg_frames(path_video_frames_temp)
+LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
+assert os.path.exists(LOCAL_PROJECT_PATH)
+THIS_DATASET = "20180829 194519"
+THIS_FRAMES_DIR = "Video Frames"
+OUTPUT_VID_NAME = "Signal video.mp4"
 
 #%%
-def write_video(frames,path_video_out, fps, width, height):
-    """From a list of frames objects, generate a MP4. 
-    
-    The frames objects are dictionaries with NPY arrays and the timestamp.
-    """
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v') # Be sure to use lower case
-    
-    # This is extremely picky, and can fail (create empty file) with no warning !!
-    writer = cv2.VideoWriter(path_this_video_out, cv2.VideoWriter_fourcc(*"MJPG"), fps, (width,height))
+logger = logging.getLogger()
+logger.handlers = []
 
-    for this_frame_dict in frames:
-        writer.write(this_frame_dict['array']) # Write out frame to video
-    
-    logging.debug("Wrote {} frames to {}".format(len(frames),path_video_out))
-    
-    writer.release()
-    cv2.destroyAllWindows()
-    
-path_this_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,VIDEO_OUT_NAME+'.mp4')
-frames_height = frames[0]['array'].shape[0]
-frames_width = frames[0]['array'].shape[1]
-write_video(frames,path_this_video_out, fps=30, width=frames_width, height=frames_height)
+# Set level
+logger.setLevel(logging.DEBUG)
 
-#%% TEST VIDEO WITH RANDOM NOISE
-if 0:
-    frames[0]['array'].shape
-    frames[0]['array'].dtype
-    this_frame.shape
-    this_frame.dtype
+# Create formatter
+#FORMAT = "%(asctime)s - %(levelno)s - %(module)-15s - %(funcName)-15s - %(message)s"
+#FORMAT = "%(asctime)s L%(levelno)s: %(message)s"
+FORMAT = "%(asctime)s - %(levelname)s - %(funcName) -20s: %(message)s"
+DATE_FMT = "%Y-%m-%d %H:%M:%S"
+formatter = logging.Formatter(FORMAT, DATE_FMT)
 
-    path_this_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'test.mp4')
+# Create handler and assign
+handler = logging.StreamHandler(sys.stderr)
+handler.setFormatter(formatter)
+logger.handlers = [handler]
+logger.critical("Logging started")
+
+class LoggerCritical:
+    def __enter__(self):
+        my_logger = logging.getLogger()
+        my_logger.setLevel("CRITICAL")
+    def __exit__(self, type, value, traceback):
+        my_logger = logging.getLogger()
+        my_logger.setLevel("DEBUG")
+
+
+class NoPlots:
+    def __enter__(self):
+        get_ipython().run_line_magic('matplotlib', 'qt')
+        plt.ioff()
+    def __exit__(self, type, value, traceback):
+        get_ipython().run_line_magic('matplotlib', 'inline')
+        plt.ion()
+
+#%%
+
+class VideoWriter:
+    def __init__(self,jpg_folder, path_vid_out, fps):
+        self.jpg_folder = jpg_folder
+        self.path_vid_out = path_vid_out
+        self.fps = fps
+        assert os.path.exists(self.jpg_folder), "{} does not exist".format(self.jpg_folder)
+        
+        jpg_files = glob.glob(os.path.join(self.jpg_folder,'*.jpg'))
+        
+        logging.debug("{} video JPG frames found in {}".format(len(jpg_files),self.jpg_folder))
+
+        self.jpg_files = self.sort_jpgs(jpg_files)
+        
+        logging.debug("Output video set to {} at {} fps".format(self.path_vid_out,self.fps))
+
+        self.height, self.width = self.get_dimensions(self.jpg_files[0])
+
+    def get_dimensions(self,this_jpg_path):
+        # Load a single frame to get dimensions
+        img_arr = mpl.image.imread(this_jpg_path)
+        frames_height = img_arr.shape[0]
+        frames_width = img_arr.shape[1]
+        logging.debug("Dimensions: {} x {} pixels (Height x Width)".format(frames_height,frames_width))
+        
+        return frames_height,frames_width
+
+    def sort_jpgs(self,jpg_files):
+        """Sort on file name (timestamp)
+        
+        """
+        frame_paths = list()
+        for this_img_path in jpg_files:
+            this_frame_dict = dict()
+            _, this_img_fname = os.path.split(this_img_path)
+            timestamp = os.path.splitext(this_img_fname)[0]
+            this_frame_dict['timestamp'] = timestamp
+            this_frame_dict['path'] = this_img_path
+            frame_paths.append(this_frame_dict)
+
+        # Sort the frames!
+        frame_paths_sorted = sorted(frame_paths, key=lambda k: k['timestamp'])
+        logging.debug("Sorted {} video frame image paths".format(len(frame_paths_sorted)))
+        
+        return [fd['path'] for fd in frame_paths_sorted]
     
-    H = 480
+    def write_video(self, num_frames=None):
+        """From a list of frame JPG paths, generate a MP4. 
+        
+        Optionally specify the length of the video in num_frames (good for testing)
+        """
+        
+        # This is extremely picky, and can fail (create empty file) with no warning !!
+        writer = cv2.VideoWriter(self.path_vid_out, cv2.VideoWriter_fourcc(*"MJPG"), self.fps, (self.width,self.height))
+        if not num_frames:
+            frames_to_write = self.jpg_files
+        else:
+            frames_to_write = self.jpg_files[0:num_frames]
+        with NoPlots(), LoggerCritical():
+            for this_jpg_path in tqdm.tqdm(frames_to_write):
+                img_arr = mpl.image.imread(this_jpg_path)
+                writer.write(img_arr) # Write out frame to video
+        
+        logging.debug("Wrote {} frames to {}".format(len(frames_to_write),path_video_out))
+        
+        writer.release()
+        cv2.destroyAllWindows()
     
-    W = 640
+    def test_write(self):
+        """To test cv2 import, dimensions (cv2 is very picky), etc.
+        
+        Write some random noise to the video out path. 
+        """
+        
+        # Dimensions, for testing purposes
+        H = 480
+        W = 640
+        writer = cv2.VideoWriter(self.path_vid_out, cv2.VideoWriter_fourcc(*"MJPG"), 30, (W,H))
+        for frame in tqdm.tqdm(range(400)):
+            this_frame = np.random.randint(0, 255, (H,W,3)).astype('uint8')
+            writer.write(this_frame)
+        writer.release()        
+        logging.debug("Wrote test video to {}".format(self.path_vid_out))
+
+
+#%%
     
-    
-    writer = cv2.VideoWriter(path_this_video_out, cv2.VideoWriter_fourcc(*"MJPG"), 30, (W,H))
-    for frame in range(400):
-        this_frame = np.random.randint(0, 255, (H,W,3)).astype('uint8')
-        this_frame = frames[0]['array']
-        writer.write(this_frame)
-    writer.release()
+path_video_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_FRAMES_DIR)
+path_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,OUTPUT_VID_NAME)
+vidwriter = VideoWriter(path_video_frames,path_video_out,fps=30)
+#vidwriter.test_write()
+#%%
+vidwriter.write_video()
