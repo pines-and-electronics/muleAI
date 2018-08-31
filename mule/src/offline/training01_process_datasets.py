@@ -4,8 +4,8 @@ Iterate over each Data Set and check which data elements have been created.
 
 """
 
-import sys
-import glob,os
+import sys, glob, os
+import math
 import json
 import pandas as pd
 #import tensorflow as tf
@@ -16,12 +16,12 @@ import logging
 import zipfile
 #import re
 import datetime
-import cv2
-import shutil
-import json
-from tabulate import tabulate
+#import cv2
+#import shutil
+#import json
+#from tabulate import tabulate
 import tqdm
-from IPython import get_ipython
+#from IPython import get_ipython
 
 
 #%% LOGGING for Spyder! Disable for production. 
@@ -179,12 +179,12 @@ class AIDataSet():
     
     
     def bin_Y(self,Y):
-        d = [ linear_bin(y) for y in Y ]
+        d = [ self.linear_bin(y) for y in Y ]
         return np.array(d)
     
     
     def unbin_Y(self,Y):
-        d = [ linear_unbin(y) for y in Y ]
+        d = [ self.augment_df_datetimelinear_unbin(y) for y in Y ]
         return np.array(d)    
     
     
@@ -265,74 +265,6 @@ class AIDataSet():
         hist_throttle = self.df['throttle_signal'].hist()
         #plot_url = py.plot_mpl(fig)
 
-    
-    # =============================================================================
-    #--- Video
-    # =============================================================================
-    def gen_record_frame(self, ts_string_index, source_jpg_folder='jpg_images'):
-        """From a Record dictionary, create a single summary image of that timestep. 
-        
-        The figure has no border (full image)
-        
-        Show a data box with throttle and steering values. 
-        Show also the predicted values, if available. 
-        
-        Show a steering widget to visualize the current steering signal. 
-        Show also the predicted value, if available. 
-        
-        """
-        rec = self.df.loc[ts_string_index]
-        # Settings ############################################################
-        font_label_box = {
-            'color':'green',
-            'size':16,
-        }
-        font_steering = {'family': 'monospace',
-                #'color':  'darkred',
-                'weight': 'normal',
-                'size': 45,
-                }
-        SCALE = 50
-        HEIGHT_INCHES = 160*2.54/SCALE
-        WIDTH_INCHES =  120*2.54/SCALE
-        
-        # Figure ##############################################################
-        fig = plt.figure(frameon=False,figsize=(HEIGHT_INCHES,WIDTH_INCHES))
-        ax = mpl.axes.Axes(fig, [0., 0., 1., 1.])
-        ax.set_axis_off()
-        fig.add_axes(ax)
-        
-        # Main Image ##########################################################
-        jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
-        assert os.path.exists(jpg_path)
-        img = mpl.image.imread(jpg_path)
-        ax.imshow(img)
-        #raise
-        
-        
-        #ax.axes.get_xaxis().set_visible(False)
-        #ax.axes.get_yaxis().set_visible(False)
-        
-        # Data box ########################################################
-        timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
-        if 'steering_pred_signal' in self.df.columns:
-            this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
-                          rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
-        else: 
-            this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
-        t1 = ax.text(2,15,this_label,fontdict=font_label_box)
-        t1.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-        # Steering widget HUD #################################################
-        # Steering HUD: Actual steering signal
-        steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
-        text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-        # Steering HUD: Predicted steering angle
-        if 'steering_pred_signal' in self.df.columns:
-            steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
-            text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-        
-        return fig
-
     def plot12(self,ts_string_indices, source_jpg_folder='jpg_images', rows=3, cols=4):
         """
         Render N records to analysis
@@ -397,27 +329,84 @@ class AIDataSet():
     def plot_turning_frames(self):
         # Right turn
         these_indices = self.df[self.df['steering_signal'] > 0.9].sample(4)['timestamp'].tolist()
-        #self.plot4(these_indices)
-        #these_records = self.get_full_records(frames_npz, df_records, these_indices)
-        #plot_frames(these_records)
-        
+
         # Left turn
-        #these_indices += df_records[self.df['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
         these_indices += self.df[self.df['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
-        #self.plot4(these_indices)        
-        #these_records = get_full_records(frames_npz, df_records, these_indices)
-        #plot_frames(these_records)
-        
+
         # Straight
-        
-        #these_indices += df_records[(self.df['steering_signal'] > -0.1) & (df_records['steering_signal'] < 0.1)].sample(4)['timestamp'].tolist()
         these_indices += self.df[(self.df['steering_signal']  > -0.1) & (self.df['steering_signal']  < 0.1)].sample(4)['timestamp'].tolist()
-        #self.plot4(these_indices)
         self.plot12(these_indices)
-        #these_records = get_full_records(frames_npz, df_records, these_indices)
-        #plot_frames(these_records)    
     
     
+
+    
+    # =============================================================================
+    #--- Video
+    # =============================================================================
+    def gen_record_frame(self, ts_string_index, source_jpg_folder='jpg_images'):
+        """From a timestamp, create a single summary figure of that timestep. 
+        
+        The figure has no border (full image)
+        
+        Show a data box with throttle and steering values. 
+        Show also the predicted values, if available. 
+        
+        Show a steering widget to visualize the current steering signal. 
+        Show also the predicted value, if available. 
+        
+        """
+        rec = self.df.loc[ts_string_index]
+        # Settings ############################################################
+        font_label_box = {
+            'color':'green',
+            'size':16,
+        }
+        font_steering = {'family': 'monospace',
+                #'color':  'darkred',
+                'weight': 'normal',
+                'size': 45,
+                }
+        SCALE = 50
+        HEIGHT_INCHES = 160*2.54/SCALE
+        WIDTH_INCHES =  120*2.54/SCALE
+        
+        # Figure ##############################################################
+        fig = plt.figure(frameon=False,figsize=(HEIGHT_INCHES,WIDTH_INCHES))
+        ax = mpl.axes.Axes(fig, [0., 0., 1., 1.])
+        ax.set_axis_off()
+        fig.add_axes(ax)
+        
+        # Main Image ##########################################################
+        jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
+        assert os.path.exists(jpg_path)
+        img = mpl.image.imread(jpg_path)
+        ax.imshow(img)
+        #raise
+        
+        
+        #ax.axes.get_xaxis().set_visible(False)
+        #ax.axes.get_yaxis().set_visible(False)
+        
+        # Data box ########################################################
+        timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
+        if 'steering_pred_signal' in self.df.columns:
+            this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
+                          rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
+        else: 
+            this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
+        t1 = ax.text(2,15,this_label,fontdict=font_label_box)
+        t1.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+        # Steering widget HUD #################################################
+        # Steering HUD: Actual steering signal
+        steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
+        text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+        # Steering HUD: Predicted steering angle
+        if 'steering_pred_signal' in self.df.columns:
+            steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
+            text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+        
+        return fig
+
     # =============================================================================
     # Process frames to JPG
     # =============================================================================
@@ -501,7 +490,7 @@ class AIDataSet():
         os.rmdir(path_jpg)
         logging.debug("Deleted all .jpg files".format())
 
-#%%
+#%% Instantiate and load
 #%matplotlib inline
 #plt.ion()
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
@@ -530,99 +519,142 @@ data1.write_frames()
 
 
 
+#%% DATAGEN
+from tensorflow.python import keras as ks
 #%%
-
-# =============================================================================
-# Utility: Process frames
-# =============================================================================
-def process_jpg_zip(this_dir):
-    return_dict = dict()
-    
-    if os.path.exists(os.path.join(this_dir,'jpg_images.zip')):
-        return_dict['jpg_zip'] = glob.glob(os.path.join(this_dir,'jpg_images.zip'))[0]
-        return_dict['jpg_zip_size_MB'] = os.path.getsize(return_dict['jpg_zip'])/1000/1000
+class MuleDataGenerator(ks.utils.Sequence):
+    """Generates data for Keras"""
+    def __init__(self, indices, dataset, 
+                 batch_size=32, dim=None, n_channels=None, n_classes=15, shuffle=True):
+        """Keras data generator
         
-        # Look inside
-        with zipfile.ZipFile(return_dict['jpg_zip'], "r") as f:
-            #fnames = (os.path.splitext(name) for name in f.namelist())
-            return_dict['num_jpgs'] = len(f.namelist())
-    else:
-        raise
-    return return_dict
-
-# =============================================================================
-# Process json
-# =============================================================================
-def process_time_steps(camera_zip_path, json_zip_path):
-    return_dict = dict()
-    # Get the record timestamps
-    numpy_timestamps = check_numpy(camera_zip_path)
-    json_timestamps = check_json(json_zip_path)
-    
-    # Ensure timestamp alignment
-    assert numpy_timestamps == json_timestamps, "Temporal alignment failure"
-    
-    # Analysis of timesteps
-    timestamps = pd.Series(numpy_timestamps)
-    
-    return_dict['num_records'] =  len(timestamps)
-    
-    return_dict['elapsed_time'] = timestamps.iloc[-1] - timestamps.iloc[0]
-    return_dict['elapsed_time_mins'] = return_dict['elapsed_time'].total_seconds() / 60
-    
-    # Analysis of delta-times
-    ts_deltas = (timestamps-timestamps.shift()).fillna(0)
-    stats = ts_deltas[0:-1].describe()
-    
-    return_dict['ts_deltas_mean'] = stats['mean'].total_seconds() * 1000
-    return_dict['ts_deltas_std'] = stats['std'].total_seconds() * 1000
-    return return_dict
-
-def process_datetime(index_timestamp):
-    return_dict = dict()
-    return_dict['this_dt'] = datetime.datetime.strptime(index_timestamp, '%Y%m%d %H%M%S')
-    return_dict['this_dt_iso'] = return_dict['this_dt'].isoformat()
-    return_dict['this_dt_nice'] = return_dict['this_dt'].strftime("%A %d %b %H:%M")
-    return return_dict
-
-
-def process_json_records(this_dir):
-    this_return_dict = dict()
-    this_return_dict['json_record_zip'] = glob.glob(os.path.join(this_dir,'json_records.zip'))[0]
-    this_return_dict['json_size_MB'] = os.path.getsize(this_return_dict['json_record_zip'])/1000/1000
-    #dataset_def['num_json'] = os.path.getsize(dataset_def['json_record_zip'])/1000/1000
-    
-    
-    this_return_dict['df_record'] = os.path.join(this_dir,'df_record.pck')
-    
-    if not os.path.exists(this_return_dict['df_record']):
-        create_record_df(this_return_dict['json_record_zip'],this_return_dict['df_record'])
-        assert os.path.exists(this_return_dict['df_record'])
-    
-    return this_return_dict
-
-
-def create_record_df(json_zip,out_path):
-    json_records = list()
-    with zipfile.ZipFile(json_zip, "r") as f:
-        json_file_paths = [name for name in f.namelist() if os.path.splitext(name)[1] =='.json']
+        Aggregates the AIDataSet class
         
-        for json_file in json_file_paths:
-            this_fname = os.path.splitext(json_file)[0] 
-            this_timestep = this_fname.split('_')[1]
-            d = f.read(json_file)
-            d = json.loads(d.decode("utf-8"))
-            d['timestamp'] = this_timestep
-            json_records.append(d)
-    logging.debug("Returning {} json records from {}".format(len(json_file_paths),json_zip))
-    df_records = pd.DataFrame(json_records)  
+        Attributes:
+            indices (str): The allowed timestamps for data generation
+            dataset (AIDataSet): The dataset object with it's df and npz
+            batch_size : 
+            dim : 
+            n_channels : 
+            n_classes :
+            shuffle :
+        """
+        self.indices = indices
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.dim = dim
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.shuffle = shuffle
+        self.on_epoch_end()
+        #self.path_frames = path_frames
+        #assert os.path.exists(self.path_frames)
+        #self.path_records = path_records
+        #assert os.path.exists(self.path_records)
+        logging.debug("** Initialize datagen **".format())
+        logging.debug("{} of {} total records used for generation".format(len(self.indices), len(self.dataset.df)))
+        logging.debug("Frames NPZ located at: {}".format(self.dataset.path_frames_npz))
+        logging.debug("{} samples over batch size {} yields {} batches".format(len(self.indices),
+                                                                                   self.batch_size,
+                                                                                   math.ceil(len(self.indices)/self.batch_size),))
+        
+    def __len__(self):
+        """Keras generator method - Denotes the number of batches per epoch
+        """        
+        return int(np.floor(len(self.indices) / self.batch_size))
     
-    df_records.to_pickle(out_path)
-    logging.debug("Saved records to {}".format(out_path))
+    # GET A BATCH!
+    def __getitem__(self, index): 
+        """Keras generator method - Generate one batch of data
+        """         
+        logging.debug("Generating batch {}".format(index))
+        
+        # Generate indexes of the batch
+        batch_indices = self.indices[index*self.batch_size:(index+1)*self.batch_size]
+        #print(batch_indices)
+        
+        # Find list of IDs
+        #list_IDs_temp = [self.list_IDs[k] for k in indexes]
 
+        # Generate data by selecting these IDs
+        X, y = self.__data_generation(batch_indices)
 
+        return X, y
 
+    def on_epoch_end(self):
+        """Keras generator method - Shuffles indices after each epoch
+        """
+        #self.indexes = np.arange(len(self.indices))
+        if self.shuffle == True:
+            # Shuffle is in-place! 
+            np.random.shuffle(self.indices)
+            
+    def __get_npy_arrays(self,batch_indices):
+        """Custom method - get the X input arrays
+        
+        Open the npz file and load n frames into memory
+        """
+        # This is a pointer to the file
+        npz_file=np.load(self.dataset.path_frames_npz)
+        #for k in list_ID_temp:
+        #    npy_records.append(npz_file[k])
+        #X_train = np.array(npy_records)
+        
+        frames_array = np.stack([npz_file[idx] for idx in batch_indices], axis=0)
+        logging.debug("Generating {} frames: {}".format(frames_array.shape[0], frames_array.shape))
+        
+        return frames_array
     
+    def __get_records(self,batch_indices):
+        """Custom method - get the y labels
+        """
+        # Load the saved records
+        #df_records = pd.read_pickle(self.path_records)
+        # Set the index to match
+        #df_records.index = df_records['timestamp']
+        # Subset
+        #this_batch_steering = df_records.loc[list_IDs_temp]
+        
+        this_batch_df = self.dataset.df.loc[batch_indices]
+        
+        steering_values = this_batch_df['steering_signal'].values
+        
+        #print(steering_values)
+        steering_records_array = self.dataset.bin_Y(steering_values)
+        
+        #df_categorical_steering = df_records['steering_signal']
+        #
+        
+        
+        #records_array = df_records[]
+        logging.debug("Generating {} records {}:".format(steering_records_array.shape[0],steering_records_array.shape))
+        return steering_records_array
+        
+        #raise
+    
+    def __data_generation(self, batch_indices):
+        """Keras generator method - Generates data containing batch_size samples
+        """
+        # X : (n_samples, *dim, n_channels)
+        # Initialization
+        #X = np.empty((self.batch_size, *self.dim, self.n_channels))
+        #y = np.empty((self.batch_size), dtype=int)
+        
+        X = self.__get_npy_arrays(batch_indices)
+        y = self.__get_records(batch_indices)
+        
+        # Generate data
+        #for i, ID in enumerate(list_IDs_temp):
+            # Store sample
+            #X[i,] = np.load('data/' + ID + '.npy')
+
+            # Store class
+            #y[i] = self.labels[ID]
+        #    pass
+
+        return X, y
+    
+
 #%% PROCESS ALL DATASETS!
 
 #this_data_dir = LOCAL_PROJECT_PATH
@@ -727,13 +759,13 @@ def get_datasets(df_datasets):
 df_datasets_processed = get_datasets(df_checkfiles)
 df_all_datasets = df_checkfiles.join(df_datasets_processed)
 
-#%%
+#%% Print table
 
 print(tabulate(df_all_datasets.loc[:,['camera_size_MB','elapsed_time']],headers="keys"))
-
 for c in df_all_datasets.columns:
     print(c)
-#%%
+
+#%% Select one dataset
 def select_data(this_df):
     head_str = "{:<20}  {:<30} {:<12} {:<15} {:>30}"
     row_str =  "{:<20}  {:<30} {:<12} {:>15.0f} {:>20.1f}"

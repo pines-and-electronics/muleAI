@@ -1,5 +1,97 @@
 
 
+def create_record_df(json_zip,out_path):
+    json_records = list()
+    with zipfile.ZipFile(json_zip, "r") as f:
+        json_file_paths = [name for name in f.namelist() if os.path.splitext(name)[1] =='.json']
+        
+        for json_file in json_file_paths:
+            this_fname = os.path.splitext(json_file)[0] 
+            this_timestep = this_fname.split('_')[1]
+            d = f.read(json_file)
+            d = json.loads(d.decode("utf-8"))
+            d['timestamp'] = this_timestep
+            json_records.append(d)
+    logging.debug("Returning {} json records from {}".format(len(json_file_paths),json_zip))
+    df_records = pd.DataFrame(json_records)  
+    
+    df_records.to_pickle(out_path)
+    logging.debug("Saved records to {}".format(out_path))
+
+
+# =============================================================================
+# Process json
+# =============================================================================
+def process_time_steps(camera_zip_path, json_zip_path):
+    return_dict = dict()
+    # Get the record timestamps
+    numpy_timestamps = check_numpy(camera_zip_path)
+    json_timestamps = check_json(json_zip_path)
+    
+    # Ensure timestamp alignment
+    assert numpy_timestamps == json_timestamps, "Temporal alignment failure"
+    
+    # Analysis of timesteps
+    timestamps = pd.Series(numpy_timestamps)
+    
+    return_dict['num_records'] =  len(timestamps)
+    
+    return_dict['elapsed_time'] = timestamps.iloc[-1] - timestamps.iloc[0]
+    return_dict['elapsed_time_mins'] = return_dict['elapsed_time'].total_seconds() / 60
+    
+    # Analysis of delta-times
+    ts_deltas = (timestamps-timestamps.shift()).fillna(0)
+    stats = ts_deltas[0:-1].describe()
+    
+    return_dict['ts_deltas_mean'] = stats['mean'].total_seconds() * 1000
+    return_dict['ts_deltas_std'] = stats['std'].total_seconds() * 1000
+    return return_dict
+
+
+    this_return_dict['df_record'] = os.path.join(this_dir,'df_record.pck')
+    
+    if not os.path.exists(this_return_dict['df_record']):
+        create_record_df(this_return_dict['json_record_zip'],this_return_dict['df_record'])
+        assert os.path.exists(this_return_dict['df_record'])
+    
+    return this_return_dict
+
+#%%
+def process_datetime(index_timestamp):
+    return_dict = dict()
+    return_dict['this_dt'] = datetime.datetime.strptime(index_timestamp, '%Y%m%d %H%M%S')
+    return_dict['this_dt_iso'] = return_dict['this_dt'].isoformat()
+    return_dict['this_dt_nice'] = return_dict['this_dt'].strftime("%A %d %b %H:%M")
+    return return_dict
+
+
+def process_json_records(this_dir):
+    this_return_dict = dict()
+    this_return_dict['json_record_zip'] = glob.glob(os.path.join(this_dir,'json_records.zip'))[0]
+    this_return_dict['json_size_MB'] = os.path.getsize(this_return_dict['json_record_zip'])/1000/1000
+    #dataset_def['num_json'] = os.path.getsize(dataset_def['json_record_zip'])/1000/1000
+    
+    
+#%%
+# =============================================================================
+# Utility: Process frames
+# =============================================================================
+def process_jpg_zip(this_dir):
+    return_dict = dict()
+    
+    if os.path.exists(os.path.join(this_dir,'jpg_images.zip')):
+        return_dict['jpg_zip'] = glob.glob(os.path.join(this_dir,'jpg_images.zip'))[0]
+        return_dict['jpg_zip_size_MB'] = os.path.getsize(return_dict['jpg_zip'])/1000/1000
+        
+        # Look inside
+        with zipfile.ZipFile(return_dict['jpg_zip'], "r") as f:
+            #fnames = (os.path.splitext(name) for name in f.namelist())
+            return_dict['num_jpgs'] = len(f.namelist())
+    else:
+        raise
+    return return_dict
+
+
 
 #%%
 def write_video(frames,path_video_out, fps, width, height):

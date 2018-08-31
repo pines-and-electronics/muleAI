@@ -59,37 +59,6 @@ plt.ion()
 #%matplotlib inline
 
     
-# In[9]:
-
-
-# Conversion between categorical and floating point steering
-def linear_bin(a):
-    a = a + 1
-    b = round(a / (2 / 14))
-    arr = np.zeros(15)
-    arr[int(b)] = 1
-    return arr
-
-
-def linear_unbin(arr):
-    if not len(arr) == 15:
-        raise ValueError('Illegal array length, must be 15')
-    b = np.argmax(arr)
-    a = b * (2 / 14) - 1
-    return a
-
-
-def bin_Y(Y):
-    d = [ linear_bin(y) for y in Y ]
-    return np.array(d)
-
-
-def unbin_Y(Y):
-    d = [ linear_unbin(y) for y in Y ]
-    return np.array(d)
-
-
-#print()
 
 #%%
 ##indices= sel_indices
