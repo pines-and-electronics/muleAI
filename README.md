@@ -33,15 +33,15 @@ UPDATE? Tensor flow 1.8 (includes keras as `tf.keras`)
 1. Images are saved directly to numpy arrays, timestamped, and zipped for fast transfer to training
 1. After driving, analysis and training of results are done in an offline suite of tools
    * DataSet class 
-    * Enforces contract for further offline processing pipeline
-    * Strictly aggregates the numpy images and the saved records and signals
-    * Transforms underlying records
+     * Enforces contract for further offline processing pipeline
+     * Strictly aggregates the numpy images and the saved records and signals
+     * Transforms underlying records
    * Plotter class
-    * Operates on DataSet to plot summary histograms, charts etc.
-    * Operates on DataSet to generate analysis frames with a HUD overlay
+     * Operates on DataSet to plot summary histograms, charts etc.
+     * Operates on DataSet to generate analysis frames with a HUD overlay
    * DataGenerator class operates on DataSet to serve batches to Keras
    * Trainer class operatates on DataSet to train a Keras model
-   * Saliency class operates on DataSet to generate
+   * Saliency class operates on DataSet to visualize the network activations
 
 
 ### Behaviour changes
