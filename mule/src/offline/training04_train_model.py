@@ -1,4 +1,8 @@
 
+LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
+assert os.path.exists(LOCAL_PROJECT_PATH)
+THIS_DATASET = "20180829 194519"
+data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
   
 #%% Generate partitions
 #datagen = MuleDataGenerator(data1)
@@ -60,7 +64,7 @@ blmodel.summary()
 
 #%% TRAIN
 
-EPOCHS = 10
+EPOCHS = 5
 with LoggerCritical():
     history = blmodel.fit_generator(generator=training_generator,
                       validation_data=validation_generator,

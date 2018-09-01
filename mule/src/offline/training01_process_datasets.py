@@ -107,6 +107,8 @@ class AIDataSet():
         # JPG folder
         JPG_FOLDER_NAME = "jpg_images"
         self.path_jpgs_dir = os.path.join(self.path_dataset,JPG_FOLDER_NAME)
+        
+        self.augment_df_datetime()
 
     # =============================================================================
     #--- Query
@@ -252,94 +254,6 @@ class AIDataSet():
                       self.ts_deltas_mean,
                       self.ts_deltas_std
                       ))        
-    
-    # =============================================================================
-    #--- Plotting
-    # =============================================================================
-    def histogram_steering(self):
-        fig=plt.figure(figsize=[10,5],facecolor='white')
-        hist_steering = self.df['steering_signal'].hist()
-        return hist_steering
-   
-    def histogram_throttle(self):
-        fig=plt.figure(figsize=[10,5],facecolor='white')
-        hist_throttle = self.df['throttle_signal'].hist()
-        #plot_url = py.plot_mpl(fig)
-
-    def plot12(self,ts_string_indices, source_jpg_folder='jpg_images', rows=3, cols=4):
-        """
-        Render N records to analysis
-        """
-        # Settings ############################################################
-        font_label_box = {
-            'color':'green',
-            'size':16,
-        }
-        font_steering = {'family': 'monospace',
-                #'color':  'darkred',
-                'weight': 'normal',
-                'size': 25,
-                }
-        ROWS = rows
-        COLS = cols
-        NUM_IMAGES = ROWS * COLS
-        
-        # Figure ##############################################################
-        # figsize = [width, height]
-        fig=plt.figure(figsize=[20,18],facecolor='white')
-
-        
-        for i,ts_string_index in enumerate(ts_string_indices):
-            rec = self.df.loc[ts_string_index]
-
-            timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
-            
-            if 'steering_pred_signal' in self.df.columns:
-                this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
-                              rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
-            else: 
-                this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
-                
-            ax = fig.add_subplot(ROWS,COLS,i+1)
-
-            # Main Image ##########################################################
-            jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
-            assert os.path.exists(jpg_path)
-            img = mpl.image.imread(jpg_path)
-            ax.imshow(img)
-            #plt.title(str_label)
-            
-            # Data box ########################################################
-            
-            #ax.axes.get_xaxis().set_visible(False)
-            #ax.axes.get_yaxis().set_visible(False)
-            t = ax.text(5,25,this_label,color='green',alpha=1)
-            #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
-            t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
-            
-            # Steering widget HUD #################################################
-            # Steering HUD: Actual steering signal
-            steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
-            text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
-            # Steering HUD: Predicted steering angle
-            if 'steering_pred_signal' in self.df.columns:
-                steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
-                text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
-
-
-    def plot_turning_frames(self):
-        # Right turn
-        these_indices = self.df[self.df['steering_signal'] > 0.9].sample(4)['timestamp'].tolist()
-
-        # Left turn
-        these_indices += self.df[self.df['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
-
-        # Straight
-        these_indices += self.df[(self.df['steering_signal']  > -0.1) & (self.df['steering_signal']  < 0.1)].sample(4)['timestamp'].tolist()
-        self.plot12(these_indices)
-    
-    
-
     
     # =============================================================================
     #--- Video
@@ -491,12 +405,104 @@ class AIDataSet():
         os.rmdir(path_jpg)
         logging.debug("Deleted all .jpg files".format())
 
+#%% Plotter
+class DataSetPlotter:
+    def __init__(self):
+        pass
+    # =============================================================================
+    #--- Plotting
+    # =============================================================================
+    def histogram_steering(self,dataset):
+        fig=plt.figure(figsize=[10,5],facecolor='white')
+        hist_steering = dataset.df['steering_signal'].hist()
+        return hist_steering
+   
+    def histogram_throttle(self,dataset):
+        fig=plt.figure(figsize=[10,5],facecolor='white')
+        hist_throttle = dataset.df['throttle_signal'].hist()
+        #plot_url = py.plot_mpl(fig)
+
+    def plot12(self,dataset,ts_string_indices, source_jpg_folder='jpg_images', rows=3, cols=4):
+        """
+        Render N records to analysis
+        """
+        # Settings ############################################################
+        font_label_box = {
+            'color':'green',
+            'size':16,
+        }
+        font_steering = {'family': 'monospace',
+                #'color':  'darkred',
+                'weight': 'normal',
+                'size': 25,
+                }
+        ROWS = rows
+        COLS = cols
+        NUM_IMAGES = ROWS * COLS
+        
+        # Figure ##############################################################
+        # figsize = [width, height]
+        fig=plt.figure(figsize=[20,18],facecolor='white')
+
+        
+        for i,ts_string_index in enumerate(ts_string_indices):
+            rec = dataset.df.loc[ts_string_index]
+
+            timestamp_string = rec['datetime'].strftime("%D %H:%M:%S.") + "{:.2}".format(str(rec['datetime'].microsecond))
+            
+            if 'steering_pred_signal' in dataset.df.columns:
+                this_label = "{}\n{:0.2f}/{:0.2f} steering \n{:0.2f} throttle".format(timestamp_string,
+                              rec['steering_signal'],rec['steering_pred_signal'],rec['throttle_signal'])
+            else: 
+                this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
+                
+            ax = fig.add_subplot(ROWS,COLS,i+1)
+
+            # Main Image ##########################################################
+            jpg_path = os.path.join(dataset.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
+            assert os.path.exists(jpg_path)
+            img = mpl.image.imread(jpg_path)
+            ax.imshow(img)
+            #plt.title(str_label)
+            
+            # Data box ########################################################
+            
+            #ax.axes.get_xaxis().set_visible(False)
+            #ax.axes.get_yaxis().set_visible(False)
+            t = ax.text(5,25,this_label,color='green',alpha=1)
+            #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
+            t.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+            
+            # Steering widget HUD #################################################
+            # Steering HUD: Actual steering signal
+            steer_actual = ''.join(['|' if v else '-' for v in dataset.linear_bin(rec['steering_signal'])])
+            text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+            # Steering HUD: Predicted steering angle
+            if 'steering_pred_signal' in dataset.df.columns:
+                steer_pred = ''.join(['◈' if v else ' ' for v in dataset.linear_bin(rec['steering_pred_signal'])])
+                text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
+
+    def plot_sample_frames(self,dataset):
+        # Right turn
+        these_indices = dataset.df[dataset.df['steering_signal'] > 0.9].sample(4)['timestamp'].tolist()
+
+        # Left turn
+        these_indices += dataset.df[dataset.df['steering_signal'] < -0.9].sample(4)['timestamp'].tolist()
+
+        # Straight
+        these_indices += dataset.df[(dataset.df['steering_signal']  > -0.1) & (dataset.df['steering_signal']  < 0.1)].sample(4)['timestamp'].tolist()
+        
+        #return these_indices
+        self.plot12(dataset,these_indices)
+
 #%% Instantiate and load
 
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
-data1 = AIDataSet(LOCAL_PROJECT_PATH,"20180829 194519")
-data1.augment_df_datetime()
+THIS_DATASET = "20180829 194519"
+
+data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
+#data1.augment_df_datetime()
 data1.process_time_steps()
 data1.write_jpgs(overwrite=False)
 
@@ -507,14 +513,16 @@ data1.write_jpgs(overwrite=False)
 
 #%% Turn off plotting, write frames and videos
 # First. change the mode to GUI window output
-
+plotter = DataSetPlotter()
+plotter.histogram_steering(data1)
+plotter.histogram_throttle(data1)
 #%matplotlib qt
 # Then disable output
-plt.ion()
-data1.histogram_steering()
-data1.histogram_throttle()
-data1.plot_turning_frames()
-data1.write_frames()
+#plt.ion()
+#data1.histogram_steering()
+
+plotter.plot_sample_frames(data1)
+#data1.write_frames()
 
 
 #%% PROCESS ALL DATASETS!
