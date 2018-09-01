@@ -1,4 +1,4 @@
-Mule: the love-child issuing from a male donkey (a jack) and a mare. Reliable. Sure footed. Even tempered. Gets you from point A to B. 
+Mule: the love-child issuing from a male donkey (a jack) and a mare. Reliable. Sure footed. Even tempered. Gets you from point A to B, even if it's not the most elegant ride in town. 
 
 ---
 
@@ -16,7 +16,7 @@ Mule: the love-child issuing from a male donkey (a jack) and a mare. Reliable. S
 ## Release candidate 1.0
 
 ### Dependencies
-Tensor flow 1.8 (includes keras as `tf.keras`)
+UPDATE? Tensor flow 1.8 (includes keras as `tf.keras`)
 
 ### Features
 1. Extended configuration YAML file 
@@ -29,11 +29,23 @@ Tensor flow 1.8 (includes keras as `tf.keras`)
 1. New adjustment method for PS3 controller, DPad selects a value, and up/down to change the value allowing performance changes as the car is driving
    * D-pad left/right on the PS3 controller iterates over adjustment settings
    * D-pad up/down on the PS3 controller adjusts that value by SHIFT amount
-   * Adjustment mode 4 is the SHIFT setting, allowing fast or slow adjustments
-1. Images are saved directly to numpy arrays
+   * Currently able to adjust max forward/reverse throttle and steering
+1. Images are saved directly to numpy arrays, timestamped, and zipped for fast transfer to training
+1. After driving, analysis and training of results are done in an offline suite of tools
+   * DataSet class 
+    * Enforces contract for further offline processing pipeline
+    * Strictly aggregates the numpy images and the saved records and signals
+    * Transforms underlying records
+   * Plotter class
+    * Operates on DataSet to plot summary histograms, charts etc.
+    * Operates on DataSet to generate analysis frames with a HUD overlay
+   * DataGenerator class operates on DataSet to serve batches to Keras
+   * Trainer class operatates on DataSet to train a Keras model
+   * Saliency class operates on DataSet to generate
 
-### Changes
+
+### Behaviour changes
 1. No support for any installation or setup method - project is run directly from the git directory. 
 1. Linux and Mac OS are tested, not Windows
-1. Training of models is left up to the user, in a separate module
+1. Training of models is in a separate module
 
