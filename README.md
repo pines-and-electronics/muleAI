@@ -1,4 +1,4 @@
-Mule: the forbidden love-child issuing from a male donkey (a jack) and a mare. Sure footed. Even tempered. Ok, maybe your friends laugh at you from their fancy horses, their thoroughbreds, their imported Arabians; but we'll see who gets the last laugh!
+**The Mule**: the forbidden love-child issuing from a male donkey (a jack) and a mare. Sure footed. Even tempered. Ok, maybe your friends laugh at you from their fancy horses, their thoroughbreds, their imported Arabians; but we'll see who gets the last laugh!
 
 ---
 
