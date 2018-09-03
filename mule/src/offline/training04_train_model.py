@@ -2,15 +2,24 @@
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 THIS_DATASET = "20180829 194519"
-data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
-  
+this_dataset = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
+print(this_dataset)
+
+
+THIS_MODEL_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
+
+model_dir = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model ' + THIS_MODEL_TIMESTAMP)
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)
+assert not os.listdir(model_dir), "{} not empty".format(model_dir)
+
 #%% Generate partitions
 #datagen = MuleDataGenerator(data1)
 
 msk = np.random.rand(len(data1.df)) < 0.8
 partition = dict()
-partition['train'] = data1.df.index[msk].values
-partition['validation'] = data1.df.index[~msk].values
+partition['train'] = this_dataset.df.index[msk].values
+partition['validation'] = this_dataset.df.index[~msk].values
 
 #%%
 generator_params = {'dim': (160,120),
@@ -25,7 +34,7 @@ generator_params = {'dim': (160,120),
 training_generator = MuleDataGenerator(partition['train'], data1, **generator_params)
 validation_generator = MuleDataGenerator(partition['validation'], data1, **generator_params)
 
-logging.debug("**")
+#logging.debug("**")
 #logging.debug("Data Generators: {} samples over batch size {} yields ~{} batches: {} / {} train/val ".format(len(df_records),
 #                                                                                   generator_params['batch_size'],
 #                                                                                   math.ceil(len(df_records)/generator_params['batch_size']),
@@ -62,21 +71,109 @@ blmodel.compile(optimizer='adam',
                )
 blmodel.summary()
 
+#%% Callbacks
+weight_filename="weights Loss {val_loss:.2f} Epoch {epoch:02d}.h5"
+weight_path = os.path.join(model_dir,weight_filename)
+callback_wts = ks.callbacks.ModelCheckpoint(weight_path, 
+                                                monitor='val_loss', 
+                                                verbose=1, 
+                                                save_best_only=True, 
+                                                mode='min')
+callback_stopping = ks.callbacks.EarlyStopping(monitor='val_loss', 
+                                               min_delta=0.0005, 
+                                               patience=5, # number of epochs with no improvement after which training will be stopped.
+                                               verbose=1, 
+                                               mode='auto')
+class MyCallback(ks.callbacks.Callback):
+    def on_train_begin(self, logs={}):
+        logging.info("Started training {}".format(self.model))
+        self.losses = []
+        return 
+        
+    def on_train_end(self, logs={}):
+        logging.info("Finished training {}".format(self.model))
+        return
+ 
+
+    def on_epoch_begin(self, epoch, logs={}):
+        logging.info("Epoch {} {}".format(epoch,logs))
+        
+        return
+ 
+    def on_batch_end(self, batch, logs={}):
+        #self.losses.append(logs.get('loss'))
+        logging.debug("\tBatch {} {}".format(batch,logs))
+        pass
+
+        
+    def on_epoch_end(self, epoch, logs={}):
+        logging.info("*".format(epoch))
+        
+
+callback_list = [callback_wts,callback_stopping,MyCallback()]
+
+
+#%% Search this dataset for trained models
+model_dirs = glob.glob(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET)+'/model *')
+logging.debug("Found {} model directories;".format(len(models_dirs_dict)))
+model_dicts = list()
+for folder in model_dirs:
+    print(md)
+    this_dict = dict()
+    this_dict['path'] = folder
+    this_dict['name'] = os.path.split(folder)[1]
+    this_dict['model_wts'] = glob.glob(this_dict['path']+'/*.h5')
+    this_dict['model_wts_sorted'] = list()
+    for wt_file in this_dict['model_wts']:
+        _,fname = os.path.split(wt_file)
+        
+        loss_string = re.search(r"Loss [-+]?[0-9]*\.?[0-9]+",fname)[0]
+        loss_num = float(re.search("[-+]?[0-9]*\.?[0-9]+",loss_string)[0])
+        this_dict['model_wts_sorted'].append((loss_num,wt_file))
+        this_dict['model_wts_sorted'] = sorted(this_dict['model_wts_sorted'], key=lambda tup: tup[0])
+    this_dict['best_model'] = this_dict['model_wts_sorted'][0][1]
+    model_dicts.append(this_dict)
+pprint(model_dicts)
+THIS_DATASET = "20180829 194519"
+#this_dict['model_wts_sorted'].append(1)
+
+#%%
+
+path_model = "/home/batman/MULE DATA/20180829 194519/model 20180901 112128/weights epoch03 Loss 0.76.h5"
+model_reloaded = ks.models.load_model(path_model)
+#print(model_reloaded)
+#dir(remodel)
+#remodel.
+
+EPOCHS = 3
+history_reloaded = model_reloaded.fit_generator(
+            generator=training_generator,
+            validation_data=validation_generator,
+            use_multiprocessing=True,
+            workers=6,
+            epochs=EPOCHS,
+            verbose=1,
+            callbacks=callback_list)
+
+#remodel.history
+#remodel.callbacks
 #%% TRAIN
 
-EPOCHS = 5
+EPOCHS = 3
 with LoggerCritical():
-    history = blmodel.fit_generator(generator=training_generator,
-                      validation_data=validation_generator,
-                      use_multiprocessing=True,
-                      workers=6,
-                      epochs=EPOCHS,
-                      verbose=1,)
+    history = blmodel.fit_generator(
+            generator=training_generator,
+            validation_data=validation_generator,
+            use_multiprocessing=True,
+            workers=6,
+            epochs=EPOCHS,
+            verbose=1,
+            callbacks=callback_list)
 
 history_dict = history.__dict__
 
 this_timestamp = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
-logging.debug("Finished training model {}".format(this_timestamp))
+logging.debug("Finished training model {}".format(this_model_timestamp))
 
 #%% Make predictions and augment the records frame with predicted values
 
@@ -148,9 +245,6 @@ plot_frames(these_records)
 # Save the model weights, architecture, configuration, and state
 # serialize weights to HDF5
 path_model_h5 = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',this_timestamp + ' model.h5')
-model_dir = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model')
-if not os.path.exists(model_dir):
-    os.makedirs(model_dir)
 blmodel.save(path_model_h5)
 logging.debug("Saved complete model hd5 to disk".format())
 

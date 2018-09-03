@@ -18,7 +18,8 @@ import math
 #import tensorflow as tf
 #import sklearn as sk
 from tensorflow.python import keras as ks
-
+from pprint import pprint
+import re
 #import cv2
 
 #%% Logging
@@ -97,10 +98,12 @@ class MuleDataGenerator(ks.utils.Sequence):
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.on_epoch_end()
-
+        
         logging.debug("** Initialize datagen **".format())
+        logging.debug("Data folder: {}".format(dataset.data_folder))
+        
         logging.debug("{} of {} total records used for generation".format(len(self.indices), len(self.dataset.df)))
-        logging.debug("Frames NPZ located at: {}".format(self.dataset.path_frames_npz))
+        #logging.debug("Frames NPZ located at: {}".format(self.dataset.path_frames_npz))
         logging.debug("{} samples over batch size {} yields {} batches".format(len(self.indices),
                                                                                    self.batch_size,
                                                                                    math.ceil(len(self.indices)/self.batch_size),))

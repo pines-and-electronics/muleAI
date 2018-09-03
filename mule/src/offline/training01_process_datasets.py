@@ -149,6 +149,9 @@ class AIDataSet():
         # Sorted and reindexed! 
         return pd.Series(timestamps).sort_values().reset_index(drop=True)
     
+    def __str__(self):
+        return "Dataset {} at {} with {} records".format(self.data_folder, self.path_data, len(self.df))
+    
     @property
     def int_index(self,timestamp):
         # Helper to swap timestamp string <> integer index on df
@@ -502,27 +505,19 @@ assert os.path.exists(LOCAL_PROJECT_PATH)
 THIS_DATASET = "20180829 194519"
 
 data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
-#data1.augment_df_datetime()
 data1.process_time_steps()
 data1.write_jpgs(overwrite=False)
 
-#r = data1.df.head()
-#data1.df.loc[0]
-#data1.df.loc['1535564758226']
-#data1.gen_record_frame('1535564758226')
 
-#%% Turn off plotting, write frames and videos
-# First. change the mode to GUI window output
+#%% Summary plots
 plotter = DataSetPlotter()
 plotter.histogram_steering(data1)
 plotter.histogram_throttle(data1)
-#%matplotlib qt
-# Then disable output
-#plt.ion()
-#data1.histogram_steering()
 
 plotter.plot_sample_frames(data1)
-#data1.write_frames()
+
+#%% Write frames
+data1.write_frames(overwrite=False)
 
 
 #%% PROCESS ALL DATASETS!
