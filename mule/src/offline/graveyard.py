@@ -1,3 +1,23 @@
+#%%
+def get_predictions(model, this_frames_npz, this_df_records):
+    """Augment the df_records with the predictions
+    """
+    this_df_records['steering_pred_cats'] = pd.Series(dtype=object)
+    #df_records['steering_pred_argmax'] = 
+    for i,idx in enumerate(this_df_records.index):
+        
+        this_frame = np.expand_dims(this_frames_npz[idx],0)
+        this_frame.shape
+        this_pred = model.predict(this_frame)
+        this_df_records.loc[idx,'steering_pred_cats'] = [this_pred]
+        this_df_records.loc[idx,'steering_pred_argmax'] = np.argmax(this_pred)
+        this_df_records.loc[idx,'steering_pred_signal'] = linear_unbin(this_df_records.loc[idx,'steering_pred_cats'][0])
+        if i%100 == 0:
+            print(i,"|", end="")
+    logging.debug("Returning predictions. NB: Steering is INVERTED!!!".format())
+    
+    return this_df_reco
+
 
 #%% Data gen OLD
 class MuleDataGenerator(ks.utils.Sequence):

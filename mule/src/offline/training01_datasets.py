@@ -23,7 +23,7 @@ import datetime
 #from tabulate import tabulate
 import tqdm
 #from IPython import get_ipython
-
+import cv2
 
 #%% LOGGING for Spyder! Disable for production. 
 logger = logging.getLogger()
@@ -190,7 +190,7 @@ class AIDataSet():
     
     
     def unbin_Y(self,Y):
-        d = [ self.augment_df_datetimelinear_unbin(y) for y in Y ]
+        d = [ self.linear_unbin(y) for y in Y ]
         return np.array(d)    
     
     
@@ -226,6 +226,59 @@ class AIDataSet():
         return this_df
         #return pd.DataFrame(json_records).sort_values(by='timestamp').reset_index(drop=True)
     
+    # =============================================================================
+    #--- Predictions
+    # =============================================================================
+    def make_predictions(self,model):
+        """Augment the df_records with the predictions
+        """
+        #print(self.df.head())
+        #this_df_records['steering_pred_cats'] = pd.Series(dtype=object)
+        #df_records['steering_pred_argmax'] = 
+        
+        # get all the X array (all numpy arrays), in *proper* order
+        
+        #
+        npz_file = np.load(self.path_frames_npz)
+        #frames_array = np.stack([npz_file[idx] for idx in batch_indices], axis=0)
+        frames_array = np.stack([npz_file[idx] for idx in self.df.index], axis=0)
+        #print(arrays)
+        logging.debug("All images loaded as 1 numpy array {}".format(frames_array.shape))
+        logging.debug("Starting predictions ...".format(frames_array.shape))
+        
+        predictions_cats = model.predict(frames_array,verbose=1)
+        logging.debug("Predictions complete, shape: {}".format(predictions_cats.shape))
+        predictions = self.unbin_Y(predictions_cats)
+        logging.debug("Predictions unbinned, shape: {}".format(predictions.shape))
+
+        self.df['steering_pred_signal'] = predictions
+        logging.debug("Predictions added to df in column {}".format('steering_pred_signal'))
+        
+        return predictions
+    
+#        raise
+#        
+#
+#        npz_file=np.load(self.dataset.path_frames_npz)
+#        
+#        
+#        model.predict(training_generator)
+#
+#        for i,idx in enumerate(this_df_records.index):
+#            
+#            this_frame = np.expand_dims(this_frames_npz[idx],0)
+#            this_frame.shape
+#            this_pred = model.predict(this_frame)
+#            this_df_records.loc[idx,'steering_pred_cats'] = [this_pred]
+#            this_df_records.loc[idx,'steering_pred_argmax'] = np.argmax(this_pred)
+#            this_df_records.loc[idx,'steering_pred_signal'] = linear_unbin(this_df_records.loc[idx,'steering_pred_cats'][0])
+#            if i%100 == 0:
+#                print(i,"|", end="")
+#        logging.debug("Returning predictions. NB: Steering is INVERTED!!!".format())
+#        
+#        #return this_df_records
+#    
+            
     # =============================================================================
     #--- Timestep analysis and processing
     # =============================================================================
@@ -503,6 +556,9 @@ class DataSetPlotter:
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 THIS_DATASET = "20180829 194519"
+THIS_DATASET = "20180904 180522"
+THIS_DATASET = "20180904 183359"
+THIS_DATASET = "20180904 192907"
 
 data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
 data1.process_time_steps()
@@ -519,7 +575,7 @@ plotter.plot_sample_frames(data1)
 #%% Write frames
 data1.write_frames(overwrite=False)
 
-
+raise
 #%% PROCESS ALL DATASETS!
 
 #this_data_dir = LOCAL_PROJECT_PATH

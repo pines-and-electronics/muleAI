@@ -1,14 +1,5 @@
 """
-From a list of records;
-1) Generate the frame figures
-    - Plot the image, and th HUD
-    - If available, plot also the predicted steering
-2) Save the frame figuress as JPG into JPG_OUT_DIR
-3) Reload each JPG as a NPY, sorted by the timestep (name)
-4) Write an mp4 viedo to VIDEO_OUT_NAME
-
-Standalone script. 
-
+Writes video from a folder of JPG
 """
 #%%
 import glob

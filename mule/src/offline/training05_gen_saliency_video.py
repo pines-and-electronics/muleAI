@@ -62,34 +62,48 @@ logging.debug("test")
 
 with LoggerCritical():
     logging.debug("test block")
-#%%
+#%% Paths
 
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
 
-#THIS_DATASET = '20180807 194733'
-THIS_DATASET = '20180807 194733'
-#THIS_MODEL_ID = '20180825 104855'
-THIS_MODEL_ID = '20180825 174021'
-
-
+# SALIENCY IMAGES
+# This is where the raw saliency (black/white) jpg frames are written
 JPG_OUT_DIR = 'frames_saliency'
 path_saliency_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,JPG_OUT_DIR)
 if not os.path.exists(path_saliency_frames): 
     os.makedirs(path_saliency_frames)
 
+# BLEND IMAGES
+# This is where the mask is overlayed on the driving frames
 SALIENCY_BLEND_DIR = 'frames_saliency_blend'
 path_saliency_blend_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,SALIENCY_BLEND_DIR)
 if not os.path.exists(path_saliency_blend_frames): 
     os.makedirs(path_saliency_blend_frames)
 
-#THIS_DATASET = '20180807 201756'
-    
-RAW_FRAME_DIR = 'frames_raw'
+# Frames dir
+RAW_FRAME_DIR = 'jpg_images'
 path_raw_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,RAW_FRAME_DIR)
 if not os.path.exists(path_raw_frames): 
     os.makedirs(path_raw_frames)
     
+#%% Load the dataset
+#THIS_DATASET = '20180807 194733'
+#THIS_DATASET = '20180807 194733'
+THIS_DATASET = "20180904 192907"
+data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
+
+#%% Load the predictions and model, augment the dataset with these predictions
+THIS_MODEL_ID = 'model 20180904 225308'
+MODEL_VERSION = 'weights Loss 0.69 Epoch 06.h5'
+path_model = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID,MODEL_VERSION)
+assert os.path.exists(path_model)
+this_model = ks.models.load_model(path_model)
+logging.debug("Loaded model '{}' from {}".format(MODEL_VERSION,THIS_MODEL_ID))
+
+#%% Augment with predictions
+
+
 #%% Load
 df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',THIS_MODEL_ID+' predicted.pck'))
 frames_npz=np.load(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'))
