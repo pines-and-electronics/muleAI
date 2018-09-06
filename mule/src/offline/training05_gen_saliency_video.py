@@ -169,49 +169,49 @@ class SaliencyGen():
         frames_npz = np.load(self.modelled_dataset.path_frames_npz)
         if not number:
             number = len(self.modelled_dataset.df)
-        
-        for idx in tqdm.tqdm(self.modelled_dataset.df.index[0:number]):
-            rec = self.modelled_dataset.df.loc[idx]
-            path_out = os.path.join(self.path_saliency_jpgs,rec['timestamp']+'.png')
-
-            #print(idx,rec)
             
-            # Get a frame array, and shape it to 4D
-            img_array = frames_npz[idx]
-            img_array = np.expand_dims(img_array, axis=0)
-            activations = self.saliency_function([img_array])
-            
-            # The upscaled activation changes each loop (layer)
-            upscaled_activation = np.ones((3, 6))
-            for layer in [5, 4, 3, 2, 1]:
-                averaged_activation = np.mean(activations[layer], axis=3).squeeze(axis=0) * upscaled_activation
-                output_shape = (activations[layer - 1].shape[1], activations[layer - 1].shape[2])
-                x = tf.constant(
-                    np.reshape(averaged_activation, (1,averaged_activation.shape[0],averaged_activation.shape[1],1)),
-                    tf.float32
-                )
-                conv = tf.nn.conv2d_transpose(
-                    x, self.layers_kernels[layer],
-                    output_shape=(1,output_shape[0],output_shape[1], 1), 
-                    strides=self.layers_strides[layer], 
-                    padding='VALID'
-                )
-                with tf.Session() as session:
-                    result = session.run(conv)
-                upscaled_activation = np.reshape(result, output_shape)
+        with LoggerCritical(), NoPlots():
+            for idx in tqdm.tqdm(self.modelled_dataset.df.index[0:number]):
+                rec = self.modelled_dataset.df.loc[idx]
+                path_out = os.path.join(self.path_saliency_jpgs,rec['timestamp']+'.png')
+    
+                #print(idx,rec)
                 
-                salient_mask = (upscaled_activation - np.min(upscaled_activation))/(np.max(upscaled_activation) - np.min(upscaled_activation))
+                # Get a frame array, and shape it to 4D
+                img_array = frames_npz[idx]
+                img_array = np.expand_dims(img_array, axis=0)
+                activations = self.saliency_function([img_array])
                 
-                # Make an RGB 3-channel image            
-                salient_mask_stacked = np.dstack((salient_mask,salient_mask,salient_mask))
-                
-                # Save it to JPG
-                with LoggerCritical(), NoPlots():
+                # The upscaled activation changes each loop (layer)
+                upscaled_activation = np.ones((3, 6))
+                for layer in [5, 4, 3, 2, 1]:
+                    averaged_activation = np.mean(activations[layer], axis=3).squeeze(axis=0) * upscaled_activation
+                    output_shape = (activations[layer - 1].shape[1], activations[layer - 1].shape[2])
+                    x = tf.constant(
+                        np.reshape(averaged_activation, (1,averaged_activation.shape[0],averaged_activation.shape[1],1)),
+                        tf.float32
+                    )
+                    conv = tf.nn.conv2d_transpose(
+                        x, self.layers_kernels[layer],
+                        output_shape=(1,output_shape[0],output_shape[1], 1), 
+                        strides=self.layers_strides[layer], 
+                        padding='VALID'
+                    )
+                    with tf.Session() as session:
+                        result = session.run(conv)
+                    upscaled_activation = np.reshape(result, output_shape)
+                    
+                    salient_mask = (upscaled_activation - np.min(upscaled_activation))/(np.max(upscaled_activation) - np.min(upscaled_activation))
+                    
+                    # Make an RGB 3-channel image            
+                    salient_mask_stacked = np.dstack((salient_mask,salient_mask,salient_mask))
+                    
+                    # Save it to JPG
                     plt.imsave(path_out, salient_mask_stacked)
                 
-    def blend_simple(self,blur_rad,strength):
+    def blend_simple(self,blur_rad,strength,num_frames = None):
         #
-        logging.debug("blur_rad {}, map_name {}, strength {}".format(blur_rad,map_name,strength))
+        logging.debug("blur_rad {}, strength {}".format(blur_rad,strength))
         
         source_folder = os.path.split(self.path_saliency_jpgs)[1]
         target_folder = os.path.split(self.path_boosted_saliency_jpgs)[1]
@@ -219,56 +219,112 @@ class SaliencyGen():
         logging.debug("Boosting {} frames at {} to {}".format(len(jpg_files),source_folder,target_folder))
         
         frames_npz = np.load(self.modelled_dataset.path_frames_npz)
+        
+        # For testing, write a sample
+        if not num_frames:
+            num_frames = len(jpg_files)
+            
+        with LoggerCritical(), NoPlots():
+            for img_path in tqdm.tqdm(jpg_files[0:num_frames]):
+                #print(img_path)
+                _,fname = os.path.split(img_path)
+                timestamp,_ = os.path.splitext(fname)
+                #print(timestamp)
+                saliency_frame = plt.imread(img_path)[:,:,:3]
+                raw_frame = frames_npz[timestamp]
+                
+                if 0: # Try adjusting brightness and contrast...
+                    b = 0. # brightness
+                    c = 64.  # contrast
+                
+                    #call addWeighted function, which performs:
+                    #    dst = src1*alpha + src2*beta + gamma
+                    # we use beta = 0 to effectively only operate on src1
+                    saliency_frame = cv2.addWeighted(saliency_frame, 1. + c/127., saliency_frame, 0, b-c)                                
+                
+                saliency_frame.setflags(write=1)
+                saliency_frame[:,:,0] = saliency_frame[:,:,0] * 0.5
+                saliency_frame[:,:,1] = saliency_frame[:,:,1] * 1.2
+                saliency_frame[:,:,2] = saliency_frame[:,:,2] * 0
+                blur_kernel = np.ones((blur_rad,blur_rad),np.float32) * strength
+                saliency_frame_blurred = cv2.filter2D(saliency_frame,-1,blur_kernel)
 
-        
-        for img_path in jpg_files:
-            #print(img_path)
-            _,fname = os.path.split(img_path)
-            timestamp,_ = os.path.splitext(fname)
-            #print(timestamp)
-            saliency_frame = plt.imread(img_path)[:,:,:3]
-            raw_frame = frames_npz[timestamp]
-            
-            saliency_frame.setflags(write=1)
-            saliency_frame[:,:,0] = saliency_frame[:,:,0] * 0.5
-            saliency_frame[:,:,1] = saliency_frame[:,:,1] * 0.9
-            saliency_frame[:,:,2] = saliency_frame[:,:,2] * 0
-            blur_kernel = np.ones((blur_rad,blur_rad),np.float32) * strength
-            saliency_frame_blurred = cv2.filter2D(saliency_frame,-1,blur_kernel)
-        
-            alpha = 0.004
-            beta = 1.0 - alpha
-            gamma = 0.0
-            
-            blend = cv2.addWeighted(raw_frame.astype(np.float32), alpha, saliency_frame_blurred, beta, gamma)
-            plt.imshow(blend)
+
+                #saliency_frame_blurred = cv2.GaussianBlur(saliency_frame,(1,1),0)
+                
+                alpha = 0.004
+                beta = 1.0 - alpha
+                gamma = 0.0
+                
+                blend = cv2.addWeighted(raw_frame.astype(np.float32), alpha, saliency_frame_blurred, beta, gamma)
+                #plt.imshow(blend)
+                
+                
+                path_out = os.path.join(self.path_boosted_saliency_jpgs,fname)
+                plt.imsave(path_out, blend)
+
         # Raw masks
         pass
+    
+    def create_HUD_frames(self):
+        source_folder_jpg = os.path.split(self.path_saliency_jpgs)[1]
+        target_folder = os.path.split(self.path_frames_jpgs)[1]
+        jpg_files = glob.glob(os.path.join(self.path_boosted_saliency_jpgs,'*.png'))
+        logging.debug("Creating {} HUD frames from {} to {}".format(len(jpg_files),source_folder_jpg,target_folder))        
 
-    def blend_PIL(self,blur_rad,strength):
+        with LoggerCritical(), NoPlots():
+            for img_path in tqdm.tqdm(glob.glob(self.path_boosted_saliency_jpgs + r"/*.png")):
+                print(img_path)
+                _,fname = os.path.split(img_path)
+                index,_ = os.path.splitext(fname)
+                pathpart_source_imgs = self.model_folder + r"/" + 'boosted_saliency_mask_jpgs'
+                frame_figure = this_saliency.modelled_dataset.gen_record_frame(index, source_jpg_folder=pathpart_source_imgs, source_ext = '.png')
+                
+                # Save it to jpg
+                #path_jpg = os.path.join(OUT_PATH,idx + '.jpg')
+                path_jpg = os.path.join(self.path_frames_jpgs, index + ".jpg")
+                frame_figure.savefig(path_jpg)
+        logging.debug("Wrote frames to {}".format(self.path_frames_jpgs))
+        
+
+    def blend_PIL(self,blur_rad,map_name,strength):
+        """A more advanced boosting pipeline
+        """
+        logging.debug("blur_rad {}, map_name {}, strength {}".format(blur_rad,map_name,strength))
 
         pass
 
-#%%    
-
-this_modelled_ds = trds
-#LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
-#THIS_DATASET = "20180904 192907"
+#%% Load the DataSet, and train the predictions
+LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
+THIS_DATASET = "20180904 192907"
 #THIS_MODEL_ID = 'model 20180906 154310'
+THIS_MODEL_ID = 'model 20180906 165918'
+this_modelled_ds = ModelledDataSet(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID)
+this_modelled_ds.load_best_model()
+this_modelled_ds.model.summary()
+this_modelled_ds.make_predictions()
+
+#%% Generate the saliency frames
 this_saliency = SaliencyGen(this_modelled_ds)
 this_saliency.gen_pure_CNN()
-
-this_saliency.modelled_dataset.model.layers
+this_saliency.path_saliency_jpgs
+##this_saliency.modelled_dataset.model.layers
 #this_saliency.modelled_dataset.model.summary()
 this_saliency.get_layers()
 this_saliency.saliency_tf_function()
 this_saliency.get_kernels()
-#this_saliency.write_saliency_mask_jpgs(10)
+if False: # This takes a while!
+    this_saliency.write_saliency_mask_jpgs()
 #this
 #%%
-this_strength = 4
-this_blur = 3
-this_saliency.blend_simple(this_blur,this_map,this_strength)
+this_saliency.create_HUD_frames()
+
+#this_saliency.modelled_dataset.gen_record_frame('1536082180023', source_jpg_folder=r"model 20180906 165918/boosted_saliency_mask_jpgs", source_ext = '.png')
+raise
+#%%
+#this_strength = 4
+#this_blur = 3
+this_saliency.blend_simple(2,1.5)
 
 #%%
 this_map = 'viridis'
@@ -278,7 +334,7 @@ this_map = 'magma'
 this_map = 'hot'
 this_strength = 4
 this_blur = 3
-this_saliency.blend_simple(this_blur,this_map,this_strength)
+this_saliency.blend_PIL(this_blur,this_map,this_strength,this_map)
 
 #%%
 #this_ts = these_records[0]['timestamp_raw']

@@ -264,6 +264,9 @@ class ModelledDataSet(AIDataSet):
         assert 'steering_pred_signal_catnum' in self.df.columns 
         pass
 
+#%%
+raise Exception("Manual execution below")
+
 #%% RELOAD A MODEL
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 THIS_DATASET = "20180904 192907"

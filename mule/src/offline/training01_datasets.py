@@ -276,7 +276,7 @@ class AIDataSet():
     # =============================================================================
     #--- Video
     # =============================================================================
-    def gen_record_frame(self, ts_string_index, source_jpg_folder='jpg_images'):
+    def gen_record_frame(self, ts_string_index, source_jpg_folder='jpg_images', source_ext = '.jpg'):
         """From a timestamp, create a single summary figure of that timestep. 
         
         The figure has no border (full image)
@@ -310,8 +310,11 @@ class AIDataSet():
         fig.add_axes(ax)
         
         # Main Image ##########################################################
-        jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
-        assert os.path.exists(jpg_path)
+        jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+source_ext)
+        print(self.path_dataset)
+        print(source_jpg_folder)
+        print(ts_string_index+source_ext)
+        assert os.path.exists(jpg_path), "Does not exist: {}".format(jpg_path)
         img = mpl.image.imread(jpg_path)
         ax.imshow(img)
         #raise
@@ -328,7 +331,7 @@ class AIDataSet():
         else: 
             this_label = "{}\n{:0.2f}/ steering \n{:0.2f} throttle".format(timestamp_string,rec['steering_signal'],rec['throttle_signal'])
         t1 = ax.text(2,15,this_label,fontdict=font_label_box)
-        t1.set_bbox(dict(facecolor='white', alpha=0.3,edgecolor='none'))
+        t1.set_bbox(dict(facecolor='white', alpha=0.7,edgecolor='none'))
         # Steering widget HUD #################################################
         # Steering HUD: Actual steering signal
         steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
@@ -440,7 +443,7 @@ class DataSetPlotter:
         hist_throttle = dataset.df['throttle_signal'].hist()
         #plot_url = py.plot_mpl(fig)
 
-    def plot12(self,dataset,ts_string_indices, source_jpg_folder='jpg_images', rows=3, cols=4):
+    def plot12(self,dataset,ts_string_indices, source_jpg_folder='jpg_images',extension='jpg', rows=3, cols=4):
         """
         Render N records to analysis
         """
@@ -477,7 +480,7 @@ class DataSetPlotter:
             ax = fig.add_subplot(ROWS,COLS,i+1)
 
             # Main Image ##########################################################
-            jpg_path = os.path.join(dataset.path_dataset,source_jpg_folder,ts_string_index+'.jpg')
+            jpg_path = os.path.join(dataset.path_dataset,source_jpg_folder,ts_string_index+extension)
             assert os.path.exists(jpg_path)
             img = mpl.image.imread(jpg_path)
             ax.imshow(img)
@@ -512,6 +515,9 @@ class DataSetPlotter:
         
         #return these_indices
         self.plot12(dataset,these_indices)
+
+#%%
+raise Exception("Manual execution below")
 
 #%% Instantiate and load
 
