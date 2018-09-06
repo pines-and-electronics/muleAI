@@ -5,6 +5,71 @@
 Needs the AIDataSet
 
 """
+
+THIS_MODEL_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
+#%%
+
+class ModelledDataSet(AIDataSet):
+    """Augment a dataset with training
+    """
+    
+    def __init__(self,path_data,data_folder,model_folder):
+        super().__init__(path_data,data_folder)
+        
+        self.model_folder = model_folder
+        
+        
+        # Create the model folder, or reference it
+        self.path_model_dir = os.path.join(self.path_data,self.data_folder,self.model_folder)
+        if not os.path.exists(self.path_model_dir):
+            os.makedirs(self.path_model_dir)
+            logging.debug("Created a NEW model folder at {}/{}".format(data_folder,self.model_folder))
+        else:
+            logging.debug("Model folder at {}/{}".format(data_folder,model_folder))
+        #assert not os.listdir(self.path_model_dir), "{} not empty".format(self.path_model_dir)
+        #logging.debug("This model exists in {}".format(model_dir))
+        if not self.model_empty:
+            self.list_models()
+
+    def list_models(self):
+        search_str = os.path.join(self.path_model_dir,'*.h5')
+        #print(search_str)
+        paths_weights = glob.glob(search_str)
+        logging.debug("{} weights found".format(len(paths_weights)))
+        model_files = list()
+        for this_wt_path in paths_weights:
+            _,fname = os.path.split(this_wt_path)
+            basename, ext = os.path.splitext(fname)
+            #print(basename)
+            loss_string = re.search(r"Loss [-+]?[0-9]*\.?[0-9]+",basename)[0]
+            loss_num = float(re.search("[-+]?[0-9]*\.?[0-9]+",loss_string)[0])            
+            #print(loss_num)
+            model_files.append({'path':this_wt_path, 'loss':loss_num, 'fname':basename})
+        
+        model_files = sorted(model_files, key=lambda k: k['loss'])
+        for mf in model_files:
+            print(mf['fname'],mf['loss'])
+            
+    @property
+    def model_empty(self):
+        if os.listdir(self.path_model_dir): return False
+        else:  return True
+        
+    
+    def generate_partitions
+    def train(self):
+        assert self.model_empty, "The model folder {} is not empty, instantiate a new model!".format(self.model_folder)
+        
+        
+#trained_dataset = ModelledDataSet(LOCAL_PROJECT_PATH,THIS_DATASET,'model ' + THIS_MODEL_TIMESTAMP)
+trds = ModelledDataSet(LOCAL_PROJECT_PATH,THIS_DATASET,'model 20180904 225308')
+trds.model_empty
+trds.train()
+#trained_dataset.list_models()
+
+
+
+
 #%%
 ks.backend.clear_session()
 #%%
@@ -24,13 +89,8 @@ this_dataset = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
 print(this_dataset)
 
 #%% Create training directory
-THIS_MODEL_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
 
-model_dir = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model ' + THIS_MODEL_TIMESTAMP)
-if not os.path.exists(model_dir):
-    os.makedirs(model_dir)
-assert not os.listdir(model_dir), "{} not empty".format(model_dir)
-logging.debug("This model exists in {}".format(model_dir))
+
 
 #%% Generate partitions
 #datagen = MuleDataGenerator(data1)
@@ -171,16 +231,26 @@ if reload:
 #model.predict(training_generator)
 data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
 
-res = data1.make_predictions(model)
+data1.make_predictions(model)
 
-h = data1.df.head()['predicted_steering']
+h = data1.df.head()
+
+
+MODEL_NAME = os.path.splitext(MODEL_VERSION)[0]
+path_predictions = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID,MODEL_NAME+'.csv')
+
+print(data1)
+
+
+data1.save_predictions()
+#h = data1.df.head()['steering_pred_signal']
 
 # The manually calculated accuracy: 
 #sum(df_records['steering_pred_argmax'] == df_records['steering_signal_argmax'])/len(df_records)
-sum(df_records['steering_pred_argmax'] == df_records['steering_signal_argmax'])/len(df_records)
+#sum(df_records['steering_pred_argmax'] == df_records['steering_signal_argmax'])/len(df_records)
 # Invert the steering! WHY>?
-df_records['steering_pred_signal'] = df_records['steering_pred_signal'].apply(lambda x: x*-1)
-logging.debug("Steering signal inverterted - WHY?".format())
+#df_records['steering_pred_signal'] = df_records['steering_pred_signal'].apply(lambda x: x*-1)
+#logging.debug("Steering signal inverterted - WHY?".format())
 
 #%% Plot analysis of model
 

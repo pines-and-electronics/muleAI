@@ -1,3 +1,139 @@
+#%% Paths
+#
+#LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
+#assert os.path.exists(LOCAL_PROJECT_PATH)
+#
+## SALIENCY IMAGES
+## This is where the raw saliency (black/white) jpg frames are written
+#JPG_OUT_DIR = 'frames_saliency'
+#path_saliency_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,JPG_OUT_DIR)
+#if not os.path.exists(path_saliency_frames): 
+#    os.makedirs(path_saliency_frames)
+#
+## BLEND IMAGES
+## This is where the mask is overlayed on the driving frames
+#SALIENCY_BLEND_DIR = 'frames_saliency_blend'
+#path_saliency_blend_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,SALIENCY_BLEND_DIR)
+#if not os.path.exists(path_saliency_blend_frames): 
+#    os.makedirs(path_saliency_blend_frames)
+#
+## Frames dir
+#RAW_FRAME_DIR = 'jpg_images'
+#path_raw_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,RAW_FRAME_DIR)
+#if not os.path.exists(path_raw_frames): 
+#    os.makedirs(path_raw_frames)
+#    
+#%% Load the dataset
+#THIS_DATASET = '20180807 194733'
+#THIS_DATASET = '20180807 194733'
+#THIS_DATASET = "20180904 192907"
+#data1 = AIDataSet(LOCAL_PROJECT_PATH,THIS_DATASET)
+
+#%% Load the predictions and model, augment the dataset with these predictions
+#THIS_MODEL_ID = 'model 20180904 225308'
+#MODEL_VERSION = 'weights Loss 0.69 Epoch 06.h5'
+#path_model = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID,MODEL_VERSION)
+#assert os.path.exists(path_model)
+#this_model = ks.models.load_model(path_model)
+#logging.debug("Loaded model '{}' from {}".format(MODEL_VERSION,THIS_MODEL_ID))
+
+#%% Augment with predictions
+
+
+#%% Load
+#df_records = pd.read_pickle(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',THIS_MODEL_ID+' predicted.pck'))
+#frames_npz=np.load(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'))
+#df_records.index = df_records['timestamp']
+#df_records.sort_index(inplace=True)
+#logging.debug("Loaded {} frames from {}".format(len(frames_npz),THIS_DATASET))
+#logging.debug("Loaded {} records from {}".format(len(df_records),THIS_DATASET))
+##this_model
+#path_model = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'model',THIS_MODEL_ID+' model.h5' )
+#this_model = ks.models.load_model(path_model)
+#
+
+
+
+
+#%% 
+
+these_records = get_full_records(frames_npz,df_records,df_records.index)
+
+
+#%%
+class DataSet():
+    def __init__(self,path_dataset):
+        self.path_dataset = path_dataset
+        logging.debug("Dataset located at {}".format(self.path_dataset))
+
+    def load_records(self,path_records):
+        self.df_records = pd.read_pickle(path_records)
+        logging.debug("Loaded {} records from {}".format(len(self.df_records),path_records))
+        self.df_records.index = self.df_records['timestamp']
+        self.df_records.sort_index(inplace=True)
+        logging.debug("Sorted records".format())    
+
+    def load_frames_npz(self,path_frames_npz):
+        
+        self.frames_npz = np.load(path_frames_npz)
+        assert len(self.df_records) == len(self.frames_npz)
+        self.frames = np.stack([self.frames_npz[idx] for idx in self.df_records.index], axis=0)
+        
+        logging.debug("Loaded {} frames from {}".format(len(self.frames),THIS_DATASET))
+
+    def sample_n(self,n):
+        #self.df_records.sample(n)
+        these_idx = ds.df_records.sample(3).index
+        these_locs = [ds.df_records.index.get_loc(idx) for idx in these_idx]
+        
+        return self.frames[these_locs], self.df_records.loc[these_idx,:]
+
+    def get_full_records(self, this_indices):
+        #assert type(this_indices) == list or type(this_indices) == np.ndarray
+        """Given a list of indices (timestamps), return a list of "Records""
+        
+        A record is used for further visualization or analysis of a given timestep.
+        
+        A Record is a convenience dictionary with following keys: 
+        
+            frames          : The frame images as a numpy array, directly from NPZ
+            steering_signal : The steering at these times as a float
+            throttle        : The throttle at these times as a float
+            timestamp       : The timestep as a datetime object
+        
+            AND OPTIONALLY: 
+            df_records['steering_pred_signal'] : The model predicted steering at these times
+        
+        """
+        this_frames, this_df_records, 
+        
+        records = list()
+        for this_idx in this_indices:
+            #print(this_idx)
+            rec = dict()
+            rec['frame'] = this_frames[this_idx]
+            rec['steering_signal'] = df_records.loc[this_idx]['steering_signal']
+            #print(rec['steer'])
+            rec['throttle'] = df_records.loc[this_idx]['throttle_signal']
+            rec['timestamp_raw'] = df_records.loc[this_idx]['timestamp']
+            #print()
+            rec['timestamp'] = datetime.datetime.fromtimestamp(int(rec['timestamp_raw'])/1000)
+            if 'steering_pred_signal' in df_records.columns:
+                #'steering_signal' in df_records.columns
+                rec['steering_pred_signal'] = df_records.loc[this_idx]['steering_pred_signal']
+    
+            records.append(rec)
+        logging.debug("Created {} record dictionaries".format(len(this_indices)))
+        
+        return records
+
+ds = DataSet(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET))
+ds.load_records(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'df_record.pck'))
+ds.load_frames_npz(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'))
+frames, recs = ds.sample_n(3)
+#self.df_records
+
+
 #%%
 def get_predictions(model, this_frames_npz, this_df_records):
     """Augment the df_records with the predictions

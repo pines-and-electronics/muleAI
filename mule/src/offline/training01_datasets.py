@@ -94,6 +94,8 @@ class AIDataSet():
         assert os.path.exists(self.path_records_zip)   
         self.df = self.load_records_df()
         logging.debug("Records {}".format(len(self.df)))
+        self.df['steering_signal_catnum'] = self.signal_to_category_number('steering_signal')
+
         
         # Check the raw frames zip, no need to unzip
         self.path_frames_npz = os.path.join(self.path_dataset,"camera_numpy.zip")
@@ -108,6 +110,10 @@ class AIDataSet():
         JPG_FOLDER_NAME = "jpg_images"
         self.path_jpgs_dir = os.path.join(self.path_dataset,JPG_FOLDER_NAME)
         
+        
+        # Predictions
+        #self.predicted_model = None
+        #self.
         self.augment_df_datetime()
 
     # =============================================================================
@@ -127,7 +133,7 @@ class AIDataSet():
     def frames_size(self):
         """Size of frames npz array in MB
         """
-        print(self.path_frames_npz)
+        #print(self.path_frames_npz)
         return os.path.getsize(self.path_frames_npz)/1000/1000
     
     def get_frames_timesteps(self):
@@ -192,7 +198,14 @@ class AIDataSet():
     def unbin_Y(self,Y):
         d = [ self.linear_unbin(y) for y in Y ]
         return np.array(d)    
-    
+
+    def signal_to_category_number(self,column_name):
+        """Break the floating point [-1,1] signal into bins
+        """
+        cats = self.bin_Y(self.df[column_name])
+        # Get the category number
+        return np.argmax(cats,axis=1)
+        
     
     # =============================================================================
     #--- Load into memory
@@ -222,62 +235,11 @@ class AIDataSet():
         #.reset_index(drop=True)
         this_df['steering_signal'] = this_df['steering_signal'].apply(lambda x: x*-1)
         logging.debug("Steering signal inverterted - WHY?".format())
-        
+
         return this_df
         #return pd.DataFrame(json_records).sort_values(by='timestamp').reset_index(drop=True)
     
-    # =============================================================================
-    #--- Predictions
-    # =============================================================================
-    def make_predictions(self,model):
-        """Augment the df_records with the predictions
-        """
-        #print(self.df.head())
-        #this_df_records['steering_pred_cats'] = pd.Series(dtype=object)
-        #df_records['steering_pred_argmax'] = 
-        
-        # get all the X array (all numpy arrays), in *proper* order
-        
-        #
-        npz_file = np.load(self.path_frames_npz)
-        #frames_array = np.stack([npz_file[idx] for idx in batch_indices], axis=0)
-        frames_array = np.stack([npz_file[idx] for idx in self.df.index], axis=0)
-        #print(arrays)
-        logging.debug("All images loaded as 1 numpy array {}".format(frames_array.shape))
-        logging.debug("Starting predictions ...".format(frames_array.shape))
-        
-        predictions_cats = model.predict(frames_array,verbose=1)
-        logging.debug("Predictions complete, shape: {}".format(predictions_cats.shape))
-        predictions = self.unbin_Y(predictions_cats)
-        logging.debug("Predictions unbinned, shape: {}".format(predictions.shape))
 
-        self.df['steering_pred_signal'] = predictions
-        logging.debug("Predictions added to df in column {}".format('steering_pred_signal'))
-        
-        return predictions
-    
-#        raise
-#        
-#
-#        npz_file=np.load(self.dataset.path_frames_npz)
-#        
-#        
-#        model.predict(training_generator)
-#
-#        for i,idx in enumerate(this_df_records.index):
-#            
-#            this_frame = np.expand_dims(this_frames_npz[idx],0)
-#            this_frame.shape
-#            this_pred = model.predict(this_frame)
-#            this_df_records.loc[idx,'steering_pred_cats'] = [this_pred]
-#            this_df_records.loc[idx,'steering_pred_argmax'] = np.argmax(this_pred)
-#            this_df_records.loc[idx,'steering_pred_signal'] = linear_unbin(this_df_records.loc[idx,'steering_pred_cats'][0])
-#            if i%100 == 0:
-#                print(i,"|", end="")
-#        logging.debug("Returning predictions. NB: Steering is INVERTED!!!".format())
-#        
-#        #return this_df_records
-#    
             
     # =============================================================================
     #--- Timestep analysis and processing

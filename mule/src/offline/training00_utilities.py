@@ -21,6 +21,27 @@ from tensorflow.python import keras as ks
 from pprint import pprint
 import re
 #import cv2
+import json
+
+
+import sys, glob, os
+import json
+import pandas as pd
+#import tensorflow as tf
+# Check versions
+#assert tf.__version__ == '1.8.0'
+
+import logging
+import zipfile
+#import re
+import datetime
+#import cv2
+#import shutil
+#import json
+#from tabulate import tabulate
+import tqdm
+#from IPython import get_ipython
+#import cv2
 
 #%% Logging
 #>>> import warnings
@@ -45,33 +66,6 @@ logging.debug("test")
 
 with LoggerCritical():
     logging.debug("test block")
-
-
-
-#%% Search this dataset for trained models
-def search_models():
-    model_dirs = glob.glob(os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET)+'/model *')
-    logging.debug("Found {} model directories;".format(len(models_dirs_dict)))
-    model_dicts = list()
-    for folder in model_dirs:
-        print(md)
-        this_dict = dict()
-        this_dict['path'] = folder
-        this_dict['name'] = os.path.split(folder)[1]
-        this_dict['model_wts'] = glob.glob(this_dict['path']+'/*.h5')
-        this_dict['model_wts_sorted'] = list()
-        for wt_file in this_dict['model_wts']:
-            _,fname = os.path.split(wt_file)
-            
-            loss_string = re.search(r"Loss [-+]?[0-9]*\.?[0-9]+",fname)[0]
-            loss_num = float(re.search("[-+]?[0-9]*\.?[0-9]+",loss_string)[0])
-            this_dict['model_wts_sorted'].append((loss_num,wt_file))
-            this_dict['model_wts_sorted'] = sorted(this_dict['model_wts_sorted'], key=lambda tup: tup[0])
-        this_dict['best_model'] = this_dict['model_wts_sorted'][0][1]
-        model_dicts.append(this_dict)
-    pprint(model_dicts)
-    THIS_DATASET = "20180829 194519"
-    #this_dict['model_wts_sorted'].append(1)
 
 
 
