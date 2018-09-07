@@ -122,7 +122,7 @@ class VideoWriter:
                 img_arr = mpl.image.imread(this_jpg_path)
                 writer.write(img_arr) # Write out frame to video
         
-        logging.debug("Wrote {} frames to {}".format(len(frames_to_write),path_video_out))
+        logging.debug("Wrote {} frames to {}".format(len(frames_to_write),self.path_vid_out))
         
         writer.release()
         cv2.destroyAllWindows()
@@ -145,10 +145,15 @@ class VideoWriter:
 
 
 #%% Initialize the video writer object
-    
-path_video_frames = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_FRAMES_DIR)
-path_video_out = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,OUTPUT_VID_NAME)
-vidwriter = VideoWriter(path_video_frames,path_video_out,fps=30)
+
+PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_FRAMES_DIR)
+PATH_OUTPUT_FILE = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,OUTPUT_VID_NAME)
+
+PATH_INPUT_JPGS = '/home/batman/MULE DATA/20180904 192907/model 20180906 165918/frames_saliency_boosted'
+PATH_OUTPUT_FILE = '/home/batman/MULE DATA/20180904 192907/model 20180906 165918/frames_saliency_boosted.mp4'
+
+vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=30)
 #vidwriter.test_write()
 #%%
-vidwriter.write_video()
+if False: 
+    vidwriter.write_video()

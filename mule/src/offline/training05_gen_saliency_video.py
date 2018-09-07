@@ -76,7 +76,7 @@ class SaliencyGen():
     """Aggregates the ModelledDataSet class, and operates to produce frames
     """
     def __init__(self,modelled_dataset):
-        # Get the model
+        # Get the model and dataset (modelleddataset)
         self.modelled_dataset = modelled_dataset
         assert modelled_dataset.has_predictions
         self.model_folder = modelled_dataset.model_folder
@@ -87,27 +87,33 @@ class SaliencyGen():
         # Original raw images
         self.path_jpgs_dir = modelled_dataset.path_jpgs_dir
         logging.debug("Source orginal raw images are in folder: {}".format(self.path_jpgs_dir))
-        jpg_files = glob.glob(os.path.join(self.path_jpgs_dir,'*.jpg'))
-        logging.debug("{} jpgs found".format(len(jpg_files)))
+        files = glob.glob(os.path.join(self.path_jpgs_dir,'*.jpg'))
+        logging.debug("{} jpgs found".format(len(files)))
         
         # New saliency mask jpgs
-        self.path_saliency_jpgs = os.path.join(self.path_model_dir,'saliency_mask_jpgs')
+        self.path_saliency_jpgs = os.path.join(self.path_model_dir,'imgs_saliency_masks')
         if not os.path.exists(self.path_saliency_jpgs): 
             os.makedirs(self.path_saliency_jpgs)
         logging.debug("Saliency JPG output folder: {}".format(self.path_saliency_jpgs))
+        files = glob.glob(os.path.join(self.path_saliency_jpgs,'*.*'))
+        logging.debug("{} files found".format(len(files)))        
         
         # Boosted saliency mask jpgs
-        self.path_boosted_saliency_jpgs = os.path.join(self.path_model_dir,'boosted_saliency_mask_jpgs')
+        self.path_boosted_saliency_jpgs = os.path.join(self.path_model_dir,'imgs_saliency_masks_boosted')
         if not os.path.exists(self.path_boosted_saliency_jpgs): 
             os.makedirs(self.path_boosted_saliency_jpgs)
         logging.debug("BOOSTED Saliency JPG output folder: {}".format(self.path_boosted_saliency_jpgs))
+        files = glob.glob(os.path.join(self.path_boosted_saliency_jpgs,'*.*'))
+        logging.debug("{} files found".format(len(files)))        
         
         # New saliency frames
-        self.path_frames_jpgs = os.path.join(self.path_model_dir,'saliency_frames_jpgs')
+        self.path_frames_jpgs = os.path.join(self.path_model_dir,'frames_saliency_boosted')
         if not os.path.exists(self.path_frames_jpgs): 
             os.makedirs(self.path_frames_jpgs)        
         logging.debug("Combined HUD frames output folder: {}".format(self.path_frames_jpgs))
-    
+        files = glob.glob(os.path.join(self.path_frames_jpgs,'*.*'))
+        logging.debug("{} files found".format(len(files)))
+        
     def gen_pure_CNN(self):
         # Get a pure convolutional model, no dropout or other layers
         img_in = ks.layers.Input(shape=(120, 160, 3), name='img_in')
@@ -174,7 +180,8 @@ class SaliencyGen():
             for idx in tqdm.tqdm(self.modelled_dataset.df.index[0:number]):
                 rec = self.modelled_dataset.df.loc[idx]
                 path_out = os.path.join(self.path_saliency_jpgs,rec['timestamp']+'.png')
-    
+                if os.path.exists(path_out): continue
+
                 #print(idx,rec)
                 
                 # Get a frame array, and shape it to 4D
@@ -208,6 +215,9 @@ class SaliencyGen():
                     
                     # Save it to JPG
                     plt.imsave(path_out, salient_mask_stacked)
+                    
+                    #ks.backend.clear_session()
+
                 
     def blend_simple(self,blur_rad,strength,num_frames = None):
         #
@@ -226,8 +236,12 @@ class SaliencyGen():
             
         with LoggerCritical(), NoPlots():
             for img_path in tqdm.tqdm(jpg_files[0:num_frames]):
+                
                 #print(img_path)
                 _,fname = os.path.split(img_path)
+                path_out = os.path.join(self.path_boosted_saliency_jpgs,fname)
+                if os.path.exists(path_out): continue
+
                 timestamp,_ = os.path.splitext(fname)
                 #print(timestamp)
                 saliency_frame = plt.imread(img_path)[:,:,:3]
@@ -255,12 +269,15 @@ class SaliencyGen():
                 alpha = 0.004
                 beta = 1.0 - alpha
                 gamma = 0.0
-                
-                blend = cv2.addWeighted(raw_frame.astype(np.float32), alpha, saliency_frame_blurred, beta, gamma)
+                try:
+                    blend = cv2.addWeighted(raw_frame.astype(np.float32), alpha, saliency_frame_blurred, beta, gamma)
+                except:
+                    print("BAD IMAGE?", img_path)
+                    raise
                 #plt.imshow(blend)
                 
                 
-                path_out = os.path.join(self.path_boosted_saliency_jpgs,fname)
+                
                 plt.imsave(path_out, blend)
 
         # Raw masks
@@ -274,15 +291,19 @@ class SaliencyGen():
 
         with LoggerCritical(), NoPlots():
             for img_path in tqdm.tqdm(glob.glob(self.path_boosted_saliency_jpgs + r"/*.png")):
-                print(img_path)
+                #print(img_path)
                 _,fname = os.path.split(img_path)
+
                 index,_ = os.path.splitext(fname)
-                pathpart_source_imgs = self.model_folder + r"/" + 'boosted_saliency_mask_jpgs'
+                pathpart_source_imgs = self.model_folder + r"/" + 'imgs_saliency_masks_boosted'
+                path_jpg = os.path.join(self.path_frames_jpgs, index + ".jpg")
+                if os.path.exists(path_jpg): continue
+
                 frame_figure = this_saliency.modelled_dataset.gen_record_frame(index, source_jpg_folder=pathpart_source_imgs, source_ext = '.png')
-                
+                ks.backend.clear_session()
+
                 # Save it to jpg
                 #path_jpg = os.path.join(OUT_PATH,idx + '.jpg')
-                path_jpg = os.path.join(self.path_frames_jpgs, index + ".jpg")
                 frame_figure.savefig(path_jpg)
         logging.debug("Wrote frames to {}".format(self.path_frames_jpgs))
         
@@ -294,7 +315,8 @@ class SaliencyGen():
 
         pass
 
-#%% Load the DataSet, and train the predictions
+#%% 1) Load the DataSet, and train the predictions AGAIN
+        
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 THIS_DATASET = "20180904 192907"
 #THIS_MODEL_ID = 'model 20180906 154310'
@@ -304,7 +326,7 @@ this_modelled_ds.load_best_model()
 this_modelled_ds.model.summary()
 this_modelled_ds.make_predictions()
 
-#%% Generate the saliency frames
+#%% 2) Generate the saliency black & white frames
 this_saliency = SaliencyGen(this_modelled_ds)
 this_saliency.gen_pure_CNN()
 this_saliency.path_saliency_jpgs
@@ -317,7 +339,9 @@ if False: # This takes a while!
     this_saliency.write_saliency_mask_jpgs()
 #this
 #%%
-this_saliency.create_HUD_frames()
+raise
+if False:
+    this_saliency.create_HUD_frames()
 
 #this_saliency.modelled_dataset.gen_record_frame('1536082180023', source_jpg_folder=r"model 20180906 165918/boosted_saliency_mask_jpgs", source_ext = '.png')
 raise

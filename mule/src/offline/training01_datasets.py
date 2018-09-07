@@ -311,9 +311,9 @@ class AIDataSet():
         
         # Main Image ##########################################################
         jpg_path = os.path.join(self.path_dataset,source_jpg_folder,ts_string_index+source_ext)
-        print(self.path_dataset)
-        print(source_jpg_folder)
-        print(ts_string_index+source_ext)
+        #print(self.path_dataset)
+        #print(source_jpg_folder)
+        #print(ts_string_index+source_ext)
         assert os.path.exists(jpg_path), "Does not exist: {}".format(jpg_path)
         img = mpl.image.imread(jpg_path)
         ax.imshow(img)
