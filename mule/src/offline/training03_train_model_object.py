@@ -9,7 +9,7 @@ import json
 
 ks.backend.clear_session()
 #%% Get a new model folder, if necessary
-THIS_MODEL_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
+THIS_MODEL_ID = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
 
 #%% Check CUDA
 from tensorflow.python.client import device_lib
@@ -91,8 +91,8 @@ class ModelledDataSet(AIDataSet):
                       #'path_records':os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'df_record.pck'),
                      }
        
-        self.training_generator = generator_class(self.partition['train'], data1, **generator_params)
-        self.validation_generator = generator_class(self.partition['validation'], data1, **generator_params)        
+        self.training_generator = generator_class(self.partition['train'], self, **generator_params)
+        self.validation_generator = generator_class(self.partition['validation'], self, **generator_params)        
         logging.debug("training_generator and validation_generator instantiated".format())
 
     def instantiate_model(self):
@@ -268,17 +268,25 @@ class ModelledDataSet(AIDataSet):
 raise Exception("Manual execution below")
 
 #%% RELOAD A MODEL
-LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
-THIS_DATASET = "20180904 192907"
-THIS_MODEL_ID = 'model 20180906 154310'
-trds = ModelledDataSet(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID)
-trds.load_best_model()
-trds.model.summary()
-trds.make_predictions()
+if False:
+    LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
+    THIS_DATASET = "20180904 192907"
+    THIS_DATASET = "20180907 174134"
+    THIS_DATASET = "20180907 180022"
+    
+    #THIS_MODEL_ID = 'model 20180906 154310'
+    trds = ModelledDataSet(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID)
+    trds.load_best_model()
+    trds.model.summary()
+    trds.make_predictions()
 
 
         
 #%% CREATE NEW MODEL AND TRAIN
+THIS_DATASET = "20180907 184100"
+THIS_DATASET = "20180907 193306"
+
+LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 
 #trained_dataset = ModelledDataSet(LOCAL_PROJECT_PATH,THIS_DATASET,'model ' + THIS_MODEL_TIMESTAMP)
 THIS_MODEL_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
@@ -291,8 +299,9 @@ trds.instantiate_generators(MuleDataGenerator)
 trds.instantiate_model()
 trds.model.summary()
 trds.instantiate_callbacks()
-trds.train_model(3)
+trds.train_model(30)
 trds.make_predictions()
+raise
 
 #%% Plot analysis of model
 
