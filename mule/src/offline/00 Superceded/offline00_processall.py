@@ -1,64 +1,3 @@
-"""
-Manage and analyze the Data Set directory.
-Iterate over each Data Set and check which data elements have been created. 
-
-NOT Standalone script. 
-
-"""
-#%% Instantiate and load the dataset
-
-LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
-DATASET_ID = "20180907 193306"
-DATASET_ID = "20180907 193757"
-
-assert os.path.exists(LOCAL_PROJECT_PATH)
-
-#%% ===========================================================================
-# Load dataset
-# =============================================================================
-ds = AIDataSet(LOCAL_PROJECT_PATH,DATASET_ID)
-ds.process_time_steps()
-if True: 
-    ds.write_jpgs(dir_jpgs="jpg_images", overwrite=False)
-
-#%% ===========================================================================
-# Mask values
-# =============================================================================
-
-ds.mask_first_Ns(2)
-ds.mask_last_Ns(2)
-ds.mask_null_throttle(0.1)   
-
-#%% ===========================================================================
-# Summary plots
-# =============================================================================
-with NoPlots():
-    plotter = DataSetPlotter()
-    plotter.histogram_steering(ds)
-    plotter.histogram_throttle(ds)
-    with LoggerCritical():
-        sample_fig = plotter.plot_sample_frames(ds)
-    
-    plotter.boxplots_time(ds)
-
-#%% ===========================================================================
-# Frames: to /Video Frames and /Video Frames.mp4
-# =============================================================================
-ds.write_frames(overwrite=False)
-
-PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames')
-PATH_OUTPUT_FILE = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames.mp4')
-
-vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=24)
-vidwriter.write_video()
-
-#%%
-THIS_MODEL_ID = datetime.datetime.now().strftime("%Y%m%d %H%M%S")
-
-dsm= ModelledDataSet.from_dataset(ds,THIS_MODEL_ID)
-dsm.df
-    
-raise
 #%% PROCESS ALL DATASETS!
 
 #this_data_dir = LOCAL_PROJECT_PATH
@@ -183,4 +122,5 @@ def select_data(this_df):
     #ds_idx = int(input("Select dataset number:") )
     #this_dataset = this_df.iloc[ds_idx]
     #return this_dataset
-selected_data = select_data(df_all_datasets)
+selected_data = select_data(df_all_datasets)# -*- coding: utf-8 -*-
+

@@ -73,7 +73,7 @@ LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 THIS_DATASET = "20180904 192907"
 #THIS_MODEL_ID = 'model 20180906 154310'
 THIS_MODEL_ID = 'model 20180906 165918'
-this_modelled_ds = ModelledDataSet(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID)
+this_modelled_ds = ModelledData(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_MODEL_ID)
 this_modelled_ds.load_best_model()
 this_modelled_ds.model.summary()
 this_modelled_ds.make_predictions()

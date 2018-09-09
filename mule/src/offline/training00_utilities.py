@@ -47,9 +47,9 @@ import tqdm
 import glob
 #import json
 #import pandas as pd
-#import tensorflow as tf
+import tensorflow as tf
 # Check versions
-#assert tf.__version__ == '1.8.0'
+assert tf.__version__ == '1.8.0'
 
 import logging
 #import zipfile

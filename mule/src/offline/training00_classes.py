@@ -1,72 +1,96 @@
-
 #%% DATAGEN
 class MuleDataGenerator(ks.utils.Sequence):
-    """Generates data for Keras"""
-    def __init__(self, indices, dataset, 
-                 batch_size=32, dim=None, n_channels=None, n_classes=15, shuffle=True):
-        """Keras data generator
-        
-        Aggregates the AIDataSet class
-        
-        Attributes:
-            indices (str): The allowed timestamps for data generation
-            dataset (AIDataSet): The dataset object with it's df and npz
-            batch_size : 
-            dim : 
-            n_channels : 
-            n_classes :
-            shuffle :
-        """
-        self.indices = indices
-        self.dataset = dataset
-        self.batch_size = batch_size
-        self.dim = dim
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.shuffle = shuffle
-        self.on_epoch_end()
-        
-        logging.debug("** Initialize datagen **".format())
-        logging.debug("Data folder: {}".format(dataset.data_folder))
-        
-        logging.debug("{} of {} total records used for generation".format(len(self.indices), len(self.dataset.df)))
-        #logging.debug("Frames NPZ located at: {}".format(self.dataset.path_frames_npz))
-        logging.debug("{} samples over batch size {} yields {} batches".format(len(self.indices),
-                                                                                   self.batch_size,
-                                                                                   math.ceil(len(self.indices)/self.batch_size),))
-        
-    def __len__(self):
-        """Keras generator method - Denotes the number of batches per epoch
-        """        
-        return int(np.floor(len(self.indices) / self.batch_size))
-    
-    # GET A BATCH!
-    def __getitem__(self, index): 
-        """Keras generator method - Generate one batch of data
-        """         
-        logging.debug("Generating batch {}".format(index))
-        
-        # Generate indexes of the batch
-        batch_indices = self.indices[index*self.batch_size:(index+1)*self.batch_size]
-
-        # Generate data by selecting these IDs
-        X, y = self.__data_generation(batch_indices)
-
-        return X, y
-
-    def on_epoch_end(self):
-        """Keras generator method - Shuffles indices after each epoch
-        """
-        #self.indexes = np.arange(len(self.indices))
-        if self.shuffle == True:
-            # Shuffle is in-place! 
-            np.random.shuffle(self.indices)
-            
-    def __get_npy_arrays(self,batch_indices):
-        """Custom method - get the X input arrays
-        
-        Open the npz file and load n frames into memory
-        """
+     """Generates data for Keras"""
+     def __init__(self, indices, dataset, 
+                  batch_size=32, dim=None, n_channels=None, n_classes=15, shuffle=True):
+         """Keras data generator
+         
+         Aggregates the AIDataSet class
+         
+         Attributes:
+             indices (str): The allowed timestamps for data generation
+             dataset (AIDataSet): The dataset object with it's df and npz
+             batch_size : 
+             dim : 
+             n_channels : 
+             n_classes :
+             shuffle :
+         """
+         self.indices = indices
+         self.dataset = dataset
+         self.batch_size = batch_size
+         self.dim = dim
+         self.n_channels = n_channels
+         self.n_classes = n_classes
+         self.shuffle = shuffle
+         self.on_epoch_end()
+         
+         logging.debug("** Initialize datagen **".format())
+         logging.debug("Data folder: {}".format(dataset.data_folder))
+         
+         logging.debug("{} of {} total records used for generation".format(len(self.indices), len(self.dataset.df)))
+         #logging.debug("Frames NPZ located at: {}".format(self.dataset.path_frames_npz))
+         logging.debug("{} samples over batch size {} yields {} batches".format(len(self.indices),
+                                                                                    self.batch_size,
+                                                                                    math.ceil(len(self.indices)/self.batch_size),))
+         
+     def __len__(self):
+         """Keras generator method - Denotes the number of batches per epoch
+         """        
+         return int(np.floor(len(self.indices) / self.batch_size))
+     
+     # GET A BATCH!
+     def __getitem__(self, index): 
+         """Keras generator method - Generate one batch of data
+         """         
+         logging.debug("Generating batch {}".format(index))
+         
+         # Generate indexes of the batch
+         batch_indices = self.indices[index*self.batch_size:(index+1)*self.batch_size]
+ 
+         # Generate data by selecting these IDs
+         X, y = self.__data_generation(batch_indices)
+ 
+         return X, y
+ 
+     def on_epoch_end(self):
+         """Keras generator method - Shuffles indices after each epoch
+         """
+         #self.indexes = np.arange(len(self.indices))
+         if self.shuffle == True:
+             # Shuffle is in-place! 
+             np.random.shuffle(self.indices)
+             
+     def __get_npy_arrays(self,batch_indices):
+         """Custom method - get the X input arrays
+         
+         Open the npz file and load n frames into memory
+         """
+         # This is a pointer to the file
+         npz_file=np.load(self.dataset.path_frames_npz)
+         
+         frames_array = np.stack([npz_file[idx] for idx in batch_indices], axis=0)
+         logging.debug("Generating {} frames: {}".format(frames_array.shape[0], frames_array.shape))
+         
+         return frames_array
+     
+     def __get_records(self,batch_indices):
+         """Custom method - get the y labels
+         """
+         this_batch_df = self.dataset.df.loc[batch_indices]
+         steering_values = this_batch_df['steering_signal'].values
+         steering_records_array = self.dataset.bin_Y(steering_values)
+         logging.debug("Generating {} records {}:".format(steering_records_array.shape[0],steering_records_array.shape))
+         return steering_records_array
+         
+     def __data_generation(self, batch_indices):
+         """Keras generator method - Generates data containing batch_size samples
+         """
+ 
+         X = self.__get_npy_arrays(batch_indices)
+         y = self.__get_records(batch_indices)
+ 
+         return X, y
 
 #%% Data set class
 class AIDataSet():
@@ -126,12 +150,16 @@ class AIDataSet():
     # =============================================================================
     @property
     def datetime_string(self):
-        dt_obj = datetime.datetime.strptime(self.data_folder, '%Y%m%d %H%M%S')
+        p = re.compile("^\d+ \d+")
+        folder_dt = p.findall(self.data_folder)[0]
+        dt_obj = datetime.datetime.strptime(folder_dt, '%Y%m%d %H%M%S')
         return dt_obj.strftime("%A %d %b %H:%M")
 
     @property
     def datetime_string_iso(self):
-        dt_obj = datetime.datetime.strptime(self.data_folder , '%Y%m%d %H%M%S')
+        p = re.compile("^\d+ \d+")
+        folder_dt = p.findall(self.data_folder)[0]
+        dt_obj = datetime.datetime.strptime(folder_dt, '%Y%m%d %H%M%S')
         return dt_obj.isoformat()
 
     @property
@@ -674,24 +702,28 @@ class DataSetPlotter:
 
 #%%
 
-class ModelledDataSet(AIDataSet):
+class ModelledData():
     """Augment a dataset with training
+    
+    ds - The dataset object, as defined
+    ds.df - The dataframe
+    ds.mask - The mask
     """
     
-    def __init__(self,path_data,data_folder,model_folder):
+    def __init__(self,dataset,model_folder):
         
-        super().__init__(path_data,data_folder)
+        #super().__init__(path_data,data_folder)
+        self.ds = dataset
         
         self.model_folder = model_folder
         
-        
         # Create the model folder, or reference it
-        self.path_model_dir = os.path.join(self.path_data,self.data_folder,self.model_folder)
+        self.path_model_dir = os.path.join(self.ds.path_data,self.ds.data_folder,self.model_folder)
         if not os.path.exists(self.path_model_dir):
             os.makedirs(self.path_model_dir)
-            logging.debug("Created a NEW model folder at {}/{}".format(data_folder,self.model_folder))
+            logging.debug("Created a NEW model folder at {}/{}".format(self.ds.data_folder,self.model_folder))
         else:
-            logging.debug("Model folder at {}/{}".format(data_folder,model_folder))
+            logging.debug("Model folder at {}/{}".format(self.ds.data_folder,model_folder))
             
         #assert not os.listdir(self.path_model_dir), "{} not empty".format(self.path_model_dir)
         #logging.debug("This model exists in {}".format(model_dir))
@@ -745,14 +777,25 @@ class ModelledDataSet(AIDataSet):
     
     @property
     def has_predictions(self):
-        return 'steering_pred_signal' in self.df.columns
+        return 'steering_pred_signal' in self.ds.df.columns
     
     def generate_partitions(self, split=0.8):
-        msk = np.random.rand(len(self.df)) < split
+        logging.debug("Partitioning  train/val to {:0.0f}/{:0.0f}%".format(split*100, (1-split)*100))
+        
+        # The split mask
+        msk = np.random.rand(len(self.ds.df)) < split
+        
+        # Aggregate the split with the overall mask
+        mask_tr = msk & self.ds.mask
+        mask_val = ~msk & self.ds.mask
+        
         self.partition = dict()
-        self.partition['train'] = self.df.index[msk].values
-        self.partition['validation'] = self.df.index[~msk].values
-        logging.debug("Train/val partition set to {:0.0f}/{:0.0f}%".format(split*100, (1-split)*100))
+        self.partition['train'] = self.ds.df.index[mask_tr].values
+        self.partition['validation'] = self.ds.df.index[mask_val].values
+        
+        tr_pct = len(self.partition['train'])/(len(self.partition['train'])+len(self.partition['validation']))*100
+        val_pct = len(self.partition['validation'])/(len(self.partition['train'])+len(self.partition['validation']))*100
+        logging.debug("Actual split: {:0.1f}/{:0.1f}% over {:0.1f}% of the total records".format(tr_pct,val_pct,self.ds.mask_cover_pct))
     
     def instantiate_generators(self,generator_class, generator_params = None):
         if not generator_params:
@@ -765,8 +808,8 @@ class ModelledDataSet(AIDataSet):
                       #'path_records':os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'df_record.pck'),
                      }
        
-        self.training_generator = generator_class(self.partition['train'], self, **generator_params)
-        self.validation_generator = generator_class(self.partition['validation'], self, **generator_params)        
+        self.training_generator = generator_class(self.partition['train'], self.ds, **generator_params)
+        self.validation_generator = generator_class(self.partition['validation'], self.ds, **generator_params)        
         logging.debug("training_generator and validation_generator instantiated".format())
 
     def instantiate_model(self):
@@ -906,9 +949,9 @@ class ModelledDataSet(AIDataSet):
         #
         logging.debug("Predicting over self.model {}".format(self.model))
 
-        npz_file = np.load(self.path_frames_npz)
+        npz_file = np.load(self.ds.path_frames_npz)
         #frames_array = np.stack([npz_file[idx] for idx in batch_indices], axis=0)
-        frames_array = np.stack([npz_file[idx] for idx in self.df.index], axis=0)
+        frames_array = np.stack([npz_file[idx] for idx in self.ds.df.index], axis=0)
         #print(arrays)
         logging.debug("All images loaded as 1 numpy array {}".format(frames_array.shape))
         logging.debug("Starting predictions ...".format(frames_array.shape))
@@ -919,23 +962,23 @@ class ModelledDataSet(AIDataSet):
         logging.debug("Predictions complete, shape: {}".format(predictions_cats.shape))
         #logging.debug("Saved categories to column steering_pred_signal_cats".format())
         
-        predictions = self.unbin_Y(predictions_cats)
+        predictions = self.ds.unbin_Y(predictions_cats)
         #logging.debug("Predictions unbinned, shape: {}".format(predictions.shape))
         
-        self.df['steering_pred_signal'] = predictions
+        self.ds.df['steering_pred_signal'] = predictions
         logging.debug("Predictions added to df in column {}".format('steering_pred_signal'))
         
         # Get the category of this steering signal
-        self.df['steering_pred_signal_catnum'] = self.signal_to_category_number('steering_pred_signal')
+        self.ds.df['steering_pred_signal_catnum'] = self.ds.signal_to_category_number('steering_pred_signal')
         
-        self.raw_accuracy =  sum(self.df['steering_signal_catnum'] == self.df['steering_pred_signal_catnum'])/len(self.df)
+        self.raw_accuracy =  sum(self.ds.df[self.ds.mask]['steering_signal_catnum'] == self.ds.df[self.ds.mask]['steering_pred_signal_catnum'])/len(self.ds.df[self.ds.mask])
         logging.debug("Raw accuracy {:0.2f}%".format(self.raw_accuracy*100))
         
         #return predictions
 
     def save_predictions(self,path_out):
-        assert 'steering_pred_signal' in self.df.columns 
-        assert 'steering_pred_signal_catnum' in self.df.columns 
+        assert 'steering_pred_signal' in self.ds.df.columns 
+        assert 'steering_pred_signal_catnum' in self.ds.df.columns 
         pass
 
 
@@ -958,7 +1001,7 @@ class SaliencyGen():
         logging.debug("Loaded model accuracy: {:0.1f}%".format(self.modelled_dataset.raw_accuracy*100))
         
         # Original raw images
-        self.path_jpgs_dir = modelled_dataset.path_jpgs_dir
+        self.path_jpgs_dir = modelled_dataset.ds.path_jpgs_dir
         logging.debug("Source orginal raw images are in folder: {}".format(self.path_jpgs_dir))
         files = glob.glob(os.path.join(self.path_jpgs_dir,'*.jpg'))
         logging.debug("{} jpgs found".format(len(files)))
@@ -1045,13 +1088,13 @@ class SaliencyGen():
         logging.debug("Assigned layers_kernels and layers_strides".format())
         
     def write_saliency_mask_jpgs(self,number=None):
-        frames_npz = np.load(self.modelled_dataset.path_frames_npz)
+        frames_npz = np.load(self.modelled_dataset.ds.path_frames_npz)
         if not number:
-            number = len(self.modelled_dataset.df)
+            number = len(self.modelled_dataset.ds.df)
             
         with LoggerCritical(), NoPlots():
-            for idx in tqdm.tqdm(self.modelled_dataset.df.index[0:number]):
-                rec = self.modelled_dataset.df.loc[idx]
+            for idx in tqdm.tqdm(self.modelled_dataset.ds.df.index[0:number]):
+                rec = self.modelled_dataset.ds.df.loc[idx]
                 path_out = os.path.join(self.path_saliency_jpgs,rec['timestamp']+'.png')
                 if os.path.exists(path_out): continue
 
