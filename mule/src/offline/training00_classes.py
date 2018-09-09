@@ -428,6 +428,10 @@ class AIDataSet():
         
         return fig
 
+    def get_one_frame(self,index_ts):
+        npz_objs = np.load(self.path_frames_npz)
+        return npz_objs[index_ts]
+
     # =============================================================================
     # Process frames to JPG
     # =============================================================================
@@ -812,7 +816,7 @@ class ModelledData():
         self.validation_generator = generator_class(self.partition['validation'], self.ds, **generator_params)        
         logging.debug("training_generator and validation_generator instantiated".format())
 
-    def instantiate_model(self):
+    def instantiate_model(self,model_name="baseline_steering_model"):
         def baseline_steering_model():
             model = ks.models.Sequential()
             model.add(ks.layers.Conv2D(24, (5,5), strides=(2, 2), activation = "relu", input_shape=(120,160,3)))
@@ -827,6 +831,26 @@ class ModelledData():
             model.add(ks.layers.Dropout(0.1))
             model.add(ks.layers.Dense(15, activation='softmax', name='angle_out'))
             return model
+        
+        def blackwhite_steering_model():
+            model = ks.models.Sequential()
+            model.add(ks.layers.Conv2D(24, (5,5), strides=(2, 2), activation = "relu", input_shape=(120,160,3)))
+            model.add(ks.layers.Conv2D(32, (5,5), strides=(2, 2), activation = "relu"))
+            model.add(ks.layers.Conv2D(64, (5,5), strides=(2, 2), activation = "relu"))
+            model.add(ks.layers.Conv2D(64, (3,3), strides=(2, 2), activation = "relu"))
+            model.add(ks.layers.Conv2D(64, (3,3), strides=(1, 1), activation = "relu"))
+            model.add(ks.layers.Flatten()) # This is just a reshape!
+            model.add(ks.layers.Dense(100,activation="relu"))
+            model.add(ks.layers.Dropout(0.1))
+            model.add(ks.layers.Dense(50,activation="relu"))
+            model.add(ks.layers.Dropout(0.1))
+            model.add(ks.layers.Dense(15, activation='softmax', name='angle_out'))
+            return model
+                
+        
+        MODEL_ARCHITECTURE_MAP = {"baseline_steering_model":baseline_steering_model,
+                     "blackwhite_steering_model":blackwhite_steering_model}
+        model_architecture = MODEL_ARCHITECTURE_MAP[model_name]
         optimizer = ks.optimizers.Adam(lr=0.001, beta_1=0.99, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
         
         model = baseline_steering_model()
@@ -1144,7 +1168,7 @@ class SaliencyGen():
         jpg_files = glob.glob(os.path.join(self.path_saliency_jpgs,'*.png'))
         logging.debug("Boosting {} frames at {} to {}".format(len(jpg_files),source_folder,target_folder))
         
-        frames_npz = np.load(self.modelled_dataset.path_frames_npz)
+        frames_npz = np.load(self.modelled_dataset.ds.path_frames_npz)
         
         # For testing, write a sample
         if not num_frames:
@@ -1173,8 +1197,8 @@ class SaliencyGen():
                     saliency_frame = cv2.addWeighted(saliency_frame, 1. + c/127., saliency_frame, 0, b-c)                                
                 
                 saliency_frame.setflags(write=1)
-                saliency_frame[:,:,0] = saliency_frame[:,:,0] * 0.5
-                saliency_frame[:,:,1] = saliency_frame[:,:,1] * 1.2
+                saliency_frame[:,:,0] = saliency_frame[:,:,0] * 1.5
+                saliency_frame[:,:,1] = saliency_frame[:,:,1] * 0
                 saliency_frame[:,:,2] = saliency_frame[:,:,2] * 0
                 blur_kernel = np.ones((blur_rad,blur_rad),np.float32) * strength
                 saliency_frame_blurred = cv2.filter2D(saliency_frame,-1,blur_kernel)
@@ -1215,7 +1239,7 @@ class SaliencyGen():
                 path_jpg = os.path.join(self.path_frames_jpgs, index + ".jpg")
                 if os.path.exists(path_jpg): continue
 
-                frame_figure = this_saliency.modelled_dataset.gen_record_frame(index, source_jpg_folder=pathpart_source_imgs, source_ext = '.png')
+                frame_figure = this_saliency.modelled_dataset.ds.gen_record_frame(index, source_jpg_folder=pathpart_source_imgs, source_ext = '.png')
                 ks.backend.clear_session()
 
                 # Save it to jpg

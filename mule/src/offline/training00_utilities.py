@@ -238,7 +238,9 @@ class VideoWriter:
         with NoPlots(), LoggerCritical():
             for this_jpg_path in tqdm.tqdm(frames_to_write):
                 img_arr = mpl.image.imread(this_jpg_path)
-                writer.write(img_arr) # Write out frame to video
+                RGB_img = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)
+
+                writer.write(RGB_img) # Write out frame to video
         
         logging.debug("Wrote {} frames to {}".format(len(frames_to_write),self.path_vid_out))
         

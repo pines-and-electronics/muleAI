@@ -12,9 +12,21 @@ Writes video from a folder of JPG
 #%%
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 assert os.path.exists(LOCAL_PROJECT_PATH)
-THIS_DATASET = "20180829 194519"
-THIS_FRAMES_DIR = "Video Frames"
-OUTPUT_VID_NAME = "Signal video.mp4"
+#THIS_DATASET = "20180829 194519"
+THIS_DATASET_ID = "20180907 191303 BENCHMARK1 AUTO"
+#THIS_FRAMES_DIR = "Video Frames"
+THIS_MODEL_ID = 'model 20180907 190147'
+THIS_FRAMES_DIR = "frames_saliency_boosted"
+OUTPUT_VID_NAME = "frames_saliency_boosted.mp4"
+
+
+
+PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET_ID,THIS_MODEL_ID,THIS_FRAMES_DIR)
+PATH_OUTPUT_FILE = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,OUTPUT_VID_NAME)
+
+#PATH_INPUT_JPGS = '/home/batman/MULE DATA/20180904 192907/model 20180906 165918/frames_saliency_boosted'
+#PATH_OUTPUT_FILE = '/home/batman/MULE DATA/20180904 192907/model 20180906 165918/frames_saliency_boosted.mp4'
+
 
 #%%
 logger = logging.getLogger()
@@ -56,13 +68,7 @@ class NoPlots:
 
 #%% Initialize the video writer object
 
-PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,THIS_FRAMES_DIR)
-PATH_OUTPUT_FILE = os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,OUTPUT_VID_NAME)
-
-PATH_INPUT_JPGS = '/home/batman/MULE DATA/20180904 192907/model 20180906 165918/frames_saliency_boosted'
-PATH_OUTPUT_FILE = '/home/batman/MULE DATA/20180904 192907/model 20180906 165918/frames_saliency_boosted.mp4'
-
-vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=30)
+vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=8)
 #vidwriter.test_write()
 #%%
 if False: 

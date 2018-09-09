@@ -58,3 +58,26 @@ this_saliency.saliency_tf_function()
 this_saliency.get_kernels()
 if False: # This takes a while!
     this_saliency.write_saliency_mask_jpgs()
+
+#%% HUD Frames
+this_saliency.create_HUD_frames()
+raise
+
+#%%
+#this_strength = 4
+#this_blur = 3
+this_saliency.blend_simple(2,1.5,num_frames=None)
+#blend_simple(self,blur_rad,strength,num_frames = None)
+raise
+
+
+
+#%%
+this_map = 'viridis'
+this_map = 'seismic'
+this_map = 'summer'
+this_map = 'magma'
+this_map = 'hot'
+this_strength = 4
+this_blur = 3
+this_saliency.blend_PIL(this_blur,this_map,this_strength,this_map)
