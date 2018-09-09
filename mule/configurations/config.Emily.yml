@@ -1,5 +1,5 @@
 drive:
-    freq_hertz: 30 
+    freq_hertz: 20
     verbose: False
     verbosity: 20
 parts:
@@ -36,6 +36,8 @@ parts:
           full_right_pulse:   295
  - camera: 
         type: PiCam
+        arguments:
+          colormode: RGB
  - datastore:
         type: WriteStore
         arguments:

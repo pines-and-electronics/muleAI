@@ -94,7 +94,12 @@ class MockCam(BaseCam):
 # TODO: MJ - Add the members to __init__
 class PiCam(BaseCam):
     ''' Raspberry Pi camera '''
-    def __init__(self, resolution=(160, 120), framerate=24, threaded=False):
+    def __init__(self, resolution=(160, 120), framerate=24, threaded=False, colormode='YUV'):
+
+        self.colormode = colormode
+
+        logging.debug("PiCam set to {} mode".format(self.colormode))
+
         super().__init__(resolution, framerate, threaded)
 
 
@@ -114,12 +119,11 @@ class PiCam(BaseCam):
         # as the camera may capture only at certain resolutions predetermined resolutions
         # the capture stream is an iterator that updates self.frame each time it is iterated
         #mode = 'RGB'
-        mode = 'YUV'
-        if mode=='RGB':
+        if self.colormode=='RGB':
         	self.rgb_or_yuv_stream = picamera.array.PiRGBArray(self.camera, self.resolution)
         	#self.array_stream = self.rgb_stream
         	self.stream = self.camera.capture_continuous(self.rgb_or_yuv_stream, format='rgb', use_video_port=True)
-        elif mode=='YUV':
+        elif self.colormode=='YUV':
         	self.rgb_or_yuv_stream = picamera.array.PiYUVArray(self.camera, self.resolution) 
         	#self.this_stream = self.yuv_stream
         	self.stream = self.camera.capture_continuous(self.rgb_or_yuv_stream, format='yuv', use_video_port=True)
