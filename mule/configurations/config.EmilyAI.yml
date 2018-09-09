@@ -1,5 +1,5 @@
 drive:
-    freq_hertz: 20
+    freq_hertz: 30
     verbose: False
     verbosity: 20
 parts:
@@ -24,7 +24,7 @@ parts:
  - ai:
     type: AIController
     arguments:
-        model_path: "/home/pi/mule_out/20180828 223214/model/20180828 230712 model.h5"
+        model_path: "/home/pi/mule_out/20180907 193306/model 20180907 195613/weights Loss 0.10 Epoch 11.h5"
  - actuator:
         type: ThrottleController
         arguments:

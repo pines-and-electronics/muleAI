@@ -1,5 +1,5 @@
 drive:
-    freq_hertz: 60
+    freq_hertz: 30 
     verbose: False
     verbosity: 20
 parts:

@@ -112,10 +112,20 @@ class PiCam(BaseCam):
         import picamera.array
         # second argument engages the GPU resizer to ensure the desired resolution
         # as the camera may capture only at certain resolutions predetermined resolutions
-        self.rgb_stream = picamera.array.PiRGBArray(self.camera, self.resolution)
-
         # the capture stream is an iterator that updates self.frame each time it is iterated
-        self.stream = self.camera.capture_continuous(self.rgb_stream, format='rgb', use_video_port=True)
+        #mode = 'RGB'
+        mode = 'YUV'
+        if mode=='RGB':
+        	self.rgb_or_yuv_stream = picamera.array.PiRGBArray(self.camera, self.resolution)
+        	#self.array_stream = self.rgb_stream
+        	self.stream = self.camera.capture_continuous(self.rgb_or_yuv_stream, format='rgb', use_video_port=True)
+        elif mode=='YUV':
+        	self.rgb_or_yuv_stream = picamera.array.PiYUVArray(self.camera, self.resolution) 
+        	#self.this_stream = self.yuv_stream
+        	self.stream = self.camera.capture_continuous(self.rgb_or_yuv_stream, format='yuv', use_video_port=True)
+        else:
+        	raise
+        
 
         super().start()
 
@@ -124,13 +134,13 @@ class PiCam(BaseCam):
         super().stop()
 
         self.stream.close()
-        self.rgb_stream.close()
+        self.rgb_or_yuv_stream.close()
         self.camera.close()
 
 
     def _update(self):
         self.frame = next(self.stream).array
-        self.rgb_stream.seek(0)
+        self.rgb_or_yuv_stream.seek(0)
 
     @property
     def _class_string(self):

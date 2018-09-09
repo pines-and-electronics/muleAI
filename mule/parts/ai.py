@@ -80,8 +80,8 @@ class AIController(BasePart):
             print("In AI part, steering predictions are:",steering_prediction_cats)
             steering_prediction_float = linear_unbin(steering_prediction_cats[0])
             print("In AI part, steering prediction float:",steering_prediction_float)
-            
-            state['steering_signal'] = steering_prediction_float
+            INVERT = -1
+            state['steering_signal'] = steering_prediction_float * INVERT
 #        if state['mode'].steering == 'human' and state['mode'].throttle == 'human':
 #            pass
 #        else:
