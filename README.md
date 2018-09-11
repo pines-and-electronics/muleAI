@@ -17,7 +17,7 @@
 ### Dependencies
 UPDATE? ~~Tensor flow 1.8 (includes keras as `tf.keras`)~~
 
-### Features
+### Features - `Mule` autonomous vehicle operations software platform
 1. Extended configuration file, YAML format
    * As much as possible is exposed to configuration, allowing rapid changing of parameters during racing days
 1. Command line interface exposed using [click](http://click.pocoo.org/5/)
@@ -32,6 +32,7 @@ UPDATE? ~~Tensor flow 1.8 (includes keras as `tf.keras`)~~
    * D-pad up/down on the PS3 controller adjusts that value by SHIFT amount
    * Currently able to adjust max forward/reverse throttle and steering
 1. Images are saved directly to numpy arrays, timestamped, and zipped for fast transfer to training
+### Features - `Corral`, offline vehicle training suite
 1. After driving, analysis and training of results are done in an *offline suite of tools*
    * DataSet class 
      * Enforces contract for further offline processing pipeline
