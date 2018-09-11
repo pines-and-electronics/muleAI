@@ -21,6 +21,8 @@ UPDATE? ~~Tensor flow 1.8 (includes keras as `tf.keras`)~~
 1. Extended configuration file, YAML format
    * As much as possible is exposed to configuration, allowing rapid changing of parameters during racing days
 1. Command line interface exposed using [click](http://click.pocoo.org/5/)
+1. States are saved using a timestamp, the `time.time() * 1000` (Unix standard, number of milliseconds since 1970)
+   * Allows for fast timestep analysis, strict ordering and alignment of states
 1. Modular part classes inherit from Abstract Base Class
    * Enforce proper interface for all new parts
    * Include default behaviors such as class strings
@@ -47,5 +49,5 @@ UPDATE? ~~Tensor flow 1.8 (includes keras as `tf.keras`)~~
 1. No support for any installation or setup method - project is run directly from the git directory
 1. Linux and Mac OS are tested, not Windows
 1. Training of models is in a separate module
-1. States are saved using a timestamp, the `time.time() * 1000` (Unix standard, number of milliseconds since 1970)
+
 
