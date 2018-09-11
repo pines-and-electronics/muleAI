@@ -11,6 +11,14 @@ LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 #DATASET_ID = "20180907 193306"
 DATASET_ID = "20180907 184100 BENCHMARK1 TRG"
 DATASET_ID = "20180907 191303 BENCHMARK1 AUTO"
+DATASET_ID = "20180907 180022"
+DATASET_ID = "20180909 215233"
+DATASET_ID = "20180910 181306"
+DATASET_ID = "20180910 192658"
+
+#DATASET_ID = "20180909 213918"
+
+#/home/batman/MULE DATA/
 #DATASET_ID = "20180907 193757"
 
 assert os.path.exists(LOCAL_PROJECT_PATH)
@@ -20,7 +28,7 @@ assert os.path.exists(LOCAL_PROJECT_PATH)
 # =============================================================================
 ds = AIDataSet(LOCAL_PROJECT_PATH,DATASET_ID)
 ds.process_time_steps()
-if True: 
+if False: 
     ds.write_jpgs(dir_jpgs="jpg_images", overwrite=False)
 
 #%% ===========================================================================
@@ -46,13 +54,14 @@ with NoPlots():
 #%% ===========================================================================
 # Frames: to /Video Frames and /Video Frames.mp4
 # =============================================================================
-ds.write_frames(overwrite=False)
-
-PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames')
-PATH_OUTPUT_FILE = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames.mp4')
-
-vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=24)
-vidwriter.write_video()
+if False:
+    ds.write_frames(overwrite=False)
+    
+    PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames')
+    PATH_OUTPUT_FILE = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames.mp4')
+    
+    vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=24)
+    vidwriter.write_video()
 
 
 #%% Start CUDA and Training
@@ -73,11 +82,31 @@ dsm=ModelledData(ds,THIS_MODEL_ID)
 dsm.model_folder_empty
 dsm.generate_partitions()
 #trained_dataset.list_models()
+#dsm.instantiate_generators(MuleDataGeneratorBlackWhite)
+#dsm.instantiate_model(model_name="blackwhite_steering_model")
+
 dsm.instantiate_generators(MuleDataGenerator)
-dsm.instantiate_model()
+dsm.instantiate_model(model_name="baseline_steering_model")
+
 dsm.model.summary()
+#raise
 dsm.instantiate_callbacks()
 dsm.callback_list
 dsm.train_model(50)
 dsm.make_predictions()
 
+
+#%% TEST GEN
+if 0:
+    generator_params = {'dim': (160,120),
+              'batch_size': 64,
+              'n_classes': 15,
+              'n_channels': 3,
+              'shuffle': True,
+              #'path_frames':os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'camera_numpy.zip'),
+              #'path_records':os.path.join(LOCAL_PROJECT_PATH,THIS_DATASET,'df_record.pck'),
+             }
+    
+    training_generator = MuleDataGeneratorBlackWhite(dsm.partition['train'], dsm.ds, **generator_params)
+    first_batch = training_generator[0]
+    last_batch = training_generator[len(training_generator)]

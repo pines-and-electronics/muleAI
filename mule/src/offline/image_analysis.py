@@ -3,9 +3,12 @@
 
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
 #DATASET_ID = "20180907 193306"
-DATASET_ID = "20180907 184100 BENCHMARK1 TRG"
+#DATASET_ID = "20180907 184100 BENCHMARK1 TRG"
 #DATASET_ID = "20180907 193757"
+DATASET_ID = "20180909 215335"
+DATASET_ID = "20180909 215233"
 
+#/home/batman/MULE DATA/
 assert os.path.exists(LOCAL_PROJECT_PATH)
 
 #%% ===========================================================================
@@ -19,6 +22,7 @@ plotter = DataSetPlotter()
 #%% Get some images to work with    
 # Right turn
 this_mask = ds.mask & (ds.df['steering_signal'] > 0.9)
+this_mask = ds.mask 
 these_indices = ds.df[this_mask].sample(4)['timestamp'].tolist()
 
 
