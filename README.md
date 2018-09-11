@@ -47,4 +47,5 @@ UPDATE? ~~Tensor flow 1.8 (includes keras as `tf.keras`)~~
 1. No support for any installation or setup method - project is run directly from the git directory
 1. Linux and Mac OS are tested, not Windows
 1. Training of models is in a separate module
+1. States are saved using a timestamp, the `time.time() * 1000` (Unix standard, number of milliseconds since 1970)
 
