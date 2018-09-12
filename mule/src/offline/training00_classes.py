@@ -93,9 +93,6 @@ class MuleDataGenerator(ks.utils.Sequence):
          return X, y
 
 
-
-
-
 class MuleDataGeneratorBlackWhite(ks.utils.Sequence):
      """Generates data for Keras"""
      def __init__(self, indices, dataset, 
@@ -360,6 +357,20 @@ class AIDataSet():
         this_mask = ~truemask 
         self.mask = self.mask & this_mask
         logging.debug("Masked {} timesteps throttle<{}, current cover: {:0.1f}%".format(sum(truemask),cutoff,self.mask_cover_pct))
+
+
+    def mask_(self,first_ts,second_ts):
+        ds = self
+        #first_datetime = datetime.datetime.fromtimestamp(int(ds.df.index[0])/1000)
+        #assert ds.df['datetime'][0] == first_datetime
+        # Get a timedelta (days,seconds)
+        #tdelta = datetime.timedelta(0,numsecs)
+        #second_datetime = ds.df['datetime'][0] + tdelta
+        truemask = (ds.df.index >= first_ts) & (ds.df.index >= second_ts)
+        this_mask = ~truemask
+        self.mask = self.mask & this_mask
+        logging.debug("Masked {} timesteps from {} to {}, current cover: {:0.1f}%".format(sum(this_mask),first_datetime,second_datetime, self.mask_cover_pct))
+        
         
     
     # Conversion between categorical and floating point steering
@@ -471,7 +482,7 @@ class AIDataSet():
     # =============================================================================
     #--- Video
     # =============================================================================
-    def gen_record_frame(self, ts_string_index, source_jpg_folder='jpg_images', source_ext = '.jpg'):
+    def gen_record_frame(self, ts_string_index, source_jpg_folder='jpg_images', source_ext = '.jpg',cmap=None,gui_color='green'):
         """From a timestamp, create a single summary figure of that timestep. 
         
         The figure has no border (full image)
@@ -486,7 +497,7 @@ class AIDataSet():
         rec = self.df.loc[ts_string_index]
         # Settings ############################################################
         font_label_box = {
-            'color':'green',
+            'color':gui_color,
             'size':16,
         }
         font_steering = {'family': 'monospace',
@@ -509,9 +520,9 @@ class AIDataSet():
         #print(self.path_dataset)
         #print(source_jpg_folder)
         #print(ts_string_index+source_ext)
-        assert os.path.exists(jpg_path), "Does not exist: {}".format(jpg_path)
+        assert os.path.exists(os.path.join(self.path_dataset,source_jpg_folder)), "Does not exist: {}".format(os.path.join(self.path_dataset,source_jpg_folder))
         img = mpl.image.imread(jpg_path)
-        ax.imshow(img)
+        ax.imshow(img,cmap)
         #raise
         
         
@@ -530,7 +541,7 @@ class AIDataSet():
         # Steering widget HUD #################################################
         # Steering HUD: Actual steering signal
         steer_actual = ''.join(['|' if v else '-' for v in self.linear_bin(rec['steering_signal'])])
-        text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+        text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color=gui_color)
         # Steering HUD: Predicted steering angle
         if 'steering_pred_signal' in self.df.columns:
             steer_pred = ''.join(['◈' if v else ' ' for v in self.linear_bin(rec['steering_pred_signal'])])
@@ -575,14 +586,47 @@ class AIDataSet():
             cv2.imwrite(out_path, img)
         logging.debug("Wrote {} .jpg to {}".format(len(timestamps),path_jpg))
         #return path_jpg
+
+
+    def write_jpgs_bw(self, dir_jpgs=None, overwrite = False):
+        """Write first channel JPGs to disk from numpy zip file
+        
+        """
+        if not dir_jpgs: dir_jpgs = self.path_jpgs_dir
+        
+        
+        jpg_files = glob.glob(os.path.join(self.path_dataset,dir_jpgs,'*.jpg'))
+        if len(jpg_files) == len(self.df) and not overwrite:
+            logging.debug("{} jpg files already exist, skip unless overwrite=True".format(len(self.df)))
+            return
+        
+        # Open zip
+        arrays = np.load(self.path_frames_npz)
+        timestamps = [k for k in arrays.keys()]
+        timestamps.sort()
+        
+        # Create a directory for the JPEGs
+        path_jpg = os.path.join(self.path_dataset, dir_jpgs)
+        if not os.path.exists(path_jpg):
+            os.mkdir(path_jpg)
+        
+        # Print to .jpg
+        for k in tqdm.tqdm(timestamps):
+            img = arrays[k]
+            #arrays[k]
+            img_Y = img[:,:,0]
+            out_path = os.path.join(path_jpg,'{}.jpg'.format(k))
+            cv2.imwrite(out_path, img_Y)
+        logging.debug("Wrote {} .jpg to {}".format(len(timestamps),path_jpg))
+        #return path_jpg
     
-    def write_frames(self, output_dir_name = 'Video Frames', overwrite=False):
+    def write_frames(self, output_dir_name = 'Video Frames', overwrite=False, blackwhite=False,cmap=None,gui_color='green'):
         """From a JPG image, overlay information with matplotlib, save to disk.
         
         Skip if directory already full. 
         """
-        OUT_DIR = output_dir_name
-        OUT_PATH=os.path.join(self.path_dataset,OUT_DIR)
+        
+        OUT_PATH=os.path.join(self.path_dataset,output_dir_name)
         if not os.path.exists(OUT_PATH):
             os.mkdir(OUT_PATH)
         
@@ -596,8 +640,11 @@ class AIDataSet():
         with LoggerCritical(),NoPlots():
             for idx in tqdm.tqdm(self.df.index):
                 # Get the frame figure
-                frame_figure = self.gen_record_frame(idx)
-    
+                if blackwhite:
+                    frame_figure = self.gen_record_frame(idx,source_jpg_folder='jpg_images_Y',cmap=cmap,gui_color=gui_color)
+                elif not blackwhite:
+                    frame_figure = self.gen_record_frame(idx)
+            
                 # Save it to jpg
                 path_jpg = os.path.join(OUT_PATH,idx + '.jpg')
                 frame_figure.savefig(path_jpg)
@@ -632,10 +679,7 @@ class AIDataSet():
 class DataSetPlotter:
     def __init__(self):
         pass
-    # =============================================================================
-    #--- Plotting
-    # =============================================================================
-    
+
     def boxplots_time(self,dataset):
         fig=plt.figure(figsize=PAPER_A4_LAND,facecolor='white')
         fig, axes = plt.subplots(figsize=PAPER_A4_LAND,facecolor='white',nrows=1, ncols=3)
@@ -703,7 +747,7 @@ class DataSetPlotter:
         fig.savefig(outpath)
         logging.debug("Wrote histogram_throttle figure to {}".format(outpath))
         
-    def plot12(self,dataset,ts_string_indices, source_jpg_folder='jpg_images',extension='jpg', rows=3, cols=4):
+    def plot12(self,dataset,ts_string_indices, source_jpg_folder='jpg_images',extension='jpg', rows=3, cols=4, outfname='Sample Frames.png',cmap=None,gui_color='green'):
         """
         Render N records to analysis
         """
@@ -744,28 +788,28 @@ class DataSetPlotter:
             jpg_path = os.path.join(dataset.path_dataset,source_jpg_folder,ts_string_index+'.'+extension)
             assert os.path.exists(jpg_path), "{} does not exist".format(jpg_path)
             img = mpl.image.imread(jpg_path)
-            ax.imshow(img)
+            ax.imshow(img,cmap=cmap)
             #plt.title(str_label)
             
             # Data box ########################################################
             
             #ax.axes.get_xaxis().set_visible(False)
             #ax.axes.get_yaxis().set_visible(False)
-            t = ax.text(5,25,this_label,color='green',alpha=1)
+            t = ax.text(5,25,this_label,color=gui_color,alpha=1)
             #t = plt.text(0.5, 0.5, 'text', transform=ax.transAxes, fontsize=30)
             t.set_bbox(dict(facecolor='white', alpha=0.7,edgecolor='none'))
             
             # Steering widget HUD #################################################
             # Steering HUD: Actual steering signal
             steer_actual = ''.join(['|' if v else '-' for v in dataset.linear_bin(rec['steering_signal'])])
-            text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='green')
+            text_steer = ax.text(80,105,steer_actual,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color=gui_color)
             # Steering HUD: Predicted steering angle
             if 'steering_pred_signal' in dataset.df.columns:
                 steer_pred = ''.join(['◈' if v else ' ' for v in dataset.linear_bin(rec['steering_pred_signal'])])
                 text_steer_pred = ax.text(80,95,steer_pred,fontdict=font_steering,horizontalalignment='center',verticalalignment='center',color='red')
 
 
-        outpath=os.path.join(dataset.path_dataset,'Sample Frames.png')
+        outpath=os.path.join(dataset.path_dataset,outfname)
         fig.savefig(outpath)
         logging.debug("Wrote Sample Frames figure to {}".format(outpath))
     
@@ -786,6 +830,32 @@ class DataSetPlotter:
         #return these_indices
         self.plot12(dataset,these_indices)
 
+        # This is a pointer to the file
+        #npz_file=np.load(dataset.path_frames_npz)
+        
+        #frames_array = np.stack([npz_file[idx] for idx in batch_indices], axis=0)
+        #logging.debug("Generating {} frames: {}".format(frames_array.shape[0], frames_array.shape))
+        
+        #return frames_array
+
+
+    def plot_sample_frames_bw(self,dataset):
+        
+        # Right turn
+        this_mask = dataset.mask & (dataset.df['steering_signal'] > 0.9)
+        these_indices = dataset.df[this_mask].sample(4)['timestamp'].tolist()
+
+        # Left turn
+        this_mask = dataset.mask & (dataset.df['steering_signal'] < -0.9)
+        these_indices += dataset.df[this_mask].sample(4)['timestamp'].tolist()
+
+        # Straight
+        this_mask = dataset.mask & ((dataset.df['steering_signal']  > -0.1) & (dataset.df['steering_signal']  < 0.1))
+        these_indices += dataset.df[this_mask].sample(4)['timestamp'].tolist()
+        
+        #return these_indices
+        self.plot12(dataset=dataset,ts_string_indices=these_indices,source_jpg_folder='jpg_images_Y',extension='jpg', rows=3, cols=4, outfname='Sample Frames Y.png',cmap='bwr',gui_color='black')
+        
         # This is a pointer to the file
         #npz_file=np.load(dataset.path_frames_npz)
         

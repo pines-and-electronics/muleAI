@@ -8,28 +8,43 @@ NOT Standalone script.
 #%% Instantiate and load the dataset
 
 LOCAL_PROJECT_PATH = glob.glob(os.path.expanduser('~/MULE DATA'))[0]
-#DATASET_ID = "20180907 193306"
 DATASET_ID = "20180907 184100 BENCHMARK1 TRG"
-DATASET_ID = "20180907 191303 BENCHMARK1 AUTO"
-DATASET_ID = "20180907 180022"
-DATASET_ID = "20180909 215233"
+DATASET_ID = "20180910 202846 AUTO"
+
+# USE THESE DATASETS
 DATASET_ID = "20180910 181306"
 DATASET_ID = "20180910 192658"
-
-#DATASET_ID = "20180909 213918"
-
-#/home/batman/MULE DATA/
-#DATASET_ID = "20180907 193757"
+DATASET_ID = "20180910 193908"
+DATASET_ID = "20180912 120000 FINAL SET"
+DATASET_ID = "20180912 161937"
 
 assert os.path.exists(LOCAL_PROJECT_PATH)
+
+
+WRITE_JPG_RGB = 0
+WRITE_JPG_Y = 0
+
+WRITE_FRAMES_RGB = 0
+WRITE_FRAMES_Y = 0
+
+#
+mask_sections = (
+        ('1536596037921','1536596044125'),
+        
+        )
+        
+
+
 
 #%% ===========================================================================
 # Load dataset
 # =============================================================================
 ds = AIDataSet(LOCAL_PROJECT_PATH,DATASET_ID)
 ds.process_time_steps()
-if False: 
+if WRITE_JPG_RGB: 
     ds.write_jpgs(dir_jpgs="jpg_images", overwrite=False)
+if WRITE_JPG_Y:     
+    ds.write_jpgs_bw(dir_jpgs="jpg_images_Y", overwrite=False)
 
 #%% ===========================================================================
 # Mask values
@@ -47,14 +62,17 @@ with NoPlots():
     plotter.histogram_steering(ds)
     plotter.histogram_throttle(ds)
     with LoggerCritical():
-        sample_fig = plotter.plot_sample_frames(ds)
-    
+        if WRITE_JPG_RGB: 
+            plotter.plot_sample_frames(ds)
+        if WRITE_JPG_Y:     
+            plotter.plot_sample_frames_bw(ds)
+        
     plotter.boxplots_time(ds)
 
 #%% ===========================================================================
 # Frames: to /Video Frames and /Video Frames.mp4
 # =============================================================================
-if False:
+if WRITE_FRAMES_RGB:
     ds.write_frames(overwrite=False)
     
     PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames')
@@ -63,6 +81,14 @@ if False:
     vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=24)
     vidwriter.write_video()
 
+if WRITE_FRAMES_Y:
+    ds.write_frames(output_dir_name="Video Frames Y", overwrite=False,blackwhite=True,cmap='bwr',gui_color='black')
+    
+    PATH_INPUT_JPGS = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames Y')
+    PATH_OUTPUT_FILE = os.path.join(LOCAL_PROJECT_PATH,DATASET_ID,'Video Frames Y.mp4')
+    
+    vidwriter = VideoWriter(PATH_INPUT_JPGS,PATH_OUTPUT_FILE,fps=24)
+    vidwriter.write_video()
 
 #%% Start CUDA and Training
 ks.backend.clear_session()
