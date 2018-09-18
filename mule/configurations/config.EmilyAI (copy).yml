@@ -19,14 +19,14 @@ parts:
  - joystick:
       type: PS3Controller
       arguments:
-        scale_throttle_forward: 0.80
+        scale_throttle_forward: 0.48
         scale_throttle_back: 1.1
         scale_steer_left: 1.0
         scale_steer_right: 1.0
  - ai:
     type: AIController
     arguments:
-        model_path: COMMAND LINE OPTION
+        model_path: "/home/pi/mule_out/20180907 193306/model 20180907 195613/weights Loss 0.10 Epoch 11.h5"
  - actuator:
         type: ThrottleController
         arguments:

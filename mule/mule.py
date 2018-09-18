@@ -46,11 +46,29 @@ cli.add_command(calibrate)
 
 @click.command()
 @click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.drive.yml'), type=click.Path(exists=True))
+@click.option('--model_path', type=click.Path(exists=True),required=False)
 #@click.option('--logcfg', default=os.path.join(LOGGING_DIR, 'logging.simple.yml'), type=click.Path(exists=True))
-def drive(cfg):
+def drive(cfg,model_path):
+    
+    #print(model_path)
+    #raise
+
 
     config = configutil.parse_config(cfg)
-    
+
+    #TODO: Refactor passing model path cleanly!
+    if model_path:
+        logging.debug("Model: {}".format(model_path))
+        for part in config['parts']:
+            #print(part)
+            for key in part.keys():
+                if key=='ai':
+                    part['ai']['arguments']['model_path'] = model_path
+    else:
+        logging.debug("No model specified.".format())
+
+    #print(config)
+    #raise
     protoparts = configutil.create_protoparts(config['parts'])
     
     logging.info('Creating vehicle from loaded configuration')

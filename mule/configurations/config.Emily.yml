@@ -37,7 +37,7 @@ parts:
  - camera: 
         type: PiCam
         arguments:
-          colormode: RGB
+          colormode: YUV
  - datastore:
         type: WriteStore
         arguments:
