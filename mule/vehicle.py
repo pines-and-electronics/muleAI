@@ -94,8 +94,6 @@ class Vehicle():
 
         for part in config:
             logging.debug("Adding {} {}".format(part.type, part.arguments))
-            
-
             vehicle.add(part.type(**part.arguments))
 
         return vehicle

@@ -1,0 +1,6 @@
+The drive section of the configuration.yml file has 2 options to control verbosity of the drive loop.
+
+In addition to regular logging, this can be used to display a status message each tick.
+
+verbose: False/True # Turn the mode on/off
+verbosity: (int) # The period of messaging

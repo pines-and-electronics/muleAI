@@ -1,0 +1,7 @@
+drive:
+    freq_hertz: 10
+    verbose: True
+    verbosity: 20
+parts:
+  - mock:
+      type: MockMode
