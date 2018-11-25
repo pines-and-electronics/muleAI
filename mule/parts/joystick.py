@@ -381,6 +381,49 @@ class Mode:
 # TODO: Controllers should only produce the raw signal, there should be a
 #       separate part to do the manipulation, flipping, scaling, adapting to actuators, etc.
 
+class PS3Robotics(BasePart):
+    input_keys = ()
+    output_keys = ()
+
+    def __init__(self, device_path='/dev/input/js0'):
+        self.joystick = JoystickDevice(device_path)
+        self.thread = ThreadComponent(self._update)
+
+    def start(self):
+        self.joystick.open()
+        self.thread.start()
+
+    def transform(self, state):
+        pass
+
+    def stop(self):
+        logging.debug("Stopping thread".format())
+        self.thread.stop()
+        logging.debug("Closing joystick {}".format(self.joystick))
+        self.joystick.close()
+
+    def _update(self):
+        tag, value = self.joystick.poll()
+        if TESTING:
+            logging.debug("tag {}, value {}".format(tag, value))
+
+        # --- button-dpad-up
+        elif tag == 'button-dpad-up' and value == 1:
+            logging.debug("Servo up".format())
+
+        # --- button-dpad-down
+        elif tag == 'button-dpad-down' and value == 1:
+            logging.debug("Servo down".format())
+
+        # --- button-dpad-right
+        elif tag == 'button-dpad-right' and value == 1:
+            logging.debug("Rotate forward".format())
+
+            # --- button-dpad-left
+        elif tag == 'button-dpad-left' and value == 1:
+            logging.debug("Rotate back".format())
+
+
 class PS3Controller(BasePart):
     input_keys = ()
     output_keys = ('steering_signal', 'throttle_signal', 'mode')

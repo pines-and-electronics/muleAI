@@ -10,9 +10,4 @@ parts:
       arguments:
         colormode: RGB
   - joystick:
-      type: PS3Controller
-      arguments:
-        scale_throttle_forward: 1.0
-        scale_throttle_back: 1.0
-        scale_steer_left: 1.0
-        scale_steer_right: 1.0
+      type: PS3Robotics
