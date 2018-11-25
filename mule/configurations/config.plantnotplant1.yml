@@ -1,7 +1,18 @@
 drive:
-    freq_hertz: 10
+    freq_hertz: 1
     verbose: True
-    verbosity: 20
+    verbosity: 1
 parts:
   - mock:
       type: MockMode
+  - camera:
+      type: PiCam
+      arguments:
+        colormode: RGB
+  - joystick:
+      type: PS3Controller
+      arguments:
+        scale_throttle_forward: 1.0
+        scale_throttle_back: 1.0
+        scale_steer_left: 1.0
+        scale_steer_right: 1.0
