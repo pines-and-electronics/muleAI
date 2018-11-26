@@ -12,12 +12,12 @@ parts:
   - joystick:
       type: PS3Robotics
   - arduino_pwm_motors:
-      type: Stepper
+      type: MotorControl
       arguments:
         bus_addr: 0x8
         device: 1
-  - arduino_pwm_motors:
-      type: Servo
-      arguments:
-        bus_addr: 0x8
-        device: 1
+#  - arduino_pwm_motors:
+#      type: Servo
+#      arguments:
+#        bus_addr: 0x8
+#        device: 1
