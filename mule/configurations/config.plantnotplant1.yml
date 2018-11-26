@@ -5,19 +5,14 @@ drive:
 parts:
   - mock:
       type: MockMode
+  - joystick:
+      type: PS3Robotics
   - still_camera:
       type: StillCam
       arguments:
-        resolution: !!python/tuple [500,500]
-  - joystick:
-      type: PS3Robotics
+        resolution: !!python/tuple [1024,768]
   - arduino_pwm_motors:
       type: MotorControl
       arguments:
         bus_addr: 0x8
         device: 1
-#  - arduino_pwm_motors:
-#      type: Servo
-#      arguments:
-#        bus_addr: 0x8
-#        device: 1

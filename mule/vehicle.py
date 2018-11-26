@@ -63,7 +63,13 @@ class Vehicle():
         '''
         logging.info("Adding part {}, {}".format(len(self.parts)+1,part))
 
-        if not self.state_keys.issuperset(set(part.input_keys)):
+        input_keys = part.input_keys
+        if isinstance(input_keys, str):
+            input_keys = [input_keys]
+
+        if not self.state_keys.issuperset(set(input_keys)):
+            print("Current loaded state keys:", self.state_keys)
+            print("Input keys:",set(part.input_keys))
             msg='state missing input key for {}'
             raise KeyError(msg.format(part.__class__.__name__))
 
