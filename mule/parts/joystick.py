@@ -401,17 +401,10 @@ class PS3Robotics(BasePart):
 
     def transform(self, state):
         state['servo'] = self.servo_positions[self.servo_index]
-
-
-        # if self.stepper_index != 0:
         state['stepper'] = self.stepper_commands[self.stepper_index]
 
         # Reset the stepper so it only get executed once this timestep
         self.stepper_index = 1
-
-        # # Reset the stepper command so it
-        # if self.stepper_move > 0:
-        #     self.stepper_move -= 1
 
     def stop(self):
         logging.debug("Stopping thread".format())
@@ -446,19 +439,13 @@ class PS3Robotics(BasePart):
 
         # --- button-dpad-right
         elif tag == 'button-dpad-right' and value == 1:
-            # if self.stepper_index < 1:
             self.stepper_index = 2
             logging.debug("Rotate forward".format())
-            # else:
-            #     pass
 
-            # --- button-dpad-left
+        # --- button-dpad-left
         elif tag == 'button-dpad-left' and value == 1:
-            # if self.stepper_index > -1:
             self.stepper_index = 0
             logging.debug("Rotate back".format())
-            # else:
-            #     pass
 
 
 class PS3Controller(BasePart):

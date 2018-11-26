@@ -1,7 +1,7 @@
 drive:
-    freq_hertz: 1
+    freq_hertz: 20
     verbose: True
-    verbosity: 1
+    verbosity: 20
 parts:
   - mock:
       type: MockMode
@@ -11,3 +11,13 @@ parts:
         colormode: RGB
   - joystick:
       type: PS3Robotics
+  - arduino_pwm_motors:
+      type: Stepper
+      arguments:
+        bus_addr: 0x8
+        device: 1
+  - arduino_pwm_motors:
+      type: Servo
+      arguments:
+        bus_addr: 0x8
+        device: 1
