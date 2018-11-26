@@ -383,18 +383,24 @@ class Mode:
 
 class PS3Robotics(BasePart):
     input_keys = ()
-    output_keys = ()
+    output_keys = ('servo','stepper')
 
     def __init__(self, device_path='/dev/input/js0'):
         self.joystick = JoystickDevice(device_path)
         self.thread = ThreadComponent(self._update)
+
+        self.servo_positions = [1,2,3]
+        self.servo_index = 0
+        self.stepper_commands = [-1,0,1]
+        self.stepper_index = 1
 
     def start(self):
         self.joystick.open()
         self.thread.start()
 
     def transform(self, state):
-        pass
+        state['servo'] = self.servo_positions[self.servo_index]
+        state['stepper'] = self.stepper_commands[self.stepper_index]
 
     def stop(self):
         logging.debug("Stopping thread".format())
