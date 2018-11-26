@@ -393,6 +393,7 @@ class PS3Robotics(BasePart):
         self.servo_index = 0
         self.stepper_commands = [-1,0,1]
         self.stepper_index = 1
+        self.stepper_move = 0
 
     def start(self):
         self.joystick.open()
@@ -400,7 +401,17 @@ class PS3Robotics(BasePart):
 
     def transform(self, state):
         state['servo'] = self.servo_positions[self.servo_index]
+
+
+        # if self.stepper_index != 0:
         state['stepper'] = self.stepper_commands[self.stepper_index]
+
+        # Reset the stepper so it only get executed once this timestep
+        self.stepper_index = 1
+
+        # # Reset the stepper command so it
+        # if self.stepper_move > 0:
+        #     self.stepper_move -= 1
 
     def stop(self):
         logging.debug("Stopping thread".format())
@@ -415,19 +426,39 @@ class PS3Robotics(BasePart):
 
         # --- button-dpad-up
         elif tag == 'button-dpad-up' and value == 1:
-            logging.debug("Servo up".format())
+            # Move the servo up one position, until max
+            if self.servo_index < len(self.servo_positions)-1:
+                self.servo_index += 1
+                logging.debug("Servo up from position {} to {}".format(self.servo_positions[self.servo_index-1],
+                                                                       self.servo_positions[self.servo_index]))
+            else:
+                logging.debug("Servo already at highest position")
 
         # --- button-dpad-down
         elif tag == 'button-dpad-down' and value == 1:
-            logging.debug("Servo down".format())
+            # Move the servo up one position, until max
+            if self.servo_index > 0:
+                self.servo_index -= 1
+                logging.debug("Servo down from position {} to {}".format(self.servo_positions[self.servo_index+1],
+                                                                         self.servo_positions[self.servo_index]))
+            else:
+                logging.debug("Servo already at lowest position")
 
         # --- button-dpad-right
         elif tag == 'button-dpad-right' and value == 1:
+            # if self.stepper_index < 1:
+            self.stepper_index = 2
             logging.debug("Rotate forward".format())
+            # else:
+            #     pass
 
             # --- button-dpad-left
         elif tag == 'button-dpad-left' and value == 1:
+            # if self.stepper_index > -1:
+            self.stepper_index = 0
             logging.debug("Rotate back".format())
+            # else:
+            #     pass
 
 
 class PS3Controller(BasePart):
