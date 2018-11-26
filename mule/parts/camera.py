@@ -120,15 +120,15 @@ class PiCam(BaseCam):
         # the capture stream is an iterator that updates self.frame each time it is iterated
         #mode = 'RGB'
         if self.colormode=='RGB':
-        	self.rgb_or_yuv_stream = picamera.array.PiRGBArray(self.camera, self.resolution)
-        	#self.array_stream = self.rgb_stream
+            self.rgb_or_yuv_stream = picamera.array.PiRGBArray(self.camera, self.resolution)
+            #self.array_stream = self.rgb_stream
         	self.stream = self.camera.capture_continuous(self.rgb_or_yuv_stream, format='rgb', use_video_port=True)
         elif self.colormode=='YUV':
-        	self.rgb_or_yuv_stream = picamera.array.PiYUVArray(self.camera, self.resolution) 
-        	#self.this_stream = self.yuv_stream
+            self.rgb_or_yuv_stream = picamera.array.PiYUVArray(self.camera, self.resolution)
+            #self.this_stream = self.yuv_stream
         	self.stream = self.camera.capture_continuous(self.rgb_or_yuv_stream, format='yuv', use_video_port=True)
         else:
-        	raise
+            raise
         
 
         super().start()

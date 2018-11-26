@@ -5,10 +5,10 @@ drive:
 parts:
   - mock:
       type: MockMode
-  - camera:
-      type: PiCam
+  - still_camera:
+      type: StillCam
       arguments:
-        colormode: RGB
+        resolution: !!python/tuple [500,500]
   - joystick:
       type: PS3Robotics
   - arduino_pwm_motors:
