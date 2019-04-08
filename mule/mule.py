@@ -4,6 +4,7 @@ import logging.config
 import yaml
 import os
 import sys
+from pathlib import Path
     
 from utilities import configure as configutil
 from vehicle import Vehicle
@@ -13,9 +14,9 @@ LOGGING_DIR = 'logging'
 
 # LOGGING_DIR_HARD_CODE = "~/muleAI/mule/logging/logging.simple.yml"
 
-
+path_default_logging = Path.cwd() / 'logging' / 'logging.simple.yml'
 @click.group()
-@click.option('--logcfg', default=None, type=click.Path(exists=True))
+@click.option('--logcfg', default=str(path_default_logging), type=click.Path(exists=True))
 # @click.option('--logcfg', default=LOGGING_DIR_HARD_CODE,type=click.Path())
 # @click.option('--logcfg', default=None,type=click.Path(exists=True))
 def cli(logcfg):
