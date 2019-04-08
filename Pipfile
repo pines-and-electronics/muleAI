@@ -9,6 +9,7 @@ verify_ssl = true
 pyyaml = "*"
 click = "*"
 bitstring = "*"
+numpy = "==1.14.4"
 
 [requires]
 python_version = "3.6"
