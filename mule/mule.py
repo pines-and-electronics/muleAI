@@ -5,8 +5,8 @@ import yaml
 import os
 import sys
     
-from utilities import configure as configutil
-from vehicle import Vehicle
+from .utilities import configure as configutil
+from .vehicle import Vehicle
 
 CONFIG_DIR = 'configurations'
 LOGGING_DIR = 'logging'

@@ -1,0 +1,18 @@
+drive:
+    freq_hertz: 20
+    verbose: True
+    verbosity: 20
+parts:
+  - mock:
+      type: MockMode
+  - joystick:
+      type: PS3Robotics
+  - still_camera:
+      type: StillCam
+      arguments:
+        resolution: !!python/tuple [1024,768]
+  - arduino_pwm_motors:
+      type: MotorControl
+      arguments:
+        bus_addr: 0x8
+        device: 1
