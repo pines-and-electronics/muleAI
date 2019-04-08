@@ -5,18 +5,19 @@ import yaml
 import os
 import sys
     
-from .utilities import configure as configutil
-from .vehicle import Vehicle
+from utilities import configure as configutil
+from vehicle import Vehicle
 
 CONFIG_DIR = 'configurations'
 LOGGING_DIR = 'logging'
 
-#LOGGING_DIR_HARD_CODE = "~/muleAI/mule/logging/logging.simple.yml"
+# LOGGING_DIR_HARD_CODE = "~/muleAI/mule/logging/logging.simple.yml"
+
 
 @click.group()
 @click.option('--logcfg', default=None, type=click.Path(exists=True))
-#@click.option('--logcfg', default=LOGGING_DIR_HARD_CODE,type=click.Path())
-#@click.option('--logcfg', default=None,type=click.Path(exists=True))
+# @click.option('--logcfg', default=LOGGING_DIR_HARD_CODE,type=click.Path())
+# @click.option('--logcfg', default=None,type=click.Path(exists=True))
 def cli(logcfg):
     print('Opening {}'.format(logcfg))
     with open(logcfg, 'r') as fd:
@@ -27,32 +28,28 @@ def cli(logcfg):
 
 
 @cli.command()
-def create():
+def todo_create():
     pass
 
 
 @cli.command()
-def find():
+def TODO_find():
     pass
 
 
 @click.command()
 @click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.calibrate.yml'), type=click.Path(exists=True))
-def calibrate(cfg):
+def todo_calibrate(cfg):
     pass
 
-cli.add_command(calibrate)
+
 
 
 @click.command()
 @click.option('--cfg', default=os.path.join(CONFIG_DIR,'config.drive.yml'), type=click.Path(exists=True))
 @click.option('--model_path', type=click.Path(exists=True),required=False)
 #@click.option('--logcfg', default=os.path.join(LOGGING_DIR, 'logging.simple.yml'), type=click.Path(exists=True))
-def drive(cfg,model_path):
-    
-    #print(model_path)
-    #raise
-
+def drive(cfg, model_path):
 
     config = configutil.parse_config(cfg)
 
@@ -90,13 +87,16 @@ def drive(cfg,model_path):
 
     mule.stop()
     logging.info("Done with this driving session, exiting python.")
-    
+
 
 @cli.command()
-def train():
+def todo_train():
     pass
 
+
 cli.add_command(drive)
+cli.add_command(todo_calibrate)
+
 
 if __name__ == '__main__':
     print('*** Welcome to Mule.AI ***')
